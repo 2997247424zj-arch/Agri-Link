@@ -12,6 +12,9 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+/**
+ * 系统公共接口，提供健康检查和前端角色字典。
+ */
 @RestController
 @RequestMapping("/api/system")
 public class SystemController {

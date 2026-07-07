@@ -16,6 +16,9 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+/**
+ * 银行贷款产品接口，支持产品维护和农户侧智能匹配。
+ */
 @RestController
 @RequestMapping("/api/finance/banks")
 public class BankController {

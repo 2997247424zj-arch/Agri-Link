@@ -20,6 +20,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+/**
+ * 系统管理员后台接口，聚合用户、交易和融资审批能力。
+ */
 @RestController
 @RequestMapping("/api/admin")
 public class AdminController {

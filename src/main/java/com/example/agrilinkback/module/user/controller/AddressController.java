@@ -15,6 +15,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+/**
+ * 收货地址接口，支持按用户查询和维护地址。
+ */
 @RestController
 @RequestMapping("/api/addresses")
 public class AddressController {

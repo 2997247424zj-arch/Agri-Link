@@ -12,6 +12,11 @@ import com.example.agrilinkback.module.user.service.UserService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
+/**
+ * 登录和注册服务。
+ *
+ * <p>返回的 token 当前使用角色码承载，配合 HeaderRoleAuthenticationFilter 完成实训阶段鉴权。
+ */
 @Service
 public class AuthService {
 
@@ -33,6 +38,7 @@ public class AuthService {
 
         UserRole role = resolveRole(user.role());
         if (request.role() != null && !request.role().isBlank()) {
+            // 登录页选择的角色必须和数据库中的用户角色一致，避免跨角色进入模块。
             UserRole expectedRole = resolveRole(request.role());
             if (expectedRole != role) {
                 throw new BusinessException(403, "User role does not match requested login role");
@@ -50,6 +56,7 @@ public class AuthService {
         if (storedPassword == null) {
             return false;
         }
+        // 兼容测试数据中的明文密码，同时支持生产数据使用 BCrypt 哈希。
         if (storedPassword.startsWith("$2a$") || storedPassword.startsWith("$2b$")
                 || storedPassword.startsWith("$2y$")) {
             try {

@@ -13,6 +13,11 @@ import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+/**
+ * 买家采购订单服务。
+ *
+ * <p>采购主表和明细表必须同时写入，因此创建和删除操作使用事务保护。
+ */
 @Service
 public class PurchaseService {
 
@@ -46,6 +51,7 @@ public class PurchaseService {
     @Transactional
     public Purchase createPurchase(PurchaseRequest request) {
         Integer purchaseId = purchaseMapper.nextPurchaseId();
+        // 采购总价由明细单价和数量汇总，避免前端传入总价被篡改。
         BigDecimal totalPrice = request.details()
                 .stream()
                 .map(detail -> detail.unitPrice().multiply(BigDecimal.valueOf(detail.count())))
@@ -65,6 +71,7 @@ public class PurchaseService {
 
         int nextDetailId = purchaseMapper.nextDetailId();
         for (PurchaseDetailRequest detailRequest : request.details()) {
+            // 明细金额单独落库，便于订单详情页直接展示每行小计。
             BigDecimal sumPrice = detailRequest.unitPrice().multiply(BigDecimal.valueOf(detailRequest.count()));
             PurchaseDetail detail = new PurchaseDetail(
                     nextDetailId++,

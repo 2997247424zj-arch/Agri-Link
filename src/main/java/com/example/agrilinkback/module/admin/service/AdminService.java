@@ -21,6 +21,11 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 
+/**
+ * 系统管理员聚合服务。
+ *
+ * <p>后台接口不直接绕过业务服务，而是复用各模块服务，保证状态变更规则一致。
+ */
 @Service
 public class AdminService {
 
@@ -49,6 +54,7 @@ public class AdminService {
 
     public AdminOverview getOverview() {
         List<User> users = userService.listUsers();
+        // 概览页需要按角色统计用户分布，用于后台首页数据看板。
         Map<String, Long> usersByRole = users.stream()
                 .collect(Collectors.groupingBy(User::role, Collectors.counting()));
 
@@ -71,6 +77,7 @@ public class AdminService {
         User existing = userService.getUser(userName);
         UserRole nextRole = requireBusinessRole(role);
         if (UserRole.SYSTEM_ADMIN.code().equals(existing.role())) {
+            // 系统管理员账号不参与业务角色切换，避免误降权导致后台无法管理。
             throw new BusinessException("System admin role cannot be managed as a business role");
         }
         userMapper.updateRole(userName, nextRole.code());

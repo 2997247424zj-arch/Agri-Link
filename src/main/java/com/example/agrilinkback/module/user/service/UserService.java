@@ -10,6 +10,11 @@ import java.time.LocalDateTime;
 import java.util.List;
 import org.springframework.stereotype.Service;
 
+/**
+ * 用户基础资料服务。
+ *
+ * <p>该服务只允许创建业务角色用户，系统管理员由初始化数据维护。
+ */
 @Service
 public class UserService {
 
@@ -35,6 +40,7 @@ public class UserService {
         if (userMapper.findByUserName(request.userName()) != null) {
             throw new BusinessException(409, "User already exists");
         }
+        // 新注册用户给定默认积分和信用分，后续可由业务流程扩展调整。
         User user = toUser(request, LocalDateTime.now(), 500, 5);
         userMapper.insert(user);
         return getUser(request.userName());
@@ -94,6 +100,7 @@ public class UserService {
         UserRole userRole = UserRole.fromCode(role)
                 .orElseThrow(() -> new BusinessException("Role must be BUYER, FARMER, EXPERT or BANK"));
         if (!userRole.isBusinessRole()) {
+            // 防止通过普通用户接口注册或更新为 SYSTEM_ADMIN。
             throw new BusinessException("Role must be BUYER, FARMER, EXPERT or BANK");
         }
         return userRole;

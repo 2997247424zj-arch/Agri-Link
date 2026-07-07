@@ -16,6 +16,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+/**
+ * 专家预约接口，记录农户预约需求和专家处理结果。
+ */
 @RestController
 @RequestMapping("/api/consultation/reserves")
 public class ReserveController {

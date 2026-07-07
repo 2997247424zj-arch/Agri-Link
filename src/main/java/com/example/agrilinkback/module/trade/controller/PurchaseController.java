@@ -17,6 +17,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+/**
+ * 采购订单接口，处理买家下单、订单明细和采购状态。
+ */
 @RestController
 @RequestMapping("/api/trade/purchases")
 public class PurchaseController {

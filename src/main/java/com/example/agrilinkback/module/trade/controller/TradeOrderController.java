@@ -17,6 +17,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+/**
+ * 货源/销售订单接口，农户发布货源，买家和后台查询处理。
+ */
 @RestController
 @RequestMapping("/api/trade/orders")
 public class TradeOrderController {

@@ -14,6 +14,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+/**
+ * 农业知识讨论接口，按知识文章维护评论。
+ */
 @RestController
 @RequestMapping("/api/knowledge/{knowledgeId}/discusses")
 public class DiscussController {

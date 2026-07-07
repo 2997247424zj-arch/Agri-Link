@@ -13,6 +13,9 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+/**
+ * 全局异常出口，保证错误响应也保持统一 JSON 结构。
+ */
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
@@ -47,6 +50,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<Void>> handleException(Exception ex, HttpServletRequest request) {
         log.error("Unhandled exception on {}", request.getRequestURI(), ex);
+        // 未预期异常不向前端暴露堆栈细节，只记录服务端日志。
         return ResponseEntity
                 .status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(ApiResponse.fail(500, "Internal server error"));
@@ -59,6 +63,7 @@ public class GlobalExceptionHandler {
     }
 
     private String validationMessage(BindException ex) {
+        // 将多个字段校验错误合并成一条可读消息，方便前端直接展示。
         String message = ex.getBindingResult()
                 .getFieldErrors()
                 .stream()

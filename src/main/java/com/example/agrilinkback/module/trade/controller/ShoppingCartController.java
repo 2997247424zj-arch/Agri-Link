@@ -15,6 +15,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+/**
+ * 购物车接口，维护买家临时选购的货源商品。
+ */
 @RestController
 @RequestMapping("/api/trade/shopping-cart")
 public class ShoppingCartController {

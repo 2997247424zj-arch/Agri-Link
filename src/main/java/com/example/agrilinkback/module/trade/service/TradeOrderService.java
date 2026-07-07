@@ -9,6 +9,11 @@ import java.util.List;
 import java.time.LocalDateTime;
 import org.springframework.stereotype.Service;
 
+/**
+ * 农产品货源/销售订单服务。
+ *
+ * <p>订单状态用于表达货源审核、成交或下架等业务阶段。
+ */
 @Service
 public class TradeOrderService {
 
@@ -40,6 +45,7 @@ public class TradeOrderService {
 
     public TradeOrder createOrder(TradeOrderRequest request) {
         LocalDateTime now = LocalDateTime.now();
+        // 新发布货源默认处于待处理状态，合作方在成交/状态变更时再写入。
         TradeOrder order = new TradeOrder(
                 tradeOrderMapper.nextId(),
                 request.title(),

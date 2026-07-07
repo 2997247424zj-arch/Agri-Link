@@ -19,6 +19,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+/**
+ * 融资接口，覆盖融资申请、融资意向和银行侧农户匹配。
+ */
 @RestController
 @RequestMapping("/api/finance")
 public class FinanceController {

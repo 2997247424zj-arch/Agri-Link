@@ -16,6 +16,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+/**
+ * 在线农业问答接口，农户提问，专家答复。
+ */
 @RestController
 @RequestMapping("/api/consultation/questions")
 public class QuestionController {

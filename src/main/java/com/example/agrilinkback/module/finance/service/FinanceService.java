@@ -13,6 +13,11 @@ import java.time.LocalDateTime;
 import java.util.List;
 import org.springframework.stereotype.Service;
 
+/**
+ * 融资申请与融资意向服务。
+ *
+ * <p>融资申请表示农户向银行提交的正式申请，融资意向用于银行侧智能匹配潜在农户。
+ */
 @Service
 public class FinanceService {
 
@@ -47,6 +52,7 @@ public class FinanceService {
     }
 
     public List<FinancingIntention> matchFarmers(Integer bankId) {
+        // 银行侧匹配以银行产品额度为输入，筛选符合额度范围的农户融资意向。
         return financingIntentionMapper.findMatchedIntentions(bankService.getBank(bankId).money());
     }
 
@@ -105,6 +111,7 @@ public class FinanceService {
 
     public Finance createFinance(FinanceApplicationRequest request) {
         LocalDateTime now = LocalDateTime.now();
+        // 新融资申请默认待审核，后续由银行或管理员更新状态与备注。
         Finance finance = new Finance(
                 financeMapper.nextId(),
                 request.bankId(),

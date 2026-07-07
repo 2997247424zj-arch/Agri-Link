@@ -15,6 +15,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+/**
+ * 农业知识接口，专家发布内容，用户浏览学习。
+ */
 @RestController
 @RequestMapping("/api/knowledge")
 public class KnowledgeController {

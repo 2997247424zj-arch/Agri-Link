@@ -15,6 +15,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+/**
+ * 专家资料接口，供专家维护资料并供用户查询专家信息。
+ */
 @RestController
 @RequestMapping("/api/experts")
 public class ExpertController {

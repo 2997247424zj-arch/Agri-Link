@@ -13,6 +13,11 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+/**
+ * 本地文件存储服务。
+ *
+ * <p>当前只开放图片上传，返回的 /files/** URL 由 WebConfig 映射到本地上传目录。
+ */
 @Service
 public class FileStorageService {
 
@@ -48,6 +53,7 @@ public class FileStorageService {
         String fileName = UUID.randomUUID() + "." + extension;
         Path target = uploadRoot.resolve(fileName).normalize();
         if (!target.startsWith(uploadRoot)) {
+            // 防止构造异常路径逃逸上传目录。
             throw new BusinessException("Invalid upload path");
         }
 

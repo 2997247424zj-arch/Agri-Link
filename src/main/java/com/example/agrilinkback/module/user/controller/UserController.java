@@ -17,6 +17,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+/**
+ * 用户资料接口，覆盖个人信息、密码和基础用户管理。
+ */
 @RestController
 @RequestMapping("/api/users")
 public class UserController {

@@ -8,6 +8,11 @@ import java.math.BigDecimal;
 import java.util.List;
 import org.springframework.stereotype.Service;
 
+/**
+ * 银行贷款产品服务。
+ *
+ * <p>matchBanks 用于农户侧按融资金额筛选可覆盖需求的银行产品。
+ */
 @Service
 public class BankService {
 
@@ -22,6 +27,7 @@ public class BankService {
     }
 
     public List<Bank> matchBanks(BigDecimal amount) {
+        // 匹配规则下沉到 Mapper/SQL，便于数据库按金额排序或过滤。
         return bankMapper.findMatchedBanks(amount);
     }
 
