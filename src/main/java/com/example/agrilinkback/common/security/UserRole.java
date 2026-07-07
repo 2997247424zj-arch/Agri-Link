@@ -7,7 +7,8 @@ public enum UserRole {
     BUYER("BUYER", "买家"),
     FARMER("FARMER", "农户"),
     EXPERT("EXPERT", "技术专家"),
-    BANK("BANK", "银行");
+    BANK("BANK", "银行"),
+    SYSTEM_ADMIN("SYSTEM_ADMIN", "系统管理员");
 
     private final String code;
     private final String label;
@@ -27,6 +28,10 @@ public enum UserRole {
 
     public String authority() {
         return "ROLE_" + code;
+    }
+
+    public boolean isBusinessRole() {
+        return this != SYSTEM_ADMIN;
     }
 
     public static Optional<UserRole> fromCode(String code) {

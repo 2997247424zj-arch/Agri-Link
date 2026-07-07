@@ -49,6 +49,7 @@ public class SecurityConfig {
                                 "/v3/api-docs/**",
                                 "/error"
                         ).permitAll()
+                        .requestMatchers("/api/admin/**").hasRole("SYSTEM_ADMIN")
                         .requestMatchers(HttpMethod.GET, "/api/finance/banks/matches").hasRole("FARMER")
                         .requestMatchers(HttpMethod.GET, "/api/finance/matches/farmers/**").hasRole("BANK")
                         .requestMatchers(HttpMethod.GET,

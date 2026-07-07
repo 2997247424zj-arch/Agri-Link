@@ -7,6 +7,15 @@ insert into tb_user (
   500, 5, '/files/avatar.png', 'Zhang San'
 );
 
+insert into tb_user (
+  user_name, password, nick_name, phone, identity_num, address, role,
+  create_time, update_time, integral, credit, avatar, real_name
+) values (
+  'admin001', 'secret', 'System Admin', '13800000000', '430000198001010001',
+  'Jishou', 'SYSTEM_ADMIN', '2026-01-01 07:00:00', '2026-01-02 07:00:00',
+  0, 0, '/files/avatar.png', 'Admin User'
+);
+
 insert into tb_address (
   id, own_name, consignee, phone, address_detail, is_default
 ) values (

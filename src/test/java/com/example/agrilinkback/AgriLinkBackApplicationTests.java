@@ -44,15 +44,16 @@ class AgriLinkBackApplicationTests {
     }
 
     @Test
-    void rolesEndpointReturnsFourBusinessRoles() throws Exception {
+    void rolesEndpointReturnsBusinessAndSystemAdminRoles() throws Exception {
         mockMvc.perform(get("/api/system/roles"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.data.length()").value(4))
+                .andExpect(jsonPath("$.data.length()").value(5))
                 .andExpect(jsonPath("$.data[0].code").value("BUYER"))
                 .andExpect(jsonPath("$.data[1].code").value("FARMER"))
                 .andExpect(jsonPath("$.data[2].code").value("EXPERT"))
-                .andExpect(jsonPath("$.data[3].code").value("BANK"));
+                .andExpect(jsonPath("$.data[3].code").value("BANK"))
+                .andExpect(jsonPath("$.data[4].code").value("SYSTEM_ADMIN"));
     }
 
     @Test
@@ -70,6 +71,209 @@ class AgriLinkBackApplicationTests {
         mockMvc.perform(get("/api/finance/applications").with(role("BANK")))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true));
+
+        mockMvc.perform(get("/api/admin/overview").with(role("FARMER")))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.code").value(403));
+
+        mockMvc.perform(get("/api/admin/overview").with(role("SYSTEM_ADMIN")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true));
+    }
+
+    @Test
+    void systemAdminInterfacesWorkWithoutBusinessRoleConflict() throws Exception {
+        mockMvc.perform(get("/api/admin/overview").with(role("SYSTEM_ADMIN")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.userCount").value(2))
+                .andExpect(jsonPath("$.data.orderCount").value(1))
+                .andExpect(jsonPath("$.data.usersByRole.FARMER").value(1))
+                .andExpect(jsonPath("$.data.usersByRole.SYSTEM_ADMIN").value(1));
+
+        mockMvc.perform(get("/api/admin/users").with(role("SYSTEM_ADMIN")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data[0].userName").value("farmer001"));
+
+        mockMvc.perform(post("/api/users")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "userName": "admin-register-blocked",
+                                  "password": "secret",
+                                  "nickName": "Blocked Admin",
+                                  "phone": "13800000999",
+                                  "identityNum": "430000199901010001",
+                                  "address": "Jishou",
+                                  "role": "SYSTEM_ADMIN",
+                                  "realName": "Blocked"
+                                }
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.success").value(false));
+
+        mockMvc.perform(post("/api/users")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "userName": "roleuser001",
+                                  "password": "secret",
+                                  "nickName": "Role User",
+                                  "phone": "13800000901",
+                                  "identityNum": "430000199701010001",
+                                  "address": "Jishou",
+                                  "role": "FARMER",
+                                  "realName": "Role User"
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.role").value("FARMER"));
+
+        mockMvc.perform(patch("/api/admin/users/roleuser001/role")
+                        .with(role("SYSTEM_ADMIN"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "role": "BUYER"
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.role").value("BUYER"));
+
+        mockMvc.perform(patch("/api/admin/users/admin001/role")
+                        .with(role("SYSTEM_ADMIN"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "role": "FARMER"
+                                }
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.success").value(false));
+
+        mockMvc.perform(get("/api/admin/trade/orders").with(role("SYSTEM_ADMIN")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data[0].orderId").value(1));
+
+        String orderResponse = mockMvc.perform(post("/api/trade/orders")
+                        .with(role("FARMER"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "title": "Admin status oranges",
+                                  "price": 8.20,
+                                  "content": "Temporary order for admin test",
+                                  "type": "1",
+                                  "picture": "/files/admin-orange.png",
+                                  "ownName": "farmer001",
+                                  "address": "Jishou"
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        int orderId = objectMapper.readTree(orderResponse).path("data").path("orderId").asInt();
+
+        mockMvc.perform(patch("/api/admin/trade/orders/{orderId}/status", orderId)
+                        .with(role("SYSTEM_ADMIN"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "orderStatus": 2,
+                                  "cooperationName": "roleuser001"
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.orderStatus").value(2))
+                .andExpect(jsonPath("$.data.cooperationName").value("roleuser001"));
+
+        mockMvc.perform(get("/api/admin/trade/purchases").with(role("SYSTEM_ADMIN")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data[0].purchaseId").value(1));
+
+        String purchaseBody = """
+                {
+                  "ownName": "roleuser001",
+                  "purchaseType": 1,
+                  "address": "Jishou",
+                  "details": [
+                    {
+                      "orderId": %d,
+                      "unitPrice": 8.20,
+                      "count": 1
+                    }
+                  ]
+                }
+                """.formatted(orderId);
+        String purchaseResponse = mockMvc.perform(post("/api/trade/purchases")
+                        .with(role("BUYER"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(purchaseBody))
+                .andExpect(status().isOk())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        int purchaseId = objectMapper.readTree(purchaseResponse).path("data").path("purchaseId").asInt();
+
+        mockMvc.perform(patch("/api/admin/trade/purchases/{purchaseId}/status", purchaseId)
+                        .with(role("SYSTEM_ADMIN"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "purchaseStatus": 2
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.purchaseStatus").value(2));
+
+        mockMvc.perform(get("/api/admin/finance/applications").with(role("SYSTEM_ADMIN")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data[0].financeId").value(1));
+
+        String financeResponse = mockMvc.perform(post("/api/finance/applications")
+                        .with(role("FARMER"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "bankId": 1001,
+                                  "ownName": "farmer001",
+                                  "realName": "Zhang San",
+                                  "phone": "13800000001",
+                                  "idNum": "430000199001010001",
+                                  "money": 12000.00,
+                                  "rate": 3.50,
+                                  "repayment": "12 months",
+                                  "fileInfo": "/files/admin-finance.pdf"
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        int financeId = objectMapper.readTree(financeResponse).path("data").path("financeId").asInt();
+
+        mockMvc.perform(patch("/api/admin/finance/applications/{financeId}/status", financeId)
+                        .with(role("SYSTEM_ADMIN"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "status": 1,
+                                  "remark": "admin approved"
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.status").value(1))
+                .andExpect(jsonPath("$.data.remark").value("admin approved"));
+
+        mockMvc.perform(delete("/api/finance/applications/{financeId}", financeId).with(role("BANK")))
+                .andExpect(status().isOk());
+        mockMvc.perform(delete("/api/trade/purchases/{purchaseId}", purchaseId).with(role("BUYER")))
+                .andExpect(status().isOk());
+        mockMvc.perform(delete("/api/trade/orders/{orderId}", orderId).with(role("FARMER")))
+                .andExpect(status().isOk());
+        mockMvc.perform(delete("/api/users/roleuser001").with(role("BUYER")))
+                .andExpect(status().isOk());
     }
 
     @Test
@@ -527,6 +731,15 @@ class AgriLinkBackApplicationTests {
                 "/api/addresses",
                 "/api/addresses/{id}",
                 "/api/addresses/owners/{ownName}",
+                "/api/admin/finance/applications",
+                "/api/admin/finance/applications/{financeId}/status",
+                "/api/admin/overview",
+                "/api/admin/trade/orders",
+                "/api/admin/trade/orders/{orderId}/status",
+                "/api/admin/trade/purchases",
+                "/api/admin/trade/purchases/{purchaseId}/status",
+                "/api/admin/users",
+                "/api/admin/users/{userName}/role",
                 "/api/consultation/questions",
                 "/api/consultation/questions/{id}",
                 "/api/consultation/questions/{id}/answer",

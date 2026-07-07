@@ -49,7 +49,7 @@ public class UserService {
                 request.phone(),
                 request.identityNum(),
                 request.address(),
-                requireRole(request.role()).code(),
+                requireBusinessRole(request.role()).code(),
                 existing.createTime(),
                 LocalDateTime.now(),
                 existing.integral(),
@@ -80,7 +80,7 @@ public class UserService {
                 request.phone(),
                 request.identityNum(),
                 request.address(),
-                requireRole(request.role()).code(),
+                requireBusinessRole(request.role()).code(),
                 now,
                 now,
                 integral,
@@ -90,8 +90,12 @@ public class UserService {
         );
     }
 
-    private UserRole requireRole(String role) {
-        return UserRole.fromCode(role)
+    private UserRole requireBusinessRole(String role) {
+        UserRole userRole = UserRole.fromCode(role)
                 .orElseThrow(() -> new BusinessException("Role must be BUYER, FARMER, EXPERT or BANK"));
+        if (!userRole.isBusinessRole()) {
+            throw new BusinessException("Role must be BUYER, FARMER, EXPERT or BANK");
+        }
+        return userRole;
     }
 }

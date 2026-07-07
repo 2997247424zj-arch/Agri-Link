@@ -65,4 +65,12 @@ public interface UserMapper {
             where user_name = #{userName}
             """)
     int updatePassword(@Param("userName") String userName, @Param("password") String password);
+
+    @Update("""
+            update tb_user
+            set role = #{role},
+                update_time = current_timestamp
+            where user_name = #{userName}
+            """)
+    int updateRole(@Param("userName") String userName, @Param("role") String role);
 }
