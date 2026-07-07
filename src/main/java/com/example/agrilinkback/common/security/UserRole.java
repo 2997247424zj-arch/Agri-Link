@@ -39,8 +39,13 @@ public enum UserRole {
             return Optional.empty();
         }
         String normalized = code.trim().toUpperCase();
+        String roleCode = switch (normalized) {
+            case "ADMIN" -> SYSTEM_ADMIN.code;
+            case "USER" -> BUYER.code;
+            default -> normalized;
+        };
         return Arrays.stream(values())
-                .filter(role -> role.code.equals(normalized))
+                .filter(role -> role.code.equals(roleCode))
                 .findFirst();
     }
 }

@@ -49,7 +49,10 @@ public class SecurityConfig {
                                 "/v3/api-docs/**",
                                 "/error"
                         ).permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/auth/login", "/api/auth/register").permitAll()
                         .requestMatchers("/api/admin/**").hasRole("SYSTEM_ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/files/images")
+                                .hasAnyRole("BUYER", "FARMER", "EXPERT", "BANK", "SYSTEM_ADMIN")
                         .requestMatchers(HttpMethod.GET, "/api/finance/banks/matches").hasRole("FARMER")
                         .requestMatchers(HttpMethod.GET, "/api/finance/matches/farmers/**").hasRole("BANK")
                         .requestMatchers(HttpMethod.GET,

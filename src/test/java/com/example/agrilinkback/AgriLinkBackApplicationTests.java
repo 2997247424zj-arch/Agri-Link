@@ -7,6 +7,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.RequestPostProcessor;
@@ -17,6 +18,7 @@ import java.util.TreeSet;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
@@ -80,6 +82,82 @@ class AgriLinkBackApplicationTests {
         mockMvc.perform(get("/api/admin/overview").with(role("SYSTEM_ADMIN")))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true));
+    }
+
+    @Test
+    void authAndImageUploadInterfacesCoverLoginRegistrationAndFileTask() throws Exception {
+        mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "userName": "farmer001",
+                                  "password": "secret",
+                                  "role": "FARMER"
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.userName").value("farmer001"))
+                .andExpect(jsonPath("$.data.role").value("FARMER"))
+                .andExpect(jsonPath("$.data.token").value("FARMER"))
+                .andExpect(jsonPath("$.data.headerName").value("X-User-Role"));
+
+        mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "userName": "admin001",
+                                  "password": "secret",
+                                  "role": "SYSTEM_ADMIN"
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.role").value("SYSTEM_ADMIN"));
+
+        mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "userName": "farmer001",
+                                  "password": "wrong"
+                                }
+                                """))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.success").value(false));
+
+        mockMvc.perform(post("/api/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "userName": "bank002",
+                                  "password": "secret",
+                                  "nickName": "Bank Two",
+                                  "phone": "13800000902",
+                                  "identityNum": "430000199701010002",
+                                  "address": "Jishou",
+                                  "role": "BANK",
+                                  "realName": "Bank User"
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.userName").value("bank002"))
+                .andExpect(jsonPath("$.data.role").value("BANK"));
+
+        MockMultipartFile image = new MockMultipartFile(
+                "file",
+                "orange.png",
+                "image/png",
+                new byte[]{(byte) 0x89, 0x50, 0x4e, 0x47}
+        );
+        mockMvc.perform(multipart("/api/files/images")
+                        .file(image)
+                        .with(role("FARMER")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.originalName").value("orange.png"))
+                .andExpect(jsonPath("$.data.contentType").value("image/png"))
+                .andExpect(jsonPath("$.data.url").value(org.hamcrest.Matchers.startsWith("/files/")));
+
+        mockMvc.perform(delete("/api/users/bank002").with(role("BANK")))
+                .andExpect(status().isOk());
     }
 
     @Test
@@ -740,6 +818,8 @@ class AgriLinkBackApplicationTests {
                 "/api/admin/trade/purchases/{purchaseId}/status",
                 "/api/admin/users",
                 "/api/admin/users/{userName}/role",
+                "/api/auth/login",
+                "/api/auth/register",
                 "/api/consultation/questions",
                 "/api/consultation/questions/{id}",
                 "/api/consultation/questions/{id}/answer",
@@ -748,6 +828,7 @@ class AgriLinkBackApplicationTests {
                 "/api/consultation/reserves/{id}/answer",
                 "/api/experts",
                 "/api/experts/{userName}",
+                "/api/files/images",
                 "/api/finance/applications",
                 "/api/finance/applications/{financeId}",
                 "/api/finance/applications/{financeId}/status",

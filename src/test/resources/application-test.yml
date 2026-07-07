@@ -9,3 +9,5 @@ spring:
       mode: always
       schema-locations: classpath:schema-test.sql
       data-locations: classpath:data-test.sql
+application:
+  upload-path: ${java.io.tmpdir}/agrilink-test-uploads
