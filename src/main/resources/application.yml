@@ -1,0 +1,42 @@
+server:
+  port: 9091
+
+spring:
+  application:
+    name: Agri-Link-back
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.security.servlet.UserDetailsServiceAutoConfiguration
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://${AGRILINK_DB_HOST:localhost}:${AGRILINK_DB_PORT:3306}/${AGRILINK_DB_NAME:rongxiaotong}?serverTimezone=Asia/Shanghai&useUnicode=true&characterEncoding=UTF-8&useSSL=false&allowPublicKeyRetrieval=true
+    username: ${AGRILINK_DB_USERNAME:root}
+    password: ${AGRILINK_DB_PASSWORD:}
+  servlet:
+    multipart:
+      max-file-size: 20MB
+      max-request-size: 50MB
+  web:
+    resources:
+      static-locations: file:${application.upload-path}/
+  mvc:
+    static-path-pattern: /files/**
+
+application:
+  upload-path: ${AGRILINK_UPLOAD_PATH:d:/wangyanan/file/info}
+
+mybatis:
+  mapper-locations: classpath*:mapper/**/*.xml
+  type-aliases-package: com.example.agrilinkback.**.entity
+  configuration:
+    map-underscore-to-camel-case: true
+
+bank:
+  bankid: 1001
+
+springdoc:
+  api-docs:
+    enabled: true
+  swagger-ui:
+    enabled: true
+    path: /swagger-ui.html
