@@ -112,6 +112,9 @@ public class AdminService {
         return financeService.updateFinanceStatus(financeId, request);
     }
 
+    /**
+     * ???????????????????????????????????
+     */
     public List<AdminKnowledgeItem> listKnowledge() {
         return knowledgeService.listKnowledge().stream()
                 .map(AdminKnowledgeItem::fromKnowledge)
@@ -137,6 +140,9 @@ public class AdminService {
         knowledgeService.deleteKnowledge(knowledgeId);
     }
 
+    /**
+     * ????????????????????????????????
+     */
     private UserRole requireBusinessRole(String role) {
         UserRole userRole = UserRole.fromCode(role)
                 .orElseThrow(() -> new BusinessException("Role must be BUYER, FARMER, EXPERT or BANK"));
@@ -146,6 +152,9 @@ public class AdminService {
         return userRole;
     }
 
+    /**
+     * ??????????????category ??? Knowledge.ownName?summary ??????
+     */
     private KnowledgeRequest toKnowledgeRequest(AdminKnowledgeRequest request) {
         String category = request.category() == null || request.category().isBlank()
                 ? "平台资讯"
