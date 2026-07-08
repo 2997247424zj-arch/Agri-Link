@@ -57,6 +57,7 @@ const roles: Array<{ value: UserRole; label: string }> = [
   { value: 'SYSTEM_ADMIN', label: '管理员' },
 ]
 
+// ????????????????????????????????
 const fallbackOverview: AdminOverview = {
   userCount: 5,
   orderCount: 3,
@@ -147,6 +148,7 @@ function pageCount(total: number) {
   return Math.max(1, Math.ceil(total / pageSize))
 }
 
+// ????????????????? ID ????????
 function toggleSelection(list: number[], id: number) {
   return list.includes(id) ? list.filter((item) => item !== id) : [...list, id]
 }
@@ -193,6 +195,7 @@ function confirmAction(text: string) {
   return typeof window === 'undefined' || window.confirm(text)
 }
 
+// ??????????????????????????????????
 async function loadAdmin() {
   loading.value = true
   error.value = ''
@@ -463,6 +466,11 @@ onMounted(loadAdmin)
             </tr>
           </tbody>
         </table>
+      </div>
+      <div class="pager">
+        <button class="button button--ghost button--small" type="button" @click="changeUserPage(-1)">???</button>
+        <span>? {{ userPage }} / {{ pageCount(filteredUsers.length) }} ?</span>
+        <button class="button button--ghost button--small" type="button" @click="changeUserPage(1)">???</button>
       </div>
     </section>
 

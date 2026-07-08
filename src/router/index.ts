@@ -9,6 +9,7 @@ import ProfileView from '@/views/ProfileView.vue'
 import TradeView from '@/views/TradeView.vue'
 import type { UserRole } from '@/types/domain'
 
+// ????????????????????????? SecurityConfig ???
 const routeRoles: Partial<Record<string, UserRole[]>> = {
   trade: ['FARMER', 'BUYER', 'SYSTEM_ADMIN'],
   cart: ['BUYER', 'SYSTEM_ADMIN'],
@@ -34,6 +35,7 @@ const router = createRouter({
 })
 
 router.beforeEach((to) => {
+  // ?????????/SSR ??????????? localStorage ???
   if (typeof localStorage === 'undefined' || typeof to.name !== 'string') return true
 
   const allowedRoles = routeRoles[to.name]

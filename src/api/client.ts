@@ -1,5 +1,6 @@
 import type { ApiResponse, UserRole } from '@/types/domain'
 
+// ???????????? .env ???????????
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:9091'
 
 interface RequestOptions extends RequestInit {
@@ -22,6 +23,7 @@ export async function request<T>(path: string, options: RequestOptions = {}): Pr
     headers.set('Content-Type', 'application/json')
   }
 
+  // ?????? X-User-Role ???????????????????????????
   const storedRole = typeof localStorage === 'undefined' ? '' : localStorage.getItem('agri-link-role')
   const role = options.role ?? storedRole
   if (role) {
@@ -32,6 +34,7 @@ export async function request<T>(path: string, options: RequestOptions = {}): Pr
     ...options,
     headers,
   })
+  // ?? 204 ?? JSON ??????????????? HTTP ???
   const payload = (await response.json().catch(() => null)) as ApiResponse<T> | null
 
   if (!response.ok || payload?.success === false) {

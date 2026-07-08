@@ -3,6 +3,7 @@ import { defineStore } from 'pinia'
 import type { AuthResponse, User, UserRole } from '@/types/domain'
 import { api } from '@/api/client'
 
+// ???????????????????????????
 const roleLabels: Record<UserRole, string> = {
   BUYER: '买家',
   FARMER: '农户',
@@ -29,6 +30,7 @@ export const useSessionStore = defineStore('session', () => {
   const roleLabel = computed(() => roleLabels[role.value] ?? role.value)
   const isLoggedIn = computed(() => Boolean(userName.value))
 
+  // ?????????? localStorage???????????????
   function persist(nextUserName: string, nextRole: UserRole | string, nextDisplayName?: string) {
     userName.value = nextUserName
     role.value = nextRole as UserRole

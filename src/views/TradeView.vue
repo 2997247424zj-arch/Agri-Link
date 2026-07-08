@@ -16,6 +16,7 @@ const error = ref('')
 const cartCounts = reactive<Record<number, number>>({})
 const editingOrderId = ref<number | null>(null)
 
+// ????????? TradeOrderRequest ??????????????
 const form = reactive({
   title: '高山生态大米 50kg',
   price: 5.2,
@@ -89,6 +90,7 @@ const fallbackOrders: TradeOrder[] = [
   },
 ]
 
+// ????????????????????????????
 const filteredOrders = computed(() => {
   const text = keyword.value.trim().toLowerCase()
   if (!text) return orders.value
@@ -126,6 +128,7 @@ function imageSrc(picture?: string) {
   return first.startsWith('http') || first.startsWith('/') ? first : `/file/order/${first}`
 }
 
+// ??????? data URL ??????????????????????
 function handleImageFile(event: Event, target: typeof form | typeof editForm) {
   const file = (event.target as HTMLInputElement).files?.[0]
   if (!file) return
@@ -160,6 +163,7 @@ function updateCartCount(orderId: number, value: number) {
   cartCounts[orderId] = Math.max(1, Math.floor(Number.isFinite(value) ? value : 1))
 }
 
+// ????????????????? localStorage ?????????????
 async function addToCart(order: TradeOrder) {
   message.value = ''
   error.value = ''
