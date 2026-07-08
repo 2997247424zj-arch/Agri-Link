@@ -2,6 +2,7 @@ package com.example.agrilinkback.module.finance.controller;
 
 import com.example.agrilinkback.common.api.ApiResponse;
 import com.example.agrilinkback.module.finance.dto.FinanceApplicationRequest;
+import com.example.agrilinkback.module.finance.dto.FinanceMaterialsRequest;
 import com.example.agrilinkback.module.finance.dto.FinanceStatusRequest;
 import com.example.agrilinkback.module.finance.dto.FinancingIntentionRequest;
 import com.example.agrilinkback.module.finance.entity.Finance;
@@ -53,6 +54,14 @@ public class FinanceController {
             @Valid @RequestBody FinanceStatusRequest request
     ) {
         return ApiResponse.success(financeService.updateFinanceStatus(financeId, request));
+    }
+
+    @PatchMapping("/applications/{financeId}/materials")
+    public ApiResponse<Finance> updateFinanceMaterials(
+            @PathVariable Integer financeId,
+            @RequestBody FinanceMaterialsRequest request
+    ) {
+        return ApiResponse.success(financeService.updateFinanceMaterials(financeId, request));
     }
 
     @DeleteMapping("/applications/{financeId}")

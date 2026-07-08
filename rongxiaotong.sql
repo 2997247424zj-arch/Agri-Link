@@ -134,6 +134,7 @@ CREATE TABLE `tb_finance` (
   `combination_phone2` varchar(64) CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci DEFAULT NULL,
   `combination_idnum2` varchar(64) CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci DEFAULT NULL,
   `file_info` text CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci,
+  `materials` text CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci,
   PRIMARY KEY (`finance_id`) USING BTREE,
   KEY `bank_id` (`bank_id`) USING BTREE
 ) ENGINE=InnoDB AUTO_INCREMENT=142 DEFAULT CHARSET=utf8mb3 ROW_FORMAT=COMPACT;
@@ -202,6 +203,10 @@ CREATE TABLE `tb_order` (
   `create_time` datetime NOT NULL,
   `update_time` datetime NOT NULL,
   `address` varchar(255) CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci DEFAULT NULL COMMENT '订单收货地址',
+  `stock` int DEFAULT NULL,
+  `spec` varchar(255) CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci DEFAULT NULL,
+  `unit` varchar(64) CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci DEFAULT NULL,
+  `min_purchase` int DEFAULT NULL,
   PRIMARY KEY (`order_id`) USING BTREE
 ) ENGINE=InnoDB AUTO_INCREMENT=145 DEFAULT CHARSET=utf8mb3 ROW_FORMAT=COMPACT;
 
@@ -222,6 +227,8 @@ CREATE TABLE `tb_purchase` (
   `purchase_status` int NOT NULL,
   `create_time` datetime NOT NULL,
   `update_time` datetime NOT NULL,
+  `cancel_reason` varchar(255) CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci DEFAULT NULL,
+  `delivery_no` varchar(255) CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci DEFAULT NULL,
   PRIMARY KEY (`purchase_id`) USING BTREE
 ) ENGINE=InnoDB AUTO_INCREMENT=124 DEFAULT CHARSET=utf8mb3 ROW_FORMAT=COMPACT;
 
@@ -262,6 +269,7 @@ CREATE TABLE `tb_question` (
   `question` varchar(255) CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci DEFAULT NULL COMMENT '问题',
   `answer` varchar(255) CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci DEFAULT NULL COMMENT '回答',
   `status` int NOT NULL,
+  `attachments` text CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci,
   PRIMARY KEY (`id`) USING BTREE
 ) ENGINE=InnoDB AUTO_INCREMENT=114 DEFAULT CHARSET=utf8mb3 ROW_FORMAT=COMPACT;
 
@@ -287,6 +295,8 @@ CREATE TABLE `tb_reserve` (
   `message` varchar(64) CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci DEFAULT NULL COMMENT '留言',
   `answer` varchar(64) CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci DEFAULT NULL COMMENT '回答',
   `status` int NOT NULL,
+  `appointment_time` varchar(64) CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci DEFAULT NULL,
+  `service_mode` varchar(64) CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci DEFAULT NULL,
   PRIMARY KEY (`id`) USING BTREE
 ) ENGINE=InnoDB AUTO_INCREMENT=211 DEFAULT CHARSET=utf8mb3 ROW_FORMAT=COMPACT;
 

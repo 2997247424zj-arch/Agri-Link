@@ -58,7 +58,11 @@ public class TradeOrderService {
                 null,
                 now,
                 now,
-                request.address()
+                request.address(),
+                request.stock(),
+                request.spec(),
+                request.unit(),
+                request.minPurchase()
         );
         tradeOrderMapper.insert(order);
         return getOrder(order.orderId());
@@ -78,7 +82,11 @@ public class TradeOrderService {
                 existing.cooperationName(),
                 existing.createTime(),
                 LocalDateTime.now(),
-                request.address()
+                request.address(),
+                request.stock(),
+                request.spec(),
+                request.unit(),
+                request.minPurchase()
         );
         tradeOrderMapper.update(order);
         return getOrder(orderId);

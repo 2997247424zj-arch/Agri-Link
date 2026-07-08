@@ -3,6 +3,7 @@ package com.example.agrilinkback.module.consultation.controller;
 import com.example.agrilinkback.common.api.ApiResponse;
 import com.example.agrilinkback.module.consultation.dto.AnswerRequest;
 import com.example.agrilinkback.module.consultation.dto.ReserveRequest;
+import com.example.agrilinkback.module.consultation.dto.ReserveStatusRequest;
 import com.example.agrilinkback.module.consultation.entity.Reserve;
 import com.example.agrilinkback.module.consultation.service.ReserveService;
 import jakarta.validation.Valid;
@@ -50,6 +51,14 @@ public class ReserveController {
             @Valid @RequestBody AnswerRequest request
     ) {
         return ApiResponse.success(reserveService.answerReserve(id, request));
+    }
+
+    @PatchMapping("/{id}/status")
+    public ApiResponse<Reserve> updateReserveStatus(
+            @PathVariable Integer id,
+            @Valid @RequestBody ReserveStatusRequest request
+    ) {
+        return ApiResponse.success(reserveService.updateReserveStatus(id, request));
     }
 
     @DeleteMapping("/{id}")

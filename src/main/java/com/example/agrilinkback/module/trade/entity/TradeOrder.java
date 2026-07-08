@@ -15,6 +15,10 @@ public record TradeOrder(
         String cooperationName,
         LocalDateTime createTime,
         LocalDateTime updateTime,
-        String address
+        String address,
+        Integer stock,
+        String spec,
+        String unit,
+        Integer minPurchase
 ) {
 }

@@ -55,7 +55,7 @@ public class KnowledgeService {
                 request.title(),
                 request.content(),
                 request.picPath(),
-                existing.ownName(),
+                request.ownName(),
                 existing.createTime(),
                 LocalDateTime.now()
         );

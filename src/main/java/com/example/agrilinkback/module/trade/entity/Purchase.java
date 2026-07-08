@@ -11,6 +11,8 @@ public record Purchase(
         String address,
         Integer purchaseStatus,
         LocalDateTime createTime,
-        LocalDateTime updateTime
+        LocalDateTime updateTime,
+        String cancelReason,
+        String deliveryNo
 ) {
 }

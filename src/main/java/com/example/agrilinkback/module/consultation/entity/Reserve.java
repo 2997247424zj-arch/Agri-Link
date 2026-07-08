@@ -13,6 +13,8 @@ public record Reserve(
         String phone,
         String message,
         String answer,
-        Integer status
+        Integer status,
+        String appointmentTime,
+        String serviceMode
 ) {
 }

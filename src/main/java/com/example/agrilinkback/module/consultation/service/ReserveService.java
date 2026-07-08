@@ -3,6 +3,7 @@ package com.example.agrilinkback.module.consultation.service;
 import com.example.agrilinkback.common.exception.BusinessException;
 import com.example.agrilinkback.module.consultation.dto.AnswerRequest;
 import com.example.agrilinkback.module.consultation.dto.ReserveRequest;
+import com.example.agrilinkback.module.consultation.dto.ReserveStatusRequest;
 import com.example.agrilinkback.module.consultation.entity.Reserve;
 import com.example.agrilinkback.module.consultation.mapper.ReserveMapper;
 import java.util.List;
@@ -43,7 +44,9 @@ public class ReserveService {
                 request.phone(),
                 request.message(),
                 null,
-                0
+                0,
+                request.appointmentTime(),
+                request.serviceMode()
         );
         reserveMapper.insert(reserve);
         return getReserve(reserve.id());
@@ -52,6 +55,12 @@ public class ReserveService {
     public Reserve answerReserve(Integer id, AnswerRequest request) {
         getReserve(id);
         reserveMapper.updateAnswer(id, request.answer(), request.status());
+        return getReserve(id);
+    }
+
+    public Reserve updateReserveStatus(Integer id, ReserveStatusRequest request) {
+        getReserve(id);
+        reserveMapper.updateStatus(id, request.status());
         return getReserve(id);
     }
 

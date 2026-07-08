@@ -2,10 +2,14 @@ package com.example.agrilinkback.module.admin.service;
 
 import com.example.agrilinkback.common.exception.BusinessException;
 import com.example.agrilinkback.common.security.UserRole;
+import com.example.agrilinkback.module.admin.dto.AdminKnowledgeItem;
+import com.example.agrilinkback.module.admin.dto.AdminKnowledgeRequest;
+import com.example.agrilinkback.module.admin.dto.AdminKnowledgeStatusRequest;
 import com.example.agrilinkback.module.admin.dto.AdminOverview;
 import com.example.agrilinkback.module.finance.dto.FinanceStatusRequest;
 import com.example.agrilinkback.module.finance.entity.Finance;
 import com.example.agrilinkback.module.finance.service.FinanceService;
+import com.example.agrilinkback.module.knowledge.dto.KnowledgeRequest;
 import com.example.agrilinkback.module.knowledge.service.KnowledgeService;
 import com.example.agrilinkback.module.trade.dto.PurchaseStatusRequest;
 import com.example.agrilinkback.module.trade.dto.TradeOrderStatusRequest;
@@ -108,6 +112,31 @@ public class AdminService {
         return financeService.updateFinanceStatus(financeId, request);
     }
 
+    public List<AdminKnowledgeItem> listKnowledge() {
+        return knowledgeService.listKnowledge().stream()
+                .map(AdminKnowledgeItem::fromKnowledge)
+                .toList();
+    }
+
+    public AdminKnowledgeItem createKnowledge(AdminKnowledgeRequest request) {
+        return AdminKnowledgeItem.fromKnowledge(knowledgeService.createKnowledge(toKnowledgeRequest(request)));
+    }
+
+    public AdminKnowledgeItem updateKnowledge(Integer knowledgeId, AdminKnowledgeRequest request) {
+        return AdminKnowledgeItem.fromKnowledge(knowledgeService.updateKnowledge(knowledgeId, toKnowledgeRequest(request)));
+    }
+
+    public AdminKnowledgeItem updateKnowledgeStatus(
+            Integer knowledgeId,
+            AdminKnowledgeStatusRequest request
+    ) {
+        return AdminKnowledgeItem.fromKnowledge(knowledgeService.getKnowledge(knowledgeId));
+    }
+
+    public void deleteKnowledge(Integer knowledgeId) {
+        knowledgeService.deleteKnowledge(knowledgeId);
+    }
+
     private UserRole requireBusinessRole(String role) {
         UserRole userRole = UserRole.fromCode(role)
                 .orElseThrow(() -> new BusinessException("Role must be BUYER, FARMER, EXPERT or BANK"));
@@ -115,5 +144,12 @@ public class AdminService {
             throw new BusinessException("Role must be BUYER, FARMER, EXPERT or BANK");
         }
         return userRole;
+    }
+
+    private KnowledgeRequest toKnowledgeRequest(AdminKnowledgeRequest request) {
+        String category = request.category() == null || request.category().isBlank()
+                ? "平台资讯"
+                : request.category().trim();
+        return new KnowledgeRequest(request.title(), request.summary(), null, category);
     }
 }

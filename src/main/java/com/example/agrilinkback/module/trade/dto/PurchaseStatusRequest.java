@@ -3,6 +3,8 @@ package com.example.agrilinkback.module.trade.dto;
 import jakarta.validation.constraints.NotNull;
 
 public record PurchaseStatusRequest(
-        @NotNull Integer purchaseStatus
+        @NotNull Integer purchaseStatus,
+        String cancelReason,
+        String deliveryNo
 ) {
 }

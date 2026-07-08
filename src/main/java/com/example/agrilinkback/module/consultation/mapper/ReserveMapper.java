@@ -14,7 +14,8 @@ public interface ReserveMapper {
 
     @Select("""
             select id, expert_name, questioner, area, address, plant_name, soil_condition,
-                   plant_condition, plant_detail, phone, message, answer, status
+                   plant_condition, plant_detail, phone, message, answer, status,
+                   appointment_time, service_mode
             from tb_reserve
             order by id desc
             """)
@@ -22,7 +23,8 @@ public interface ReserveMapper {
 
     @Select("""
             select id, expert_name, questioner, area, address, plant_name, soil_condition,
-                   plant_condition, plant_detail, phone, message, answer, status
+                   plant_condition, plant_detail, phone, message, answer, status,
+                   appointment_time, service_mode
             from tb_reserve
             where id = #{id}
             """)
@@ -34,12 +36,14 @@ public interface ReserveMapper {
     @Insert("""
             insert into tb_reserve (
                 id, expert_name, questioner, area, address, plant_name, soil_condition,
-                plant_condition, plant_detail, phone, message, answer, status
+                plant_condition, plant_detail, phone, message, answer, status,
+                appointment_time, service_mode
             ) values (
                 #{reserve.id}, #{reserve.expertName}, #{reserve.questioner}, #{reserve.area},
                 #{reserve.address}, #{reserve.plantName}, #{reserve.soilCondition},
                 #{reserve.plantCondition}, #{reserve.plantDetail}, #{reserve.phone},
-                #{reserve.message}, #{reserve.answer}, #{reserve.status}
+                #{reserve.message}, #{reserve.answer}, #{reserve.status}, #{reserve.appointmentTime},
+                #{reserve.serviceMode}
             )
             """)
     int insert(@Param("reserve") Reserve reserve);
@@ -51,6 +55,13 @@ public interface ReserveMapper {
             where id = #{id}
             """)
     int updateAnswer(@Param("id") Integer id, @Param("answer") String answer, @Param("status") Integer status);
+
+    @Update("""
+            update tb_reserve
+            set status = #{status}
+            where id = #{id}
+            """)
+    int updateStatus(@Param("id") Integer id, @Param("status") Integer status);
 
     @Delete("delete from tb_reserve where id = #{id}")
     int deleteById(@Param("id") Integer id);

@@ -12,6 +12,10 @@ public record TradeOrderRequest(
         @NotBlank String type,
         String picture,
         @NotBlank String ownName,
-        String address
+        String address,
+        Integer stock,
+        String spec,
+        String unit,
+        Integer minPurchase
 ) {
 }

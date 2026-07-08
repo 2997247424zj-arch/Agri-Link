@@ -13,14 +13,16 @@ import org.apache.ibatis.annotations.Update;
 public interface QuestionMapper {
 
     @Select("""
-            select id, expert_name, questioner, phone, plant_name, title, question, answer, status
+            select id, expert_name, questioner, phone, plant_name, title, question, answer, status,
+                   attachments as attachments_text
             from tb_question
             order by id desc
             """)
     List<Question> findAll();
 
     @Select("""
-            select id, expert_name, questioner, phone, plant_name, title, question, answer, status
+            select id, expert_name, questioner, phone, plant_name, title, question, answer, status,
+                   attachments as attachments_text
             from tb_question
             where id = #{id}
             """)
@@ -31,11 +33,11 @@ public interface QuestionMapper {
 
     @Insert("""
             insert into tb_question (
-                id, expert_name, questioner, phone, plant_name, title, question, answer, status
+                id, expert_name, questioner, phone, plant_name, title, question, answer, status, attachments
             ) values (
                 #{question.id}, #{question.expertName}, #{question.questioner}, #{question.phone},
                 #{question.plantName}, #{question.title}, #{question.question}, #{question.answer},
-                #{question.status}
+                #{question.status}, #{question.attachmentsText}
             )
             """)
     int insert(@Param("question") Question question);

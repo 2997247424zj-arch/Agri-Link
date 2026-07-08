@@ -14,7 +14,8 @@ public interface TradeOrderMapper {
 
     @Select("""
             select order_id, title, price, content, order_status, type, picture,
-                   own_name, cooperation_name, create_time, update_time, address
+                   own_name, cooperation_name, create_time, update_time, address,
+                   stock, spec, unit, min_purchase
             from tb_order
             order by update_time desc
             """)
@@ -22,7 +23,8 @@ public interface TradeOrderMapper {
 
     @Select("""
             select order_id, title, price, content, order_status, type, picture,
-                   own_name, cooperation_name, create_time, update_time, address
+                   own_name, cooperation_name, create_time, update_time, address,
+                   stock, spec, unit, min_purchase
             from tb_order
             where order_id = #{orderId}
             """)
@@ -30,7 +32,8 @@ public interface TradeOrderMapper {
 
     @Select("""
             select order_id, title, price, content, order_status, type, picture,
-                   own_name, cooperation_name, create_time, update_time, address
+                   own_name, cooperation_name, create_time, update_time, address,
+                   stock, spec, unit, min_purchase
             from tb_order
             where own_name = #{ownName}
             order by update_time desc
@@ -39,7 +42,8 @@ public interface TradeOrderMapper {
 
     @Select("""
             select order_id, title, price, content, order_status, type, picture,
-                   own_name, cooperation_name, create_time, update_time, address
+                   own_name, cooperation_name, create_time, update_time, address,
+                   stock, spec, unit, min_purchase
             from tb_order
             where cooperation_name = #{cooperationName}
             order by update_time desc
@@ -52,11 +56,13 @@ public interface TradeOrderMapper {
     @Insert("""
             insert into tb_order (
                 order_id, title, price, content, order_status, type, picture,
-                own_name, cooperation_name, create_time, update_time, address
+                own_name, cooperation_name, create_time, update_time, address,
+                stock, spec, unit, min_purchase
             ) values (
                 #{order.orderId}, #{order.title}, #{order.price}, #{order.content},
                 #{order.orderStatus}, #{order.type}, #{order.picture}, #{order.ownName},
-                #{order.cooperationName}, #{order.createTime}, #{order.updateTime}, #{order.address}
+                #{order.cooperationName}, #{order.createTime}, #{order.updateTime}, #{order.address},
+                #{order.stock}, #{order.spec}, #{order.unit}, #{order.minPurchase}
             )
             """)
     int insert(@Param("order") TradeOrder order);
@@ -69,7 +75,11 @@ public interface TradeOrderMapper {
                 type = #{order.type},
                 picture = #{order.picture},
                 update_time = #{order.updateTime},
-                address = #{order.address}
+                address = #{order.address},
+                stock = #{order.stock},
+                spec = #{order.spec},
+                unit = #{order.unit},
+                min_purchase = #{order.minPurchase}
             where order_id = #{order.orderId}
             """)
     int update(@Param("order") TradeOrder order);

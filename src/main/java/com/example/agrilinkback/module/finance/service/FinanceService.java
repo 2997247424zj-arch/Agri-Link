@@ -2,6 +2,7 @@ package com.example.agrilinkback.module.finance.service;
 
 import com.example.agrilinkback.common.exception.BusinessException;
 import com.example.agrilinkback.module.finance.dto.FinanceApplicationRequest;
+import com.example.agrilinkback.module.finance.dto.FinanceMaterialsRequest;
 import com.example.agrilinkback.module.finance.dto.FinanceStatusRequest;
 import com.example.agrilinkback.module.finance.dto.FinancingIntentionRequest;
 import com.example.agrilinkback.module.finance.entity.Finance;
@@ -11,6 +12,7 @@ import com.example.agrilinkback.module.finance.mapper.FinancingIntentionMapper;
 import com.example.agrilinkback.module.finance.service.BankService;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 
 /**
@@ -132,7 +134,8 @@ public class FinanceService {
                 request.combinationName2(),
                 request.combinationPhone2(),
                 request.combinationIdnum2(),
-                request.fileInfo()
+                request.fileInfo(),
+                null
         );
         financeMapper.insert(finance);
         return getFinance(finance.financeId());
@@ -141,6 +144,18 @@ public class FinanceService {
     public Finance updateFinanceStatus(Integer financeId, FinanceStatusRequest request) {
         getFinance(financeId);
         financeMapper.updateStatus(financeId, request.status(), request.remark());
+        return getFinance(financeId);
+    }
+
+    public Finance updateFinanceMaterials(Integer financeId, FinanceMaterialsRequest request) {
+        getFinance(financeId);
+        String materials = request.materials() == null
+                ? null
+                : request.materials().stream()
+                .filter(item -> item != null && !item.isBlank())
+                .map(String::trim)
+                .collect(Collectors.joining("\n"));
+        financeMapper.updateMaterials(financeId, materials);
         return getFinance(financeId);
     }
 

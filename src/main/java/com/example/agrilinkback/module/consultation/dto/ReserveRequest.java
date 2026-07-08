@@ -12,6 +12,8 @@ public record ReserveRequest(
         @NotBlank String plantCondition,
         @NotBlank String plantDetail,
         @NotBlank String phone,
-        String message
+        String message,
+        String appointmentTime,
+        String serviceMode
 ) {
 }

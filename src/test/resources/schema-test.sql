@@ -77,7 +77,8 @@ create table tb_finance (
   combination_name2 varchar(255),
   combination_phone2 varchar(255),
   combination_idnum2 varchar(255),
-  file_info varchar(255)
+  file_info varchar(255),
+  materials text
 );
 
 create table tb_financing_intention (
@@ -125,7 +126,11 @@ create table tb_order (
   cooperation_name varchar(255),
   create_time datetime not null,
   update_time datetime not null,
-  address varchar(255)
+  address varchar(255),
+  stock int,
+  spec varchar(255),
+  unit varchar(64),
+  min_purchase int
 );
 
 create table tb_purchase (
@@ -136,7 +141,9 @@ create table tb_purchase (
   address varchar(255) not null,
   purchase_status int not null,
   create_time datetime not null,
-  update_time datetime not null
+  update_time datetime not null,
+  cancel_reason varchar(255),
+  delivery_no varchar(255)
 );
 
 create table tb_purchase_detail (
@@ -166,7 +173,8 @@ create table tb_question (
   title varchar(255) not null,
   question varchar(255),
   answer varchar(255),
-  status int not null
+  status int not null,
+  attachments text
 );
 
 create table tb_reserve (
@@ -182,5 +190,7 @@ create table tb_reserve (
   phone varchar(64) not null,
   message varchar(64),
   answer varchar(64),
-  status int not null
+  status int not null,
+  appointment_time varchar(64),
+  service_mode varchar(64)
 );

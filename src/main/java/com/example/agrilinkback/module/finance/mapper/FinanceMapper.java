@@ -16,7 +16,7 @@ public interface FinanceMapper {
             select finance_id, bank_id, own_name, real_name, phone, id_num, status, remark,
                    money, rate, repayment, create_time, update_time, combination_name1,
                    combination_phone1, combination_idnum1, combination_name2,
-                   combination_phone2, combination_idnum2, file_info
+                   combination_phone2, combination_idnum2, file_info, materials as material_text
             from tb_finance
             order by update_time desc
             """)
@@ -26,7 +26,7 @@ public interface FinanceMapper {
             select finance_id, bank_id, own_name, real_name, phone, id_num, status, remark,
                    money, rate, repayment, create_time, update_time, combination_name1,
                    combination_phone1, combination_idnum1, combination_name2,
-                   combination_phone2, combination_idnum2, file_info
+                   combination_phone2, combination_idnum2, file_info, materials as material_text
             from tb_finance
             where finance_id = #{financeId}
             """)
@@ -40,14 +40,14 @@ public interface FinanceMapper {
                 finance_id, bank_id, own_name, real_name, phone, id_num, status, remark,
                 money, rate, repayment, create_time, update_time, combination_name1,
                 combination_phone1, combination_idnum1, combination_name2, combination_phone2,
-                combination_idnum2, file_info
+                combination_idnum2, file_info, materials
             ) values (
                 #{finance.financeId}, #{finance.bankId}, #{finance.ownName}, #{finance.realName},
                 #{finance.phone}, #{finance.idNum}, #{finance.status}, #{finance.remark},
                 #{finance.money}, #{finance.rate}, #{finance.repayment}, #{finance.createTime},
                 #{finance.updateTime}, #{finance.combinationName1}, #{finance.combinationPhone1},
                 #{finance.combinationIdnum1}, #{finance.combinationName2}, #{finance.combinationPhone2},
-                #{finance.combinationIdnum2}, #{finance.fileInfo}
+                #{finance.combinationIdnum2}, #{finance.fileInfo}, #{finance.materialText}
             )
             """)
     int insert(@Param("finance") Finance finance);
@@ -64,6 +64,14 @@ public interface FinanceMapper {
             @Param("status") Integer status,
             @Param("remark") String remark
     );
+
+    @Update("""
+            update tb_finance
+            set materials = #{materials},
+                update_time = current_timestamp
+            where finance_id = #{financeId}
+            """)
+    int updateMaterials(@Param("financeId") Integer financeId, @Param("materials") String materials);
 
     @Delete("delete from tb_finance where finance_id = #{financeId}")
     int deleteByFinanceId(@Param("financeId") Integer financeId);

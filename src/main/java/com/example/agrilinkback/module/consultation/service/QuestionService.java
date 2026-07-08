@@ -6,6 +6,7 @@ import com.example.agrilinkback.module.consultation.dto.QuestionRequest;
 import com.example.agrilinkback.module.consultation.entity.Question;
 import com.example.agrilinkback.module.consultation.mapper.QuestionMapper;
 import java.util.List;
+import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -39,7 +40,8 @@ public class QuestionService {
                 request.title(),
                 request.question(),
                 null,
-                0
+                0,
+                joinLines(request.attachments())
         );
         questionMapper.insert(question);
         return getQuestion(question.id());
@@ -54,5 +56,15 @@ public class QuestionService {
     public void deleteQuestion(Integer id) {
         getQuestion(id);
         questionMapper.deleteById(id);
+    }
+
+    private String joinLines(List<String> values) {
+        if (values == null) {
+            return null;
+        }
+        return values.stream()
+                .filter(value -> value != null && !value.isBlank())
+                .map(String::trim)
+                .collect(Collectors.joining("\n"));
     }
 }

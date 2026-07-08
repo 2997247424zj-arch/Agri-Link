@@ -1,6 +1,9 @@
 package com.example.agrilinkback.module.admin.controller;
 
 import com.example.agrilinkback.common.api.ApiResponse;
+import com.example.agrilinkback.module.admin.dto.AdminKnowledgeItem;
+import com.example.agrilinkback.module.admin.dto.AdminKnowledgeRequest;
+import com.example.agrilinkback.module.admin.dto.AdminKnowledgeStatusRequest;
 import com.example.agrilinkback.module.admin.dto.AdminOverview;
 import com.example.agrilinkback.module.admin.dto.AdminRoleRequest;
 import com.example.agrilinkback.module.admin.service.AdminService;
@@ -13,9 +16,12 @@ import com.example.agrilinkback.module.trade.entity.TradeOrder;
 import com.example.agrilinkback.module.user.entity.User;
 import jakarta.validation.Valid;
 import java.util.List;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -88,5 +94,39 @@ public class AdminController {
             @Valid @RequestBody FinanceStatusRequest request
     ) {
         return ApiResponse.success(adminService.updateFinanceStatus(financeId, request));
+    }
+
+    @GetMapping("/knowledge")
+    public ApiResponse<List<AdminKnowledgeItem>> listKnowledge() {
+        return ApiResponse.success(adminService.listKnowledge());
+    }
+
+    @PostMapping("/knowledge")
+    public ApiResponse<AdminKnowledgeItem> createKnowledge(
+            @Valid @RequestBody AdminKnowledgeRequest request
+    ) {
+        return ApiResponse.success(adminService.createKnowledge(request));
+    }
+
+    @PatchMapping("/knowledge/{knowledgeId}/status")
+    public ApiResponse<AdminKnowledgeItem> updateKnowledgeStatus(
+            @PathVariable Integer knowledgeId,
+            @Valid @RequestBody AdminKnowledgeStatusRequest request
+    ) {
+        return ApiResponse.success(adminService.updateKnowledgeStatus(knowledgeId, request));
+    }
+
+    @PutMapping("/knowledge/{knowledgeId}")
+    public ApiResponse<AdminKnowledgeItem> updateKnowledge(
+            @PathVariable Integer knowledgeId,
+            @Valid @RequestBody AdminKnowledgeRequest request
+    ) {
+        return ApiResponse.success(adminService.updateKnowledge(knowledgeId, request));
+    }
+
+    @DeleteMapping("/knowledge/{knowledgeId}")
+    public ApiResponse<Void> deleteKnowledge(@PathVariable Integer knowledgeId) {
+        adminService.deleteKnowledge(knowledgeId);
+        return ApiResponse.ok();
     }
 }

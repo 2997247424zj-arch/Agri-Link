@@ -65,7 +65,9 @@ public class PurchaseService {
                 request.address(),
                 0,
                 now,
-                now
+                now,
+                null,
+                null
         );
         purchaseMapper.insertPurchase(purchase);
 
@@ -88,7 +90,12 @@ public class PurchaseService {
 
     public Purchase updatePurchaseStatus(Integer purchaseId, PurchaseStatusRequest request) {
         getPurchase(purchaseId);
-        purchaseMapper.updateStatus(purchaseId, request.purchaseStatus());
+        purchaseMapper.updateStatus(
+                purchaseId,
+                request.purchaseStatus(),
+                request.cancelReason(),
+                request.deliveryNo()
+        );
         return getPurchase(purchaseId);
     }
 
