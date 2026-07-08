@@ -48,6 +48,9 @@ const fallbackOrders: TradeOrder[] = [
   { orderId: 1, title: '高山生态大米 50kg', type: '粮油', price: 5.2, ownName: 'farmer-demo', address: '龙山县', orderStatus: 0 },
 ]
 
+const canLoadOrders = computed(() => profile.role === 'FARMER')
+const canLoadPurchases = computed(() => profile.role === 'BUYER' || profile.role === 'FARMER')
+const canLoadFinances = computed(() => profile.role === 'FARMER' || profile.role === 'BANK')
 const totalAssets = computed(() => myOrders.value.length + myPurchases.value.length + myFinances.value.length)
 
 function approvalStatusLabel(status?: number) {
@@ -98,18 +101,25 @@ async function loadProfile() {
   error.value = ''
   const userName = profile.userName || 'farmer-demo'
   try {
-    const [user, orders, purchases, finances] = await Promise.all([
-      api.get<User>(`/api/users/${encodeURIComponent(userName)}`),
-      api.get<TradeOrder[]>(`/api/trade/orders/owners/${encodeURIComponent(userName)}`).catch(() => fallbackOrders),
-      api.get<Purchase[]>(`/api/trade/purchases/owners/${encodeURIComponent(userName)}`).catch(() => []),
-      api.get<Finance[]>('/api/finance/applications').catch(() => []),
-    ])
+    const user = await api.get<User>(`/api/users/${encodeURIComponent(userName)}`)
     applyUser(user)
-    myOrders.value = orders?.length ? orders : fallbackOrders
+    const resolvedUserName = user.userName || userName
+    const [orders, purchases, finances] = await Promise.all([
+      canLoadOrders.value
+        ? api.get<TradeOrder[]>(`/api/trade/orders/owners/${encodeURIComponent(resolvedUserName)}`).catch(() => [])
+        : Promise.resolve([]),
+      canLoadPurchases.value
+        ? api.get<Purchase[]>(`/api/trade/purchases/owners/${encodeURIComponent(resolvedUserName)}`).catch(() => [])
+        : Promise.resolve([]),
+      canLoadFinances.value ? api.get<Finance[]>('/api/finance/applications').catch(() => []) : Promise.resolve([]),
+    ])
+    myOrders.value = orders?.length ? orders : canLoadOrders.value ? fallbackOrders : []
     myPurchases.value = purchases ?? []
-    myFinances.value = (finances ?? []).filter((item) => item.ownName === userName)
+    myFinances.value = (finances ?? []).filter((item) => item.ownName === resolvedUserName)
   } catch (err) {
-    myOrders.value = fallbackOrders
+    myOrders.value = canLoadOrders.value ? fallbackOrders : []
+    myPurchases.value = []
+    myFinances.value = []
     error.value = err instanceof Error ? `后端暂不可用：${err.message}` : '后端暂不可用，已显示演示资料。'
   } finally {
     loading.value = false
