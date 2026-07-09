@@ -167,7 +167,7 @@ public class SecurityConfig {
                         // 专家接口仅限专家角色访问。
                         .requestMatchers("/api/experts/**").hasRole("EXPERT")
                         // 用户资料管理：买家、农户、专家、银行均可操作自身信息。
-                        .requestMatchers("/api/users/**").hasAnyRole("BUYER", "FARMER", "EXPERT", "BANK")
+                        .requestMatchers("/api/users/**").hasAnyRole("BUYER", "FARMER", "EXPERT", "BANK", "SYSTEM_ADMIN")
                         // 收货地址：仅买家与农户需要。
                         .requestMatchers("/api/addresses/**").hasAnyRole("BUYER", "FARMER")
                         // 订单操作：买家下单、农户发货。

@@ -882,6 +882,11 @@ class AgriLinkBackApplicationTests {
                 .andExpect(jsonPath("$.data.userName").value("farmer001"))
                 .andExpect(jsonPath("$.data.role").value("FARMER"))
                 .andExpect(jsonPath("$.data.realName").value("Zhang San"));
+
+        mockMvc.perform(get("/api/users/admin001").with(role("SYSTEM_ADMIN")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.userName").value("admin001"))
+                .andExpect(jsonPath("$.data.role").value("SYSTEM_ADMIN"));
     }
 
     @Test
