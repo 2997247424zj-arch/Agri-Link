@@ -57,7 +57,7 @@ const roles: Array<{ value: UserRole; label: string }> = [
   { value: 'SYSTEM_ADMIN', label: '管理员' },
 ]
 
-// ????????????????????????????????
+// 后端不可用时保留一组演示数据，方便页面继续展示。
 const fallbackOverview: AdminOverview = {
   userCount: 5,
   orderCount: 3,
@@ -148,7 +148,7 @@ function pageCount(total: number) {
   return Math.max(1, Math.ceil(total / pageSize))
 }
 
-// ????????????????? ID ????????
+// 通用选择工具，返回新的 ID 数组。
 function toggleSelection(list: number[], id: number) {
   return list.includes(id) ? list.filter((item) => item !== id) : [...list, id]
 }
@@ -195,7 +195,7 @@ function confirmAction(text: string) {
   return typeof window === 'undefined' || window.confirm(text)
 }
 
-// ??????????????????????????????????
+// 并行加载后台各业务列表，单个接口失败时使用兜底数据。
 async function loadAdmin() {
   loading.value = true
   error.value = ''
@@ -468,9 +468,9 @@ onMounted(loadAdmin)
         </table>
       </div>
       <div class="pager">
-        <button class="button button--ghost button--small" type="button" @click="changeUserPage(-1)">???</button>
-        <span>? {{ userPage }} / {{ pageCount(filteredUsers.length) }} ?</span>
-        <button class="button button--ghost button--small" type="button" @click="changeUserPage(1)">???</button>
+        <button class="button button--ghost button--small" type="button" @click="changeUserPage(-1)">上一页</button>
+        <span>第 {{ userPage }} / {{ pageCount(filteredUsers.length) }} 页</span>
+        <button class="button button--ghost button--small" type="button" @click="changeUserPage(1)">下一页</button>
       </div>
     </section>
 

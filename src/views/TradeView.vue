@@ -16,7 +16,7 @@ const error = ref('')
 const cartCounts = reactive<Record<number, number>>({})
 const editingOrderId = ref<number | null>(null)
 
-// ????????? TradeOrderRequest ??????????????
+// 货源发布表单字段与后端 TradeOrderRequest 保持一致。
 const form = reactive({
   title: '高山生态大米 50kg',
   price: 5.2,
@@ -90,7 +90,7 @@ const fallbackOrders: TradeOrder[] = [
   },
 ]
 
-// ????????????????????????????
+// 首页货源不可用时使用演示数据兜底。
 const filteredOrders = computed(() => {
   const text = keyword.value.trim().toLowerCase()
   if (!text) return orders.value
@@ -128,7 +128,7 @@ function imageSrc(picture?: string) {
   return first.startsWith('http') || first.startsWith('/') ? first : `/file/order/${first}`
 }
 
-// ??????? data URL ??????????????????????
+// 图片预览先转为 data URL，便于无文件服务时演示。
 function handleImageFile(event: Event, target: typeof form | typeof editForm) {
   const file = (event.target as HTMLInputElement).files?.[0]
   if (!file) return
@@ -163,7 +163,7 @@ function updateCartCount(orderId: number, value: number) {
   cartCounts[orderId] = Math.max(1, Math.floor(Number.isFinite(value) ? value : 1))
 }
 
-// ????????????????? localStorage ?????????????
+// 游客加入购物车时先写入本地存储。
 async function addToCart(order: TradeOrder) {
   message.value = ''
   error.value = ''

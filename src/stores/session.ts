@@ -3,7 +3,7 @@ import { defineStore } from 'pinia'
 import type { AuthResponse, User, UserRole } from '@/types/domain'
 import { api } from '@/api/client'
 
-// ???????????????????????????
+// 角色标签统一在会话层维护，供导航和页面展示复用。
 const roleLabels: Record<UserRole, string> = {
   BUYER: '买家',
   FARMER: '农户',
@@ -30,7 +30,7 @@ export const useSessionStore = defineStore('session', () => {
   const roleLabel = computed(() => roleLabels[role.value] ?? role.value)
   const isLoggedIn = computed(() => Boolean(userName.value))
 
-  // ?????????? localStorage???????????????
+  // 登录状态持久化到 localStorage，刷新后继续可用。
   function persist(nextUserName: string, nextRole: UserRole | string, nextDisplayName?: string) {
     userName.value = nextUserName
     role.value = nextRole as UserRole

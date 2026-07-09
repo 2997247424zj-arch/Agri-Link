@@ -12,7 +12,7 @@ const mode = ref<'login' | 'register'>('login')
 const loading = ref(false)
 const message = ref('')
 const error = ref('')
-// ?????????????? query ????????????
+// 登录成功后回到路由守卫记录的目标页面。
 const routeNotice = computed(() => {
   if (route.query.reason === 'login') return '请先登录后再访问该业务页面。'
   if (route.query.reason === 'role') return '当前角色无权访问目标页面，请切换到匹配角色后登录。'
@@ -37,7 +37,7 @@ const roles: Array<{ value: UserRole; label: string }> = [
   { value: 'SYSTEM_ADMIN', label: '系统管理员' },
 ]
 
-// ??/??????????????????????
+// 登录/注册共用表单，提交时根据模式切换接口。
 async function submit() {
   loading.value = true
   message.value = ''

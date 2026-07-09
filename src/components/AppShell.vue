@@ -1,15 +1,16 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, nextTick, watch } from 'vue'
 import { RouterLink, RouterView, useRoute, useRouter } from 'vue-router'
 import AppIcon from '@/components/AppIcon.vue'
 import { useSessionStore } from '@/stores/session'
 import type { UserRole } from '@/types/domain'
+import { measureRouteReady } from '@/utils/performance'
 
 const session = useSessionStore()
 const route = useRoute()
 const router = useRouter()
 
-// ???????????????????????????????
+// 顶部导航按角色过滤，避免展示不可访问入口。
 const navItems = [
   { to: '/', label: '首页', icon: 'home' },
   { to: '/trade', label: '农产品交易', icon: 'leaf' },
@@ -43,6 +44,15 @@ function logout() {
   session.logout()
   router.push('/auth')
 }
+
+watch(
+  () => route.fullPath,
+  async () => {
+    await nextTick()
+    measureRouteReady(route)
+  },
+  { immediate: true },
+)
 </script>
 
 <template>
@@ -84,8 +94,12 @@ function logout() {
       </div>
     </header>
 
-    <main class="main-content">
-      <RouterView />
+    <main class="main-content" aria-live="polite">
+      <RouterView v-slot="{ Component, route: activeRoute }">
+        <Transition name="page-slide" mode="out-in">
+          <component :is="Component" :key="activeRoute.fullPath" />
+        </Transition>
+      </RouterView>
     </main>
 
     <footer v-if="!isAuth" class="site-footer">

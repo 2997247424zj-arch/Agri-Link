@@ -24,7 +24,7 @@ const localShoppingIds = ref<Set<number>>(new Set())
 const expandedPurchaseId = ref<number | null>(null)
 const cancelReason = ref('')
 
-// ???????????????????????????????
+// 购物车页面会同时展示远程购物车、本地兜底数据和采购记录。
 const fallbackOrders: TradeOrder[] = [
   { orderId: 1, title: '富硒猕猴桃 20kg', type: '水果', price: 8.6, ownName: '吉首合作社', address: '湘西州' },
   { orderId: 2, title: '高山生态大米 50kg', type: '粮油', price: 5.2, ownName: '龙山农户', address: '龙山县' },
@@ -36,7 +36,7 @@ const fallbackCarts: ShoppingCart[] = [
 ]
 
 const orderMap = computed(() => new Map(orders.value.map((order) => [order.orderId, order])))
-// ???????????????????????????
+// 表单默认带入当前登录用户，方便直接下单。
 const cartRows = computed(() =>
   carts.value.map((cart) => {
     const order = orderMap.value.get(cart.orderId)
@@ -88,7 +88,7 @@ function detailTitle(detail: { orderId: number }) {
   return orderMap.value.get(detail.orderId)?.title ?? `货源 #${detail.orderId}`
 }
 
-// ??????????????????????????????
+// 加载购物车、货源和采购记录，接口失败时保留本地可用数据。
 async function loadCart() {
   loading.value = true
   error.value = ''
@@ -168,7 +168,7 @@ async function removeItem(cart: ShoppingCart) {
   }
 }
 
-// ??????????????????????????????
+// 提交采购单后清理已下单购物车项。
 async function createPurchase() {
   submitting.value = true
   message.value = ''

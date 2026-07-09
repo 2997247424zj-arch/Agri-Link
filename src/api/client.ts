@@ -1,6 +1,7 @@
 import type { ApiResponse, UserRole } from '@/types/domain'
+import { measureApi } from '@/utils/performance'
 
-// ???????????? .env ???????????
+// 默认连接本地后端，可通过 .env 覆盖。
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:9091'
 
 interface RequestOptions extends RequestInit {
@@ -17,31 +18,37 @@ export class ApiError extends Error {
 }
 
 export async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
+  const startedAt = typeof performance === 'undefined' ? Date.now() : performance.now()
   const headers = new Headers(options.headers)
 
   if (!headers.has('Content-Type') && options.body && !(options.body instanceof FormData)) {
     headers.set('Content-Type', 'application/json')
   }
 
-  // ?????? X-User-Role ???????????????????????????
+  // 后端以 X-User-Role 做演示鉴权，默认读取当前会话角色。
   const storedRole = typeof localStorage === 'undefined' ? '' : localStorage.getItem('agri-link-role')
   const role = options.role ?? storedRole
   if (role) {
     headers.set('X-User-Role', role)
   }
 
-  const response = await fetch(`${API_BASE}${path}`, {
-    ...options,
-    headers,
-  })
-  // ?? 204 ?? JSON ??????????????? HTTP ???
-  const payload = (await response.json().catch(() => null)) as ApiResponse<T> | null
+  try {
+    const response = await fetch(`${API_BASE}${path}`, {
+      ...options,
+      headers,
+    })
+    // 兼容 204 或非 JSON 响应，错误仍按 HTTP 状态处理。
+    const payload = (await response.json().catch(() => null)) as ApiResponse<T> | null
 
-  if (!response.ok || payload?.success === false) {
-    throw new ApiError(payload?.message ?? `HTTP ${response.status}`, response.status)
+    if (!response.ok || payload?.success === false) {
+      throw new ApiError(payload?.message ?? `HTTP ${response.status}`, response.status)
+    }
+
+    return payload && 'data' in payload ? payload.data : (undefined as T)
+  } finally {
+    const endedAt = typeof performance === 'undefined' ? Date.now() : performance.now()
+    measureApi(path, endedAt - startedAt, options.method ?? 'GET')
   }
-
-  return payload && 'data' in payload ? payload.data : (undefined as T)
 }
 
 export const api = {
