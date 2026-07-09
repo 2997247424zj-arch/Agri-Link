@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref, watch } from 'vue'
 import AppIcon from '@/components/AppIcon.vue'
 import { api } from '@/api/client'
 import { useSessionStore } from '@/stores/session'
@@ -19,6 +19,8 @@ const applicationStatusFilter = ref<'all' | '0' | '1' | '2'>('all')
 const reviewRemarks = reactive<Record<number, string>>({})
 const expandedFinanceId = ref<number | null>(null)
 const materialInputs = reactive<Record<number, string>>({})
+const applicationPage = ref(1)
+const applicationPageSize = 5
 
 // 表单字段与后端 FinanceApplicationRequest 保持一致。
 const applicationForm = reactive({
@@ -96,6 +98,13 @@ const filteredApplications = computed(() => {
   if (applicationStatusFilter.value === 'all') return applications.value
   return applications.value.filter((item) => String(item.status ?? 0) === applicationStatusFilter.value)
 })
+const pagedApplications = computed(() => {
+  const start = (applicationPage.value - 1) * applicationPageSize
+  return filteredApplications.value.slice(start, start + applicationPageSize)
+})
+const applicationPageCount = computed(() =>
+  Math.max(1, Math.ceil(filteredApplications.value.length / applicationPageSize)),
+)
 
 function financeStatusLabel(status?: number) {
   if (status === 1) return '已通过'
@@ -107,6 +116,10 @@ function financeStatusClass(status?: number) {
   if (status === 1) return 'tag tag--green'
   if (status === 2) return 'tag tag--red'
   return 'tag tag--amber'
+}
+
+function changeApplicationPage(delta: number) {
+  applicationPage.value = Math.min(Math.max(1, applicationPage.value + delta), applicationPageCount.value)
 }
 
 function financeTimeline(status?: number) {
@@ -264,6 +277,14 @@ async function updateApplicationStatus(item: Finance, status: number) {
 }
 
 onMounted(loadFinance)
+
+watch(applicationStatusFilter, () => {
+  applicationPage.value = 1
+})
+
+watch(applicationPageCount, () => {
+  applicationPage.value = Math.min(applicationPage.value, applicationPageCount.value)
+})
 </script>
 
 <template>
@@ -415,7 +436,7 @@ onMounted(loadFinance)
               </tr>
             </thead>
             <tbody>
-              <template v-for="item in filteredApplications" :key="item.financeId">
+              <template v-for="item in pagedApplications" :key="item.financeId">
                 <tr>
                   <td>{{ item.financeId }}</td>
                   <td>{{ item.realName || item.ownName }}</td>
@@ -484,6 +505,11 @@ onMounted(loadFinance)
               </tr>
             </tbody>
           </table>
+        </div>
+        <div class="pager">
+          <button class="button button--ghost button--small" type="button" @click="changeApplicationPage(-1)">上一页</button>
+          <span>第 {{ applicationPage }} / {{ applicationPageCount }} 页</span>
+          <button class="button button--ghost button--small" type="button" @click="changeApplicationPage(1)">下一页</button>
         </div>
       </div>
     </section>

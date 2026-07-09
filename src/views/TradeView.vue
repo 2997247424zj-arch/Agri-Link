@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref, watch } from 'vue'
 import AppIcon from '@/components/AppIcon.vue'
 import { api } from '@/api/client'
 import { useSessionStore } from '@/stores/session'
@@ -15,6 +15,8 @@ const message = ref('')
 const error = ref('')
 const cartCounts = reactive<Record<number, number>>({})
 const editingOrderId = ref<number | null>(null)
+const orderPage = ref(1)
+const orderPageSize = 9
 
 // 货源发布表单字段与后端 TradeOrderRequest 保持一致。
 const form = reactive({
@@ -101,6 +103,13 @@ const filteredOrders = computed(() => {
   )
 })
 
+const pagedOrders = computed(() => {
+  const start = (orderPage.value - 1) * orderPageSize
+  return filteredOrders.value.slice(start, start + orderPageSize)
+})
+
+const orderPageCount = computed(() => Math.max(1, Math.ceil(filteredOrders.value.length / orderPageSize)))
+
 const selectedCartCount = computed(() =>
   Object.entries(cartCounts).reduce((sum, [, count]) => sum + Math.max(1, Number(count) || 1), 0),
 )
@@ -161,6 +170,10 @@ async function loadOrders() {
 
 function updateCartCount(orderId: number, value: number) {
   cartCounts[orderId] = Math.max(1, Math.floor(Number.isFinite(value) ? value : 1))
+}
+
+function changeOrderPage(delta: number) {
+  orderPage.value = Math.min(Math.max(1, orderPage.value + delta), orderPageCount.value)
 }
 
 // 游客加入购物车时先写入本地存储。
@@ -275,6 +288,14 @@ async function deleteOrder(order: TradeOrder) {
 }
 
 onMounted(loadOrders)
+
+watch(keyword, () => {
+  orderPage.value = 1
+})
+
+watch(orderPageCount, () => {
+  orderPage.value = Math.min(orderPage.value, orderPageCount.value)
+})
 </script>
 
 <template>
@@ -319,7 +340,7 @@ onMounted(loadOrders)
     </div>
 
     <section class="section grid">
-      <article v-for="order in filteredOrders" :key="order.orderId" class="card product-card">
+      <article v-for="order in pagedOrders" :key="order.orderId" class="card product-card">
         <div class="product-thumb">
           <img v-if="imageSrc(order.picture)" :src="imageSrc(order.picture)" :alt="order.title" loading="lazy" />
           <AppIcon v-else name="leaf" />
@@ -356,6 +377,11 @@ onMounted(loadOrders)
         </div>
       </article>
     </section>
+    <div class="pager">
+      <button class="button button--ghost button--small" type="button" @click="changeOrderPage(-1)">上一页</button>
+      <span>第 {{ orderPage }} / {{ orderPageCount }} 页</span>
+      <button class="button button--ghost button--small" type="button" @click="changeOrderPage(1)">下一页</button>
+    </div>
 
     <section class="section grid grid--two">
       <form class="panel form" @submit.prevent="publishOrder">

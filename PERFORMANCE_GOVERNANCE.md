@@ -31,9 +31,13 @@ Fix in this order:
 ## Development Rules
 
 - Use route-level dynamic imports for pages.
+- Preload route chunks from navigation hover/focus when the target is likely to be opened.
+- Deduplicate concurrent GET requests in the shared API client.
 - Keep page motion to `transform` and `opacity`.
 - Respect `prefers-reduced-motion`.
 - Lazy load heavy modules and non-critical images.
+- Paginate or virtualize long lists before they can render large DOM trees.
+- Use native rendering containment such as `content-visibility` for below-the-fold sections when layout allows it.
 - Avoid complex calculations in templates.
 - Debounce or throttle high-frequency input, scroll, and resize work.
 - Clean timers, subscriptions, and request side effects on component unmount.
@@ -47,10 +51,17 @@ npm run type-check
 npm run perf:verify
 ```
 
+Run browser regression when Playwright browsers are installed:
+
+```bash
+npm run test:e2e:perf
+```
+
 Check:
 
 - No type errors.
 - No bundle budget failures.
+- No governance check failures.
 - Core pages switch without blank screens.
 - Browser console has no abnormal `long-task` bursts.
 - API latency outliers are recorded and reviewed.

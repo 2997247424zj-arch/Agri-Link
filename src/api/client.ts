@@ -3,6 +3,7 @@ import { measureApi } from '@/utils/performance'
 
 // 默认连接本地后端，可通过 .env 覆盖。
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:9091'
+const pendingGets = new Map<string, Promise<unknown>>()
 
 interface RequestOptions extends RequestInit {
   role?: UserRole | string
@@ -20,6 +21,7 @@ export class ApiError extends Error {
 export async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
   const startedAt = typeof performance === 'undefined' ? Date.now() : performance.now()
   const headers = new Headers(options.headers)
+  const method = options.method ?? 'GET'
 
   if (!headers.has('Content-Type') && options.body && !(options.body instanceof FormData)) {
     headers.set('Content-Type', 'application/json')
@@ -32,7 +34,12 @@ export async function request<T>(path: string, options: RequestOptions = {}): Pr
     headers.set('X-User-Role', role)
   }
 
-  try {
+  const getKey = method === 'GET' && !options.body ? `${path}|${role ?? ''}` : ''
+  if (getKey && pendingGets.has(getKey)) {
+    return pendingGets.get(getKey) as Promise<T>
+  }
+
+  const task = (async () => {
     const response = await fetch(`${API_BASE}${path}`, {
       ...options,
       headers,
@@ -45,9 +52,20 @@ export async function request<T>(path: string, options: RequestOptions = {}): Pr
     }
 
     return payload && 'data' in payload ? payload.data : (undefined as T)
+  })()
+
+  if (getKey) {
+    pendingGets.set(getKey, task)
+  }
+
+  try {
+    return await task
   } finally {
+    if (getKey) {
+      pendingGets.delete(getKey)
+    }
     const endedAt = typeof performance === 'undefined' ? Date.now() : performance.now()
-    measureApi(path, endedAt - startedAt, options.method ?? 'GET')
+    measureApi(path, endedAt - startedAt, method)
   }
 }
 

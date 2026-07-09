@@ -22,6 +22,12 @@ function writeStorage(key: string, value: string) {
   }
 }
 
+function removeStorage(key: string) {
+  if (typeof localStorage !== 'undefined') {
+    localStorage.removeItem(key)
+  }
+}
+
 export const useSessionStore = defineStore('session', () => {
   const userName = ref(readStorage('agri-link-user'))
   const role = ref<UserRole>((readStorage('agri-link-role') as UserRole) || 'FARMER')
@@ -61,12 +67,19 @@ export const useSessionStore = defineStore('session', () => {
   }
 
   function setRole(nextRole: UserRole) {
+    if (isLoggedIn.value) return false
     role.value = nextRole
     writeStorage('agri-link-role', nextRole)
+    return true
   }
 
   function logout() {
-    persist('', 'FARMER', '访客')
+    userName.value = ''
+    role.value = 'FARMER'
+    displayName.value = '访客'
+    removeStorage('agri-link-user')
+    removeStorage('agri-link-role')
+    removeStorage('agri-link-display')
   }
 
   return { userName, role, displayName, roleLabel, isLoggedIn, login, register, setRole, logout }

@@ -1,33 +1,29 @@
 <script setup lang="ts">
-import { computed, nextTick, watch } from 'vue'
-import { RouterLink, RouterView, useRoute, useRouter } from 'vue-router'
+import { computed } from 'vue'
+import { RouterLink, useRoute, useRouter } from 'vue-router'
 import AppIcon from '@/components/AppIcon.vue'
+import { useParticles } from '@/composables/useParticles'
+import { useSpotlight } from '@/composables/useSpotlight'
 import { useSessionStore } from '@/stores/session'
 import type { UserRole } from '@/types/domain'
-import { measureRouteReady } from '@/utils/performance'
+import { preloadRouteComponent, routeRoles } from '@/router'
 
 const session = useSessionStore()
 const route = useRoute()
 const router = useRouter()
+const { canvasRef } = useParticles()
+useSpotlight()
 
 // 顶部导航按角色过滤，避免展示不可访问入口。
 const navItems = [
-  { to: '/', label: '首页', icon: 'home' },
-  { to: '/trade', label: '农产品交易', icon: 'leaf' },
-  { to: '/finance', label: '融资服务', icon: 'bank' },
-  { to: '/experts', label: '专家助力', icon: 'expert' },
-  { to: '/cart', label: '购物车', icon: 'cart' },
-  { to: '/profile', label: '个人中心', icon: 'user' },
-  { to: '/admin', label: '后台管理', icon: 'shield' },
+  { to: '/', name: 'home', label: '首页', icon: 'home' },
+  { to: '/trade', name: 'trade', label: '农产品交易', icon: 'leaf' },
+  { to: '/finance', name: 'finance', label: '融资服务', icon: 'bank' },
+  { to: '/experts', name: 'experts', label: '专家助力', icon: 'expert' },
+  { to: '/cart', name: 'cart', label: '购物车', icon: 'cart' },
+  { to: '/profile', name: 'profile', label: '个人中心', icon: 'user' },
+  { to: '/admin', name: 'admin', label: '后台管理', icon: 'shield' },
 ] as const
-
-const roles: Array<{ value: UserRole; label: string }> = [
-  { value: 'FARMER', label: '农户' },
-  { value: 'BUYER', label: '买家' },
-  { value: 'EXPERT', label: '专家' },
-  { value: 'BANK', label: '银行' },
-  { value: 'SYSTEM_ADMIN', label: '管理员' },
-]
 
 const roleHints: Record<UserRole, string> = {
   FARMER: '发布货源、申请融资、咨询专家',
@@ -38,25 +34,26 @@ const roleHints: Record<UserRole, string> = {
 }
 
 const isAuth = computed(() => route.name === 'auth')
-const roleHint = computed(() => roleHints[session.role] ?? '请选择业务角色')
+const visibleNavItems = computed(() =>
+  navItems.filter((item) => {
+    const allowedRoles = routeRoles[item.name]
+    if (!allowedRoles) return true
+    return session.isLoggedIn && allowedRoles.includes(session.role)
+  }),
+)
+const roleTitle = computed(() => (session.isLoggedIn ? session.roleLabel : '访客'))
+const roleHint = computed(() => (session.isLoggedIn ? roleHints[session.role] : '登录后按角色开放功能'))
 
 function logout() {
   session.logout()
   router.push('/auth')
 }
-
-watch(
-  () => route.fullPath,
-  async () => {
-    await nextTick()
-    measureRouteReady(route)
-  },
-  { immediate: true },
-)
 </script>
 
 <template>
   <div class="app-shell" :class="{ 'app-shell--auth': isAuth }">
+    <canvas ref="canvasRef" class="ambient-particles" aria-hidden="true"></canvas>
+    <div class="ambient-spotlight" aria-hidden="true"></div>
     <header class="topbar">
       <div class="topbar__inner">
         <RouterLink to="/" class="brand" aria-label="Agri-Link 首页">
@@ -68,7 +65,13 @@ watch(
         </RouterLink>
 
         <nav class="topbar__nav" aria-label="主导航">
-          <RouterLink v-for="item in navItems" :key="item.to" :to="item.to">
+          <RouterLink
+            v-for="item in visibleNavItems"
+            :key="item.to"
+            :to="item.to"
+            @focus="preloadRouteComponent(item.name)"
+            @mouseenter="preloadRouteComponent(item.name)"
+          >
             <AppIcon :name="item.icon" />
             {{ item.label }}
           </RouterLink>
@@ -76,30 +79,21 @@ watch(
 
         <div class="topbar__actions">
           <span class="role-current">
-            <strong>{{ session.roleLabel }}</strong>
+            <strong>{{ roleTitle }}</strong>
             <small>{{ roleHint }}</small>
           </span>
-          <label class="role-switcher">
-            <span>角色</span>
-            <select :value="session.role" @change="session.setRole(($event.target as HTMLSelectElement).value as UserRole)">
-              <option v-for="role in roles" :key="role.value" :value="role.value">{{ role.label }}</option>
-            </select>
-          </label>
-          <RouterLink class="button button--ghost" to="/auth">
+          <RouterLink v-if="!session.isLoggedIn" class="button button--ghost" to="/auth">
             <AppIcon name="user" />
-            {{ session.isLoggedIn ? session.displayName : '登录' }}
+            登录
           </RouterLink>
+          <span v-else class="session-user"><AppIcon name="user" />{{ session.displayName }}</span>
           <button v-if="session.isLoggedIn" class="button button--ghost" type="button" @click="logout">退出</button>
         </div>
       </div>
     </header>
 
     <main class="main-content" aria-live="polite">
-      <RouterView v-slot="{ Component, route: activeRoute }">
-        <Transition name="page-slide" mode="out-in">
-          <component :is="Component" :key="activeRoute.fullPath" />
-        </Transition>
-      </RouterView>
+      <slot />
     </main>
 
     <footer v-if="!isAuth" class="site-footer">

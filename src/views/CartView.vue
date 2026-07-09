@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import AppIcon from '@/components/AppIcon.vue'
 import { api } from '@/api/client'
 import { useSessionStore } from '@/stores/session'
@@ -23,6 +23,8 @@ const error = ref('')
 const localShoppingIds = ref<Set<number>>(new Set())
 const expandedPurchaseId = ref<number | null>(null)
 const cancelReason = ref('')
+const purchasePage = ref(1)
+const purchasePageSize = 5
 
 // 购物车页面会同时展示远程购物车、本地兜底数据和采购记录。
 const fallbackOrders: TradeOrder[] = [
@@ -50,6 +52,11 @@ const cartRows = computed(() =>
   }),
 )
 const totalPrice = computed(() => cartRows.value.reduce((sum, row) => sum + row.sum, 0))
+const pagedPurchases = computed(() => {
+  const start = (purchasePage.value - 1) * purchasePageSize
+  return purchases.value.slice(start, start + purchasePageSize)
+})
+const purchasePageCount = computed(() => Math.max(1, Math.ceil(purchases.value.length / purchasePageSize)))
 
 function mergeOrders(remoteOrders: TradeOrder[], localOrders: TradeOrder[]) {
   const orderMap = new Map<number, TradeOrder>()
@@ -86,6 +93,10 @@ function purchaseTimeline(status?: number) {
 
 function detailTitle(detail: { orderId: number }) {
   return orderMap.value.get(detail.orderId)?.title ?? `货源 #${detail.orderId}`
+}
+
+function changePurchasePage(delta: number) {
+  purchasePage.value = Math.min(Math.max(1, purchasePage.value + delta), purchasePageCount.value)
 }
 
 // 加载购物车、货源和采购记录，接口失败时保留本地可用数据。
@@ -240,6 +251,10 @@ async function updatePurchaseStatus(purchase: Purchase, purchaseStatus: number) 
 }
 
 onMounted(loadCart)
+
+watch(purchasePageCount, () => {
+  purchasePage.value = Math.min(purchasePage.value, purchasePageCount.value)
+})
 </script>
 
 <template>
@@ -342,7 +357,7 @@ onMounted(loadCart)
             </tr>
           </thead>
           <tbody>
-            <template v-for="purchase in purchases" :key="purchase.purchaseId">
+            <template v-for="purchase in pagedPurchases" :key="purchase.purchaseId">
               <tr>
                 <td>{{ purchase.purchaseId }}</td>
                 <td>{{ purchase.ownName }}</td>
@@ -396,6 +411,11 @@ onMounted(loadCart)
             </tr>
           </tbody>
         </table>
+      </div>
+      <div class="pager">
+        <button class="button button--ghost button--small" type="button" @click="changePurchasePage(-1)">上一页</button>
+        <span>第 {{ purchasePage }} / {{ purchasePageCount }} 页</span>
+        <button class="button button--ghost button--small" type="button" @click="changePurchasePage(1)">下一页</button>
       </div>
     </section>
   </section>

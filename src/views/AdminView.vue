@@ -13,6 +13,8 @@ interface KnowledgeItem {
   createTime?: string
 }
 
+type AdminIconName = 'home' | 'user' | 'leaf' | 'bank' | 'shield' | 'cart'
+
 const overview = ref<AdminOverview | null>(null)
 const users = ref<User[]>([])
 const orders = ref<TradeOrder[]>([])
@@ -57,6 +59,14 @@ const roles: Array<{ value: UserRole; label: string }> = [
   { value: 'SYSTEM_ADMIN', label: '管理员' },
 ]
 
+const moduleLinks = [
+  { href: '#admin-overview', label: '核心指标', icon: 'home' },
+  { href: '#admin-users', label: '用户角色', icon: 'user' },
+  { href: '#admin-trade', label: '交易监管', icon: 'leaf' },
+  { href: '#admin-finance', label: '融资审批', icon: 'bank' },
+  { href: '#admin-knowledge', label: '内容管理', icon: 'shield' },
+] as const
+
 // 后端不可用时保留一组演示数据，方便页面继续展示。
 const fallbackOverview: AdminOverview = {
   userCount: 5,
@@ -91,12 +101,12 @@ const fallbackKnowledge: KnowledgeItem[] = [
   },
 ]
 
-const statCards = computed(() => [
-  { label: '用户', value: overview.value?.userCount ?? users.value.length },
-  { label: '货源', value: overview.value?.orderCount ?? orders.value.length },
-  { label: '采购订单', value: overview.value?.purchaseCount ?? purchases.value.length },
-  { label: '融资申请', value: overview.value?.financeApplicationCount ?? finances.value.length },
-  { label: '资讯知识', value: overview.value?.knowledgeCount ?? knowledgeItems.value.length },
+const statCards = computed<Array<{ label: string; value: number; icon: AdminIconName; trend: string }>>(() => [
+  { label: '平台用户', value: overview.value?.userCount ?? users.value.length, icon: 'user', trend: '角色统一管理' },
+  { label: '货源审核', value: overview.value?.orderCount ?? orders.value.length, icon: 'leaf', trend: '农户发布监管' },
+  { label: '采购订单', value: overview.value?.purchaseCount ?? purchases.value.length, icon: 'cart', trend: '买家采购流转' },
+  { label: '融资申请', value: overview.value?.financeApplicationCount ?? finances.value.length, icon: 'bank', trend: '银行审批协同' },
+  { label: '资讯知识', value: overview.value?.knowledgeCount ?? knowledgeItems.value.length, icon: 'shield', trend: '平台内容维护' },
 ])
 
 const roleStats = computed(() =>
@@ -401,12 +411,12 @@ onMounted(loadAdmin)
 </script>
 
 <template>
-  <section class="page">
-    <div class="section-title">
+  <section class="page admin-page">
+    <div id="admin-overview" class="admin-heading">
       <div>
-        <span class="eyebrow"><AppIcon name="shield" />后台管理</span>
-        <h2>用户、交易与融资审批</h2>
-        <p>对接 `/api/admin/overview`、用户管理、货源状态、采购状态和融资审批接口。</p>
+        <span class="eyebrow"><AppIcon name="shield" />系统管理后台</span>
+        <h1>农产品融销一体平台管理控制台</h1>
+        <p>集中处理用户角色、交易监管、融资审批和平台内容维护。</p>
       </div>
       <button class="button button--ghost" type="button" @click="loadAdmin">
         <AppIcon name="search" />刷新
@@ -416,14 +426,28 @@ onMounted(loadAdmin)
     <p v-if="message" class="alert">{{ message }}</p>
     <p v-if="error" class="alert alert--error">{{ error }}</p>
 
-    <div class="summary-strip">
-      <div v-for="stat in statCards" :key="stat.label" class="metric">
+    <div class="admin-stat-cards">
+      <div v-for="stat in statCards" :key="stat.label" class="metric admin-stat-card">
+        <div class="admin-stat-card__header">
+          <span><AppIcon :name="stat.icon" /></span>
+          <small>{{ loading ? '正在加载' : stat.label }}</small>
+        </div>
         <strong>{{ stat.value }}</strong>
-        <span>{{ loading ? '正在加载' : stat.label }}</span>
+        <em>{{ stat.trend }}</em>
       </div>
     </div>
 
-    <section class="section">
+    <div class="admin-layout admin-shell-grid">
+      <aside class="admin-sidebar" aria-label="管理员模块导航">
+        <strong>系统管理</strong>
+        <a v-for="item in moduleLinks" :key="item.href" :href="item.href">
+          <AppIcon :name="item.icon" />
+          {{ item.label }}
+        </a>
+      </aside>
+
+      <div class="admin-main admin-dashboard-grid">
+    <section id="admin-users" class="section admin-card">
       <div class="section-title">
         <div>
           <h2>用户角色</h2>
@@ -474,8 +498,8 @@ onMounted(loadAdmin)
       </div>
     </section>
 
-    <section class="section grid grid--two">
-      <div class="panel">
+    <section id="admin-trade" class="section admin-card-grid admin-card-grid--two">
+      <div class="panel admin-card">
         <div class="section-title">
           <div>
             <h2>货源状态</h2>
@@ -520,7 +544,7 @@ onMounted(loadAdmin)
         </div>
       </div>
 
-      <div class="panel">
+      <div class="panel admin-card">
         <div class="section-title">
           <div>
             <h2>采购状态</h2>
@@ -567,7 +591,7 @@ onMounted(loadAdmin)
       </div>
     </section>
 
-    <section class="section">
+    <section id="admin-finance" class="section admin-card">
       <div class="section-title">
         <div>
           <h2>融资审批</h2>
@@ -624,8 +648,8 @@ onMounted(loadAdmin)
       </div>
     </section>
 
-    <section class="section grid grid--two">
-      <form class="panel form" @submit.prevent="publishKnowledge">
+    <section id="admin-knowledge" class="section admin-card-grid admin-card-grid--two">
+      <form class="panel form admin-card" @submit.prevent="publishKnowledge">
         <div class="section-title">
           <div>
             <h2>资讯知识发布</h2>
@@ -640,7 +664,7 @@ onMounted(loadAdmin)
         </button>
       </form>
 
-      <div class="panel">
+      <div class="panel admin-card">
         <div class="section-title">
           <div>
             <h2>内容列表</h2>
@@ -682,5 +706,7 @@ onMounted(loadAdmin)
         </div>
       </div>
     </section>
+      </div>
+    </div>
   </section>
 </template>
