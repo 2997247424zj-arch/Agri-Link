@@ -7,7 +7,6 @@ import com.example.agrilinkback.module.admin.dto.AdminKnowledgeStatusRequest;
 import com.example.agrilinkback.module.admin.dto.AdminOverview;
 import com.example.agrilinkback.module.admin.dto.AdminRoleRequest;
 import com.example.agrilinkback.module.admin.service.AdminService;
-import com.example.agrilinkback.module.finance.dto.FinanceStatusRequest;
 import com.example.agrilinkback.module.finance.entity.Finance;
 import com.example.agrilinkback.module.trade.dto.PurchaseStatusRequest;
 import com.example.agrilinkback.module.trade.dto.TradeOrderStatusRequest;
@@ -27,7 +26,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * 系统管理员后台接口，聚合用户、交易和融资审批能力。
+ * 系统管理员后台接口，聚合用户、交易、融资监管和内容维护能力。
  */
 @RestController
 @RequestMapping("/api/admin")
@@ -86,14 +85,6 @@ public class AdminController {
     @GetMapping("/finance/applications")
     public ApiResponse<List<Finance>> listFinanceApplications() {
         return ApiResponse.success(adminService.listFinanceApplications());
-    }
-
-    @PatchMapping("/finance/applications/{financeId}/status")
-    public ApiResponse<Finance> updateFinanceStatus(
-            @PathVariable Integer financeId,
-            @Valid @RequestBody FinanceStatusRequest request
-    ) {
-        return ApiResponse.success(adminService.updateFinanceStatus(financeId, request));
     }
 
     @GetMapping("/knowledge")

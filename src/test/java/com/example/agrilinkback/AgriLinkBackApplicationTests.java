@@ -331,18 +331,18 @@ class AgriLinkBackApplicationTests {
                 .getContentAsString();
         int financeId = objectMapper.readTree(financeResponse).path("data").path("financeId").asInt();
 
-        mockMvc.perform(patch("/api/admin/finance/applications/{financeId}/status", financeId)
-                        .with(role("SYSTEM_ADMIN"))
+        mockMvc.perform(patch("/api/finance/applications/{financeId}/status", financeId)
+                        .with(role("BANK"))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
                                   "status": 1,
-                                  "remark": "admin approved"
+                                  "remark": "bank approved"
                                 }
                                 """))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.status").value(1))
-                .andExpect(jsonPath("$.data.remark").value("admin approved"));
+                .andExpect(jsonPath("$.data.remark").value("bank approved"));
 
         mockMvc.perform(delete("/api/finance/applications/{financeId}", financeId).with(role("BANK")))
                 .andExpect(status().isOk());
@@ -622,6 +622,17 @@ class AgriLinkBackApplicationTests {
         int financeId = objectMapper.readTree(financeResponse).path("data").path("financeId").asInt();
 
         mockMvc.perform(patch("/api/finance/applications/{financeId}/status", financeId)
+                        .with(role("FARMER"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "status": 1,
+                                  "remark": "farmer approved"
+                                }
+                                """))
+                .andExpect(status().isForbidden());
+
+        mockMvc.perform(patch("/api/finance/applications/{financeId}/status", financeId)
                         .with(role("BANK"))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
@@ -813,7 +824,6 @@ class AgriLinkBackApplicationTests {
                 "/api/admin/knowledge",
                 "/api/admin/knowledge/{knowledgeId}",
                 "/api/admin/knowledge/{knowledgeId}/status",
-                "/api/admin/finance/applications/{financeId}/status",
                 "/api/admin/overview",
                 "/api/admin/trade/orders",
                 "/api/admin/trade/orders/{orderId}/status",

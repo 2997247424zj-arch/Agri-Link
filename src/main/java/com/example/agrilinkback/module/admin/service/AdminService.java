@@ -6,7 +6,6 @@ import com.example.agrilinkback.module.admin.dto.AdminKnowledgeItem;
 import com.example.agrilinkback.module.admin.dto.AdminKnowledgeRequest;
 import com.example.agrilinkback.module.admin.dto.AdminKnowledgeStatusRequest;
 import com.example.agrilinkback.module.admin.dto.AdminOverview;
-import com.example.agrilinkback.module.finance.dto.FinanceStatusRequest;
 import com.example.agrilinkback.module.finance.entity.Finance;
 import com.example.agrilinkback.module.finance.service.FinanceService;
 import com.example.agrilinkback.module.knowledge.dto.KnowledgeRequest;
@@ -106,10 +105,6 @@ public class AdminService {
 
     public List<Finance> listFinanceApplications() {
         return financeService.listFinances();
-    }
-
-    public Finance updateFinanceStatus(Integer financeId, FinanceStatusRequest request) {
-        return financeService.updateFinanceStatus(financeId, request);
     }
 
     /**

@@ -9,7 +9,6 @@ import com.example.agrilinkback.module.finance.entity.Finance;
 import com.example.agrilinkback.module.finance.entity.FinancingIntention;
 import com.example.agrilinkback.module.finance.mapper.FinanceMapper;
 import com.example.agrilinkback.module.finance.mapper.FinancingIntentionMapper;
-import com.example.agrilinkback.module.finance.service.BankService;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -113,7 +112,7 @@ public class FinanceService {
 
     public Finance createFinance(FinanceApplicationRequest request) {
         LocalDateTime now = LocalDateTime.now();
-        // 新融资申请默认待审核，后续由银行或管理员更新状态与备注。
+        // 新融资申请默认待审核，后续由银行更新状态与备注。
         Finance finance = new Finance(
                 financeMapper.nextId(),
                 request.bankId(),

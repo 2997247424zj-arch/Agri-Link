@@ -182,7 +182,10 @@ public class SecurityConfig {
                         .requestMatchers("/api/knowledge/**").hasAnyRole("FARMER", "EXPERT")
                         // 农技咨询：农户提问、专家回答。
                         .requestMatchers("/api/consultation/**").hasAnyRole("FARMER", "EXPERT")
-                        // 融资申请流程：农户发起、银行审批。
+                        // 融资申请流程：农户发起和补充材料，银行负责最终审批。
+                        .requestMatchers(HttpMethod.POST, "/api/finance/applications").hasRole("FARMER")
+                        .requestMatchers(HttpMethod.PATCH, "/api/finance/applications/*/materials").hasRole("FARMER")
+                        .requestMatchers(HttpMethod.PATCH, "/api/finance/applications/*/status").hasRole("BANK")
                         .requestMatchers("/api/finance/applications/**").hasAnyRole("FARMER", "BANK")
                         // 融资意向沟通：农户与银行双向。
                         .requestMatchers("/api/finance/intentions/**").hasAnyRole("FARMER", "BANK")
