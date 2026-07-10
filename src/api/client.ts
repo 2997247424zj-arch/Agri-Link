@@ -40,10 +40,17 @@ export async function request<T>(path: string, options: RequestOptions = {}): Pr
   }
 
   const task = (async () => {
-    const response = await fetch(`${API_BASE}${path}`, {
-      ...options,
-      headers,
-    })
+    let response: Response
+    try {
+      response = await fetch(`${API_BASE}${path}`, {
+        ...options,
+        headers,
+      })
+    } catch (err) {
+      // fetch 本身 reject 一般是网络层错误（后端未启动、端口不通、CORS 未放行等）
+      const reason = err instanceof Error ? err.message : String(err)
+      throw new ApiError(`无法连接后端服务（${reason}）。请确认 Spring Boot 已在 ${API_BASE} 运行。`, 0)
+    }
     // 兼容 204 或非 JSON 响应，错误仍按 HTTP 状态处理。
     const payload = (await response.json().catch(() => null)) as ApiResponse<T> | null
 

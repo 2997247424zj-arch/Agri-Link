@@ -28,7 +28,7 @@ watch(
   <AppShell>
     <RouterView v-slot="{ Component, route: activeRoute }">
       <Transition :name="routeTransition">
-        <KeepAlive :max="8">
+        <KeepAlive :max="4">
           <component :is="Component" :key="activeRoute.name ?? activeRoute.path" />
         </KeepAlive>
       </Transition>

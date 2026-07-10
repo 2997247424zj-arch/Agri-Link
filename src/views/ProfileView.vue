@@ -14,6 +14,13 @@ const myOrders = ref<TradeOrder[]>([])
 const myPurchases = ref<Purchase[]>([])
 const myFinances = ref<Finance[]>([])
 const newPassword = ref('')
+type ProfileActionIcon = 'leaf' | 'bank' | 'expert' | 'cart' | 'user' | 'shield'
+type ProfileRolePanel = {
+  title: string
+  desc: string
+  items: Array<{ label: string; value: string | number }>
+  actions: Array<{ to: string; label: string; icon: ProfileActionIcon; primary?: boolean }>
+}
 
 // 个人中心按角色展示资料、交易、采购和融资记录。
 const profile = reactive<Partial<User> & { password: string }>({
@@ -52,6 +59,105 @@ const canLoadOrders = computed(() => profile.role === 'FARMER')
 const canLoadPurchases = computed(() => profile.role === 'BUYER' || profile.role === 'FARMER')
 const canLoadFinances = computed(() => profile.role === 'FARMER' || profile.role === 'BANK')
 const totalAssets = computed(() => myOrders.value.length + myPurchases.value.length + myFinances.value.length)
+const purchaseAmount = computed(() =>
+  myPurchases.value.reduce((sum, purchase) => sum + Number(purchase.totalPrice ?? 0), 0),
+)
+const profileSummaryCards = computed(() => {
+  if (profile.role === 'BUYER') {
+    return [
+      { value: profile.nickName || profile.userName || '买家', label: '买家账户' },
+      { value: myPurchases.value.length, label: loading.value ? '正在加载采购记录' : '采购订单' },
+      { value: `¥${purchaseAmount.value.toFixed(2)}`, label: '累计采购金额' },
+      { value: profile.address || '待完善', label: '默认收货信息' },
+    ]
+  }
+
+  return [
+    { value: profile.nickName || profile.userName || '-', label: session.roleLabel },
+    { value: totalAssets.value, label: loading.value ? '正在加载业务记录' : '关联业务记录' },
+    { value: myOrders.value.length, label: '我的货源' },
+    { value: myFinances.value.length, label: '融资申请' },
+  ]
+})
+
+const roleProfilePanel = computed<ProfileRolePanel>(() => {
+  const commonItems = [
+    { label: '账号', value: profile.userName || '-' },
+    { label: '手机号', value: profile.phone || '待完善' },
+    { label: '联系地址', value: profile.address || '待完善' },
+  ]
+
+  if (profile.role === 'FARMER') {
+    return {
+      title: '农户个人信息管理',
+      desc: '维护经营资料、货源信息和融资申请入口。',
+      items: [
+        { label: '经营规模', value: roleProfile.farmScale },
+        { label: '主营农产品', value: roleProfile.mainProduct },
+        { label: '我的货源', value: `${myOrders.value.length} 条` },
+        ...commonItems,
+      ],
+      actions: [
+        { to: '/trade?tab=publish', label: '商品发布与管理', icon: 'leaf', primary: true },
+        { to: '/finance?tab=apply', label: '融资申请', icon: 'bank' },
+      ],
+    }
+  }
+
+  if (profile.role === 'BUYER') {
+    return {
+      title: '买家个人信息管理',
+      desc: '集中管理采购身份、收货资料、采购记录和结算入口。',
+      items: [
+        { label: '采购类型', value: roleProfile.buyerType },
+        { label: '采购订单', value: `${myPurchases.value.length} 单` },
+        { label: '累计金额', value: `¥${purchaseAmount.value.toFixed(2)}` },
+        ...commonItems,
+      ],
+      actions: [
+        { to: '/trade', label: '继续选品', icon: 'leaf', primary: true },
+        { to: '/cart', label: '采购中心', icon: 'cart' },
+      ],
+    }
+  }
+
+  if (profile.role === 'EXPERT') {
+    return {
+      title: '专家个人信息管理',
+      desc: '维护专家身份、认证专业和咨询服务入口。',
+      items: [
+        { label: '认证专业', value: roleProfile.expertField },
+        { label: '真实姓名', value: profile.realName || '待完善' },
+        ...commonItems,
+      ],
+      actions: [{ to: '/experts', label: '咨询处理', icon: 'expert', primary: true }],
+    }
+  }
+
+  if (profile.role === 'BANK') {
+    return {
+      title: '机构信息管理',
+      desc: '维护机构资料、融资产品和审核业务入口。',
+      items: [
+        { label: '机构/产品', value: roleProfile.bankName },
+        { label: '融资申请', value: `${myFinances.value.length} 条` },
+        ...commonItems,
+      ],
+      actions: [{ to: '/finance?tab=result', label: '融资审核', icon: 'bank', primary: true }],
+    }
+  }
+
+  return {
+    title: '管理员账号信息管理',
+    desc: '维护管理员账号资料，并快速进入平台监管后台。',
+    items: [
+      { label: '管理范围', value: '用户、交易、融资、内容' },
+      { label: '真实姓名', value: profile.realName || '待完善' },
+      ...commonItems,
+    ],
+    actions: [{ to: '/admin', label: '后台管理', icon: 'shield', primary: true }],
+  }
+})
 
 function approvalStatusLabel(status?: number) {
   if (status === 1) return '已通过'
@@ -135,7 +241,6 @@ async function saveProfile() {
     const saved = await api.put<User>(`/api/users/${encodeURIComponent(userName)}`, {
       userName,
       password: profile.password,
-      newPassword: newPassword.value,
       nickName: profile.nickName,
       phone: profile.phone,
       identityNum: profile.identityNum,
@@ -143,11 +248,21 @@ async function saveProfile() {
       role: profile.role,
       avatar: profile.avatar,
       realName: profile.realName,
-      roleProfile,
     })
     applyUser(saved)
     if (profile.role) session.setRole(profile.role as UserRole)
-    message.value = '个人资料已保存。'
+
+    // 若填写了新密码，走专门的改密码接口（后端 UserRequest 不含 newPassword 字段）
+    if (newPassword.value.trim()) {
+      await api.patch<User>(`/api/users/${encodeURIComponent(userName)}/password`, {
+        password: newPassword.value.trim(),
+      })
+      profile.password = newPassword.value.trim()
+      newPassword.value = ''
+      message.value = '个人资料与登录密码已更新。'
+    } else {
+      message.value = '个人资料已保存。'
+    }
   } catch (err) {
     error.value = err instanceof Error ? err.message : '个人资料保存失败。'
   } finally {
@@ -174,22 +289,14 @@ onMounted(loadProfile)
     <p v-if="message" class="alert">{{ message }}</p>
     <p v-if="error" class="alert alert--error">{{ error }}</p>
 
-    <div class="summary-strip">
-      <div class="metric">
-        <strong>{{ profile.nickName || profile.userName }}</strong>
-        <span>{{ session.roleLabel }}</span>
-      </div>
-      <div class="metric">
-        <strong>{{ totalAssets }}</strong>
-        <span>{{ loading ? '正在加载业务记录' : '关联业务记录' }}</span>
-      </div>
-      <div class="metric">
-        <strong>{{ myOrders.length }}</strong>
-        <span>我的货源</span>
+    <div class="summary-strip profile-summary-strip" :class="{ 'profile-summary-strip--buyer': profile.role === 'BUYER' }">
+      <div v-for="card in profileSummaryCards" :key="card.label" class="metric">
+        <strong>{{ card.value }}</strong>
+        <span>{{ card.label }}</span>
       </div>
     </div>
 
-    <section class="section grid grid--two">
+    <section class="section profile-workspace">
       <form class="panel form" @submit.prevent="saveProfile">
         <div class="section-title">
           <div>
@@ -224,7 +331,34 @@ onMounted(loadProfile)
         </button>
       </form>
 
-      <div class="panel">
+      <div class="profile-side">
+      <div class="panel role-profile-card">
+        <div class="section-title">
+          <div>
+            <h2>{{ roleProfilePanel.title }}</h2>
+            <p>{{ roleProfilePanel.desc }}</p>
+          </div>
+        </div>
+        <div class="role-profile-grid">
+          <span v-for="item in roleProfilePanel.items" :key="item.label">
+            <small>{{ item.label }}</small>
+            <strong>{{ item.value }}</strong>
+          </span>
+        </div>
+        <div class="role-profile-actions">
+          <RouterLink
+            v-for="action in roleProfilePanel.actions"
+            :key="action.to"
+            class="button"
+            :class="action.primary ? 'button--green' : 'button--ghost'"
+            :to="action.to"
+          >
+            <AppIcon :name="action.icon" />{{ action.label }}
+          </RouterLink>
+        </div>
+      </div>
+
+      <div class="panel profile-actions">
         <div class="section-title">
           <div>
             <h2>业务入口</h2>
@@ -232,16 +366,18 @@ onMounted(loadProfile)
           </div>
         </div>
         <div class="action-grid">
-          <RouterLink class="button button--ghost" to="/trade"><AppIcon name="leaf" />发布/浏览货源</RouterLink>
-          <RouterLink class="button button--ghost" to="/cart"><AppIcon name="cart" />采购结算</RouterLink>
-          <RouterLink class="button button--ghost" to="/finance"><AppIcon name="bank" />融资申请</RouterLink>
-          <RouterLink class="button button--ghost" to="/experts"><AppIcon name="expert" />专家问答</RouterLink>
-          <RouterLink class="button button--ghost" to="/admin"><AppIcon name="shield" />后台管理</RouterLink>
+          <RouterLink v-if="profile.role === 'FARMER'" class="button button--ghost" to="/trade?tab=browse"><AppIcon name="leaf" />货源浏览</RouterLink>
+          <RouterLink v-if="profile.role === 'FARMER'" class="button button--ghost" to="/trade?tab=publish"><AppIcon name="plus" />农产品发布</RouterLink>
+          <RouterLink v-if="profile.role === 'FARMER'" class="button button--ghost" to="/finance?tab=apply"><AppIcon name="bank" />融资申请</RouterLink>
+          <RouterLink v-if="profile.role === 'FARMER'" class="button button--ghost" to="/experts?tab=experts"><AppIcon name="expert" />专家咨询</RouterLink>
+          <RouterLink v-if="profile.role === 'BUYER'" class="button button--ghost" to="/cart"><AppIcon name="cart" />采购结算</RouterLink>
+          <RouterLink v-if="profile.role === 'EXPERT'" class="button button--ghost" to="/experts"><AppIcon name="expert" />咨询处理</RouterLink>
+          <RouterLink v-if="profile.role === 'BANK'" class="button button--ghost" to="/finance?tab=result"><AppIcon name="bank" />融资审核</RouterLink>
+          <RouterLink v-if="profile.role === 'SYSTEM_ADMIN'" class="button button--ghost" to="/admin"><AppIcon name="shield" />后台管理</RouterLink>
         </div>
       </div>
-    </section>
 
-    <section class="section grid">
+      <div class="profile-records record-grid">
       <article class="card">
         <h3>我的货源</h3>
         <p>农户发布的商品货源，可在交易页继续维护。</p>
@@ -278,6 +414,8 @@ onMounted(loadProfile)
           <span v-if="!myFinances.length">暂无融资申请</span>
         </div>
       </article>
+      </div>
+      </div>
     </section>
   </section>
 </template>

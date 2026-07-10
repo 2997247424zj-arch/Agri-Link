@@ -1,11 +1,14 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import AppIcon from '@/components/AppIcon.vue'
 import { api } from '@/api/client'
 import { useSessionStore } from '@/stores/session'
 import type { Expert, Question, Reserve } from '@/types/domain'
 
 const session = useSessionStore()
+const route = useRoute()
+const router = useRouter()
 const experts = ref<Expert[]>([])
 const questions = ref<Question[]>([])
 const reserves = ref<Reserve[]>([])
@@ -16,6 +19,13 @@ const questionAnswers = reactive<Record<number, string>>({})
 const reserveAnswers = reactive<Record<number, string>>({})
 const expertKeyword = ref('')
 const plantFilter = ref('')
+const selectedExpert = ref<Expert | null>(null)
+const consultModalOpen = ref(false)
+type ExpertTab = 'experts' | 'records'
+const expertTabs: Array<{ value: ExpertTab; label: string }> = [
+  { value: 'experts', label: '专家列表' },
+  { value: 'records', label: '我的咨询' },
+]
 
 // 专家页同时覆盖专家列表、在线问答和预约服务。
 const reserveForm = reactive({
@@ -127,10 +137,19 @@ const filteredReserves = computed(() => {
   if (!text) return reserves.value
   return reserves.value.filter((reserve) => String(reserve.plantName ?? '').toLowerCase().includes(text))
 })
+const activeTab = computed<ExpertTab>(() => (route.query.tab === 'records' ? 'records' : 'experts'))
+const isFarmerRole = computed(() => session.role === 'FARMER')
+const isExpertRole = computed(() => session.role === 'EXPERT')
+
+function setExpertTab(tab: ExpertTab) {
+  router.replace({ query: { ...route.query, tab } })
+}
 
 function selectExpert(expert: Expert) {
   reserveForm.expertName = expert.userName
   questionForm.expertName = expert.userName
+  selectedExpert.value = expert
+  if (isFarmerRole.value) consultModalOpen.value = true
 }
 
 function statusLabel(status?: number) {
@@ -192,6 +211,7 @@ async function submitReserve() {
     const created = await api.post<Reserve>('/api/consultation/reserves', reserveForm, { role: 'FARMER' })
     reserves.value = [created, ...reserves.value]
     message.value = '咨询预约已提交，专家端可查看并处理。'
+    consultModalOpen.value = false
   } catch (err) {
     error.value = err instanceof Error ? err.message : '预约提交失败。'
   } finally {
@@ -207,6 +227,7 @@ async function submitQuestion() {
     const created = await api.post<Question>('/api/consultation/questions', questionForm, { role: 'FARMER' })
     questions.value = [created, ...questions.value]
     message.value = '问题已发布，等待专家答复。'
+    consultModalOpen.value = false
   } catch (err) {
     error.value = err instanceof Error ? err.message : '问题提交失败。'
   } finally {
@@ -291,6 +312,20 @@ onMounted(loadExperts)
     <p v-if="message" class="alert">{{ message }}</p>
     <p v-if="error" class="alert alert--error">{{ error }}</p>
 
+    <div v-if="isFarmerRole" class="tabs module-switcher" role="tablist" aria-label="专家助力操作">
+      <button
+        v-for="tab in expertTabs"
+        :key="tab.value"
+        class="tab"
+        type="button"
+        role="tab"
+        :aria-selected="activeTab === tab.value"
+        @click="setExpertTab(tab.value)"
+      >
+        {{ tab.label }}
+      </button>
+    </div>
+
     <div class="summary-strip">
       <div class="metric">
         <strong>{{ experts.length }}</strong>
@@ -329,8 +364,15 @@ onMounted(loadExperts)
       </div>
     </section>
 
-    <section class="section grid">
-      <article v-for="expert in filteredExperts" :key="expert.userName" class="card">
+    <section v-if="activeTab === 'experts' || isExpertRole" class="section grid">
+      <article
+        v-for="expert in filteredExperts"
+        :key="expert.userName"
+        class="card clickable-card"
+        tabindex="0"
+        @click="selectExpert(expert)"
+        @keydown.enter.prevent="selectExpert(expert)"
+      >
         <h3>{{ expert.realName || expert.userName }}</h3>
         <p>{{ expert.profession || '农业综合服务' }}</p>
         <div class="tag-row">
@@ -339,14 +381,14 @@ onMounted(loadExperts)
         </div>
         <div class="card__footer">
           <span>{{ expert.phone || '联系方式待补充' }}</span>
-          <button class="button button--ghost" type="button" @click="selectExpert(expert)">
-            <AppIcon name="check" />选择
+          <button class="button button--ghost" type="button" @click.stop="selectExpert(expert)">
+            <AppIcon name="check" />{{ isFarmerRole ? '咨询' : '选择' }}
           </button>
         </div>
       </article>
     </section>
 
-    <section class="section grid grid--two">
+    <section v-if="!isFarmerRole && activeTab === 'experts'" class="section grid grid--two">
       <form class="panel form" @submit.prevent="submitReserve">
         <div class="section-title">
           <div>
@@ -414,12 +456,12 @@ onMounted(loadExperts)
       </form>
     </section>
 
-    <section class="section grid grid--two">
+    <section v-if="activeTab === 'records' || isExpertRole" class="section grid grid--two">
       <div class="panel">
         <div class="section-title">
           <div>
-            <h2>问答处理</h2>
-            <p>专家可直接答复农户问题。</p>
+            <h2>{{ isExpertRole ? '问答处理' : '我的问答' }}</h2>
+            <p>{{ isExpertRole ? '专家可直接答复农户问题。' : '查看已提交问题和专家回复。' }}</p>
           </div>
         </div>
         <div v-if="filteredQuestions.length" class="mini-list">
@@ -433,8 +475,8 @@ onMounted(loadExperts)
             <div v-if="question.attachments?.length" class="attachment-grid">
               <img v-for="(image, index) in question.attachments" :key="index" :src="image" alt="症状图片" />
             </div>
-            <textarea v-if="(question.status ?? 0) === 0" v-model="questionAnswers[question.id || question.questionId || 0]" placeholder="填写专家答复" />
-            <div v-if="(question.status ?? 0) === 0" class="toolbar">
+            <textarea v-if="isExpertRole && (question.status ?? 0) === 0" v-model="questionAnswers[question.id || question.questionId || 0]" placeholder="填写专家答复" />
+            <div v-if="isExpertRole && (question.status ?? 0) === 0" class="toolbar">
               <button class="button button--small" type="button" @click="answerQuestion(question)">答复</button>
               <button class="button button--danger button--small" type="button" @click="answerQuestion(question, 2)">驳回</button>
             </div>
@@ -447,8 +489,8 @@ onMounted(loadExperts)
       <div class="panel">
         <div class="section-title">
           <div>
-            <h2>预约处理</h2>
-            <p>专家处理线下或线上咨询预约。</p>
+            <h2>{{ isExpertRole ? '预约处理' : '我的预约' }}</h2>
+            <p>{{ isExpertRole ? '专家处理线下或线上咨询预约。' : '查看预约状态和专家回复。' }}</p>
           </div>
         </div>
         <div v-if="filteredReserves.length" class="mini-list">
@@ -460,19 +502,67 @@ onMounted(loadExperts)
             </small>
             <small>{{ reserve.serviceMode || '线上诊断' }} · {{ reserve.appointmentTime || '时间待确认' }}</small>
             <em>{{ reserve.plantCondition }}；{{ reserve.plantDetail }}</em>
-            <textarea v-if="(reserve.status ?? 0) === 0" v-model="reserveAnswers[reserve.id]" placeholder="填写预约处理意见" />
-            <div v-if="(reserve.status ?? 0) === 0" class="toolbar">
+            <textarea v-if="isExpertRole && (reserve.status ?? 0) === 0" v-model="reserveAnswers[reserve.id]" placeholder="填写预约处理意见" />
+            <div v-if="isExpertRole && (reserve.status ?? 0) === 0" class="toolbar">
               <button class="button button--small" type="button" @click="answerReserve(reserve)">处理</button>
               <button class="button button--danger button--small" type="button" @click="answerReserve(reserve, 2)">驳回</button>
             </div>
-            <button v-if="(reserve.status ?? 0) === 0" class="button button--ghost button--small" type="button" @click="cancelReserve(reserve)">
-              取消预约
-            </button>
             <em v-else>{{ reserve.answer || '已处理' }}</em>
           </span>
         </div>
         <div v-else class="empty">暂无符合条件的预约记录。</div>
       </div>
     </section>
+
+    <Transition name="modal-spring">
+      <div v-if="consultModalOpen" class="modal-overlay" role="presentation" @click.self="consultModalOpen = false">
+        <div class="modal modal--wide" role="dialog" aria-modal="true" aria-label="专家咨询">
+          <div class="section-title">
+            <div>
+              <h2>咨询 {{ selectedExpert?.realName || selectedExpert?.userName || '专家' }}</h2>
+              <p>提交后等待专家回复即可。</p>
+            </div>
+            <button class="button button--ghost button--small" type="button" @click="consultModalOpen = false">关闭</button>
+          </div>
+          <div class="grid grid--two">
+            <form class="form" @submit.prevent="submitReserve">
+              <h3>咨询预约</h3>
+              <label class="field"><span>农户账号</span><input v-model.trim="reserveForm.questioner" required /></label>
+              <label class="field"><span>联系电话</span><input v-model.trim="reserveForm.phone" type="tel" required /></label>
+              <label class="field"><span>作物名称</span><input v-model.trim="reserveForm.plantName" required /></label>
+              <label class="field"><span>预约时间</span><input v-model="reserveForm.appointmentTime" type="datetime-local" required /></label>
+              <label class="field">
+                <span>服务方式</span>
+                <select v-model="reserveForm.serviceMode">
+                  <option>线上诊断</option>
+                  <option>线下指导</option>
+                  <option>电话沟通</option>
+                </select>
+              </label>
+              <label class="field"><span>地块地址</span><input v-model.trim="reserveForm.address" required /></label>
+              <label class="field"><span>咨询信息</span><textarea v-model.trim="reserveForm.plantDetail" required /></label>
+              <button class="button button--green" type="submit" :disabled="submitting">
+                <AppIcon name="plus" />提交预约
+              </button>
+            </form>
+            <form class="form" @submit.prevent="submitQuestion">
+              <h3>在线问答</h3>
+              <label class="field"><span>提问人</span><input v-model.trim="questionForm.questioner" required /></label>
+              <label class="field"><span>联系电话</span><input v-model.trim="questionForm.phone" type="tel" required /></label>
+              <label class="field"><span>作物名称</span><input v-model.trim="questionForm.plantName" required /></label>
+              <label class="field"><span>标题</span><input v-model.trim="questionForm.title" required /></label>
+              <label class="field"><span>症状图片</span><input type="file" accept="image/*" multiple @change="handleQuestionAttachment" /></label>
+              <div v-if="questionForm.attachments.length" class="attachment-grid">
+                <img v-for="(image, index) in questionForm.attachments" :key="index" :src="image" alt="症状图片预览" />
+              </div>
+              <label class="field"><span>问题描述</span><textarea v-model.trim="questionForm.question" required /></label>
+              <button class="button" type="submit" :disabled="submitting">
+                <AppIcon name="plus" />发布问题
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </Transition>
   </section>
 </template>

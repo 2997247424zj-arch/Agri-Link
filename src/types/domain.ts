@@ -180,3 +180,15 @@ export interface AdminOverview {
   knowledgeCount: number
   usersByRole?: Partial<Record<UserRole | string, number>>
 }
+
+export interface Knowledge {
+  knowledgeId: number
+  title: string
+  content?: string
+  picture?: string
+  userName?: string
+  category?: string
+  status?: number
+  createTime?: string
+  updateTime?: string
+}

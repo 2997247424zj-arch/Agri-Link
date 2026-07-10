@@ -44,6 +44,14 @@ const router = createRouter({
     { path: '/admin', name: 'admin', component: routeComponents.admin, meta: { order: 7 } },
     { path: '/:pathMatch(.*)*', redirect: '/' },
   ],
+  // 处理带 #hash 的路由：滚动到锚点并预留 topbar 高度
+  scrollBehavior(to, _from, savedPosition) {
+    if (savedPosition) return savedPosition
+    if (to.hash) {
+      return { el: to.hash, top: 72, behavior: 'smooth' }
+    }
+    return { top: 0 }
+  },
 })
 
 router.beforeEach((to) => {

@@ -11,6 +11,8 @@ type IconName =
   | 'plus'
   | 'home'
   | 'check'
+  | 'menu'
+  | 'logout'
 
 defineProps<{
   name: IconName
@@ -28,6 +30,8 @@ const paths: Record<IconName, string> = {
   plus: 'M12 5v14M5 12h14',
   home: 'M4 11 12 4l8 7v8a1 1 0 0 1-1 1h-5v-6h-4v6H5a1 1 0 0 1-1-1v-8Z',
   check: 'M5 12l4 4L19 6',
+  menu: 'M4 6h16M4 12h16M4 18h16',
+  logout: 'M10 17l5-5-5-5M15 12H3m6 7h8a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2H9',
 }
 </script>
 

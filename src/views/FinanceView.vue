@@ -1,11 +1,14 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import AppIcon from '@/components/AppIcon.vue'
 import { api } from '@/api/client'
 import { useSessionStore } from '@/stores/session'
 import type { Bank, Finance, FinancingIntention } from '@/types/domain'
 
 const session = useSessionStore()
+const route = useRoute()
+const router = useRouter()
 const banks = ref<Bank[]>([])
 const matches = ref<Bank[]>([])
 const farmerMatches = ref<FinancingIntention[]>([])
@@ -21,6 +24,13 @@ const expandedFinanceId = ref<number | null>(null)
 const materialInputs = reactive<Record<number, string>>({})
 const applicationPage = ref(1)
 const applicationPageSize = 5
+const matchModalOpen = ref(false)
+type FinanceTab = 'intro' | 'apply' | 'result'
+const financeTabsAll: Array<{ value: FinanceTab; label: string; roles: Array<'FARMER' | 'BANK'> }> = [
+  { value: 'intro', label: '基础信息介绍', roles: ['FARMER', 'BANK'] },
+  { value: 'apply', label: '融资申请及意向登记', roles: ['FARMER'] },
+  { value: 'result', label: '查看审批结果', roles: ['FARMER', 'BANK'] },
+]
 
 // 表单字段与后端 FinanceApplicationRequest 保持一致。
 const applicationForm = reactive({
@@ -105,6 +115,23 @@ const pagedApplications = computed(() => {
 const applicationPageCount = computed(() =>
   Math.max(1, Math.ceil(filteredApplications.value.length / applicationPageSize)),
 )
+const activeTab = computed<FinanceTab>(() => {
+  const requested = route.query.tab === 'apply' || route.query.tab === 'result' ? route.query.tab : 'intro'
+  // BANK 不允许进入"融资申请"填单页
+  if (requested === 'apply' && session.role === 'BANK') return 'intro'
+  return requested
+})
+const isBankRole = computed(() => session.role === 'BANK')
+const financeTabs = computed(() =>
+  financeTabsAll.filter((tab) => {
+    if (isBankRole.value) return tab.roles.includes('BANK')
+    return tab.roles.includes('FARMER')
+  }),
+)
+
+function setFinanceTab(tab: FinanceTab) {
+  router.replace({ query: { ...route.query, tab } })
+}
 
 function financeStatusLabel(status?: number) {
   if (status === 1) return '已通过'
@@ -130,7 +157,7 @@ function financeTimeline(status?: number) {
   ]
 }
 
-// 融资状态在农户、银行和管理员视角中复用。
+// 融资状态在农户查看和银行审批视角中复用。
 function materialList(item: Finance) {
   const fromInput = materialInputs[item.financeId]
   if (fromInput) return fromInput.split(/[\n,，]/).map((text) => text.trim()).filter(Boolean)
@@ -196,6 +223,7 @@ async function loadFinance() {
 async function loadMatches() {
   message.value = ''
   error.value = ''
+  matchModalOpen.value = true
   try {
     const data = await api.get<Bank[]>(`/api/finance/banks/matches?amount=${applicationForm.money}`, {
       role: 'FARMER',
@@ -209,8 +237,10 @@ async function loadMatches() {
 }
 
 async function loadFarmerMatches() {
+  if (!isBankRole.value) return
   message.value = ''
   error.value = ''
+  matchModalOpen.value = true
   try {
     const data = await api.get<FinancingIntention[]>(
       `/api/finance/matches/farmers/${applicationForm.bankId}`,
@@ -297,7 +327,7 @@ watch(applicationPageCount, () => {
       </div>
       <div class="toolbar">
         <button class="button" type="button" @click="loadMatches"><AppIcon name="search" />按金额匹配</button>
-        <button class="button button--ghost" type="button" @click="loadFarmerMatches">
+        <button v-if="isBankRole" class="button button--ghost" type="button" @click="loadFarmerMatches">
           <AppIcon name="expert" />匹配农户
         </button>
       </div>
@@ -305,6 +335,20 @@ watch(applicationPageCount, () => {
 
     <p v-if="message" class="alert">{{ message }}</p>
     <p v-if="error" class="alert alert--error">{{ error }}</p>
+
+    <div class="tabs module-switcher" role="tablist" aria-label="融资申请操作">
+      <button
+        v-for="tab in financeTabs"
+        :key="tab.value"
+        class="tab"
+        type="button"
+        role="tab"
+        :aria-selected="activeTab === tab.value"
+        @click="setFinanceTab(tab.value)"
+      >
+        {{ tab.label }}
+      </button>
+    </div>
 
     <div class="summary-strip">
       <div class="metric">
@@ -325,7 +369,7 @@ watch(applicationPageCount, () => {
       </div>
     </div>
 
-    <section class="section">
+    <section v-if="activeTab === 'intro'" class="section">
       <div class="grid">
         <article v-for="bank in sortedBanks" :key="bank.bankId" class="card">
           <h3>{{ bank.bankName }}</h3>
@@ -345,12 +389,12 @@ watch(applicationPageCount, () => {
       </div>
     </section>
 
-    <section class="section grid grid--two">
+    <section v-if="activeTab === 'apply'" class="section grid grid--two">
       <form class="panel form" @submit.prevent="submitApplication">
         <div class="section-title">
           <div>
             <h2>提交融资申请</h2>
-            <p>农户侧申请，银行端或后台后续审批。</p>
+            <p>农户侧提交申请资料，后续由银行端受理并给出审批意见。</p>
           </div>
         </div>
         <label class="field">
@@ -391,26 +435,12 @@ watch(applicationPageCount, () => {
       </form>
     </section>
 
-    <section class="section grid grid--two">
-      <div class="panel">
-        <div class="section-title">
-          <div>
-            <h2>匹配结果</h2>
-            <p>展示银行产品或银行端农户匹配结果。</p>
-          </div>
-        </div>
-        <div v-if="matches.length || farmerMatches.length" class="mini-list">
-          <span v-for="bank in matches" :key="bank.bankId">{{ bank.bankName }} · 年化 {{ bank.rate ?? '-' }}%</span>
-          <span v-for="farmer in farmerMatches" :key="farmer.id">{{ farmer.realName }} · {{ farmer.amount }} 元 · {{ farmer.item || farmer.application }}</span>
-        </div>
-        <div v-else class="empty">点击匹配按钮后展示推荐结果。</div>
-      </div>
-
+    <section v-if="activeTab === 'result'" class="section">
       <div class="panel">
         <div class="section-title">
           <div>
             <h2>申请审批</h2>
-            <p>银行端处理融资申请状态。</p>
+            <p>{{ isBankRole ? '银行端处理融资申请状态。' : '农户查看融资申请进度和审批意见。' }}</p>
           </div>
           <label class="field compact-field">
             <span>状态筛选</span>
@@ -455,15 +485,17 @@ watch(applicationPageCount, () => {
                   </td>
                   <td>
                     <input
+                      v-if="isBankRole"
                       v-model.trim="reviewRemarks[item.financeId]"
                       class="inline-remark"
                       :placeholder="item.remark || '填写审批意见'"
                     />
+                    <span v-else>{{ item.remark || '暂无审批意见' }}</span>
                   </td>
                   <td class="toolbar">
                     <button class="button button--small" type="button" @click="expandedFinanceId = expandedFinanceId === item.financeId ? null : item.financeId">详情</button>
-                    <button class="button button--small" type="button" @click="updateApplicationStatus(item, 1)">通过</button>
-                    <button class="button button--danger button--small" type="button" @click="updateApplicationStatus(item, 2)">拒绝</button>
+                    <button v-if="isBankRole" class="button button--small" type="button" @click="updateApplicationStatus(item, 1)">通过</button>
+                    <button v-if="isBankRole" class="button button--danger button--small" type="button" @click="updateApplicationStatus(item, 2)">拒绝</button>
                   </td>
                 </tr>
                 <tr v-if="expandedFinanceId === item.financeId">
@@ -513,5 +545,32 @@ watch(applicationPageCount, () => {
         </div>
       </div>
     </section>
+
+    <Transition name="modal-spring">
+      <div v-if="matchModalOpen" class="modal-overlay" role="presentation" @click.self="matchModalOpen = false">
+        <div class="modal" role="dialog" aria-modal="true" aria-label="匹配结果">
+          <div class="section-title">
+            <div>
+              <h2>匹配结果</h2>
+              <p>按当前金额或银行产品生成推荐。</p>
+            </div>
+            <button class="button button--ghost button--small" type="button" @click="matchModalOpen = false">关闭</button>
+          </div>
+          <div v-if="matches.length || farmerMatches.length" class="mini-list">
+            <span v-for="bank in matches" :key="bank.bankId" class="stack-row">
+              <strong>{{ bank.bankName }}</strong>
+              <small>年化 {{ bank.rate ?? '-' }}% · 额度 {{ bank.money ? `${bank.money} 元` : '面议' }}</small>
+              <em>{{ bank.repayment || '还款方式面议' }}</em>
+            </span>
+            <span v-for="farmer in farmerMatches" :key="farmer.id" class="stack-row">
+              <strong>{{ farmer.realName || farmer.userName }}</strong>
+              <small>{{ farmer.amount }} 元 · {{ farmer.repaymentPeriod || '期限待定' }}</small>
+              <em>{{ farmer.item || farmer.application }}</em>
+            </span>
+          </div>
+          <div v-else class="empty">暂无匹配结果。</div>
+        </div>
+      </div>
+    </Transition>
   </section>
 </template>

@@ -14,6 +14,7 @@ interface KnowledgeItem {
 }
 
 type AdminIconName = 'home' | 'user' | 'leaf' | 'bank' | 'shield' | 'cart'
+type AdminTabKey = 'overview' | 'users' | 'trade' | 'finance' | 'knowledge'
 
 const overview = ref<AdminOverview | null>(null)
 const users = ref<User[]>([])
@@ -36,8 +37,8 @@ const financePage = ref(1)
 const knowledgePage = ref(1)
 const selectedOrderIds = ref<number[]>([])
 const selectedPurchaseIds = ref<number[]>([])
-const selectedFinanceIds = ref<number[]>([])
 const editingKnowledgeId = ref<number | null>(null)
+const activeAdminTab = ref<AdminTabKey>('overview')
 
 const knowledgeForm = reactive({
   title: '春耕金融服务专区上线',
@@ -59,13 +60,13 @@ const roles: Array<{ value: UserRole; label: string }> = [
   { value: 'SYSTEM_ADMIN', label: '管理员' },
 ]
 
-const moduleLinks = [
-  { href: '#admin-overview', label: '核心指标', icon: 'home' },
-  { href: '#admin-users', label: '用户角色', icon: 'user' },
-  { href: '#admin-trade', label: '交易监管', icon: 'leaf' },
-  { href: '#admin-finance', label: '融资审批', icon: 'bank' },
-  { href: '#admin-knowledge', label: '内容管理', icon: 'shield' },
-] as const
+const moduleLinks: Array<{ key: AdminTabKey; label: string; icon: AdminIconName }> = [
+  { key: 'overview', label: '核心指标', icon: 'home' },
+  { key: 'users', label: '用户角色', icon: 'user' },
+  { key: 'trade', label: '交易监管', icon: 'leaf' },
+  { key: 'finance', label: '融资监管', icon: 'bank' },
+  { key: 'knowledge', label: '内容管理', icon: 'shield' },
+]
 
 // 后端不可用时保留一组演示数据，方便页面继续展示。
 const fallbackOverview: AdminOverview = {
@@ -105,7 +106,7 @@ const statCards = computed<Array<{ label: string; value: number; icon: AdminIcon
   { label: '平台用户', value: overview.value?.userCount ?? users.value.length, icon: 'user', trend: '角色统一管理' },
   { label: '货源审核', value: overview.value?.orderCount ?? orders.value.length, icon: 'leaf', trend: '农户发布监管' },
   { label: '采购订单', value: overview.value?.purchaseCount ?? purchases.value.length, icon: 'cart', trend: '买家采购流转' },
-  { label: '融资申请', value: overview.value?.financeApplicationCount ?? finances.value.length, icon: 'bank', trend: '银行审批协同' },
+  { label: '融资申请', value: overview.value?.financeApplicationCount ?? finances.value.length, icon: 'bank', trend: '银行审批监管' },
   { label: '资讯知识', value: overview.value?.knowledgeCount ?? knowledgeItems.value.length, icon: 'shield', trend: '平台内容维护' },
 ])
 
@@ -362,24 +363,6 @@ async function updatePurchaseStatus(purchase: Purchase, purchaseStatus: number, 
   }
 }
 
-async function updateFinanceStatus(finance: Finance, status: number, shouldConfirm = true) {
-  if (shouldConfirm && !confirmAction(`确认${status === 1 ? '通过' : '拒绝'}融资申请 #${finance.financeId}？`)) return
-
-  message.value = ''
-  error.value = ''
-  try {
-    const updated = await api.patch<Finance>(
-      `/api/admin/finance/applications/${finance.financeId}/status`,
-      { status, remark: finance.remark || '后台审批' },
-      { role: 'SYSTEM_ADMIN' },
-    )
-    finance.status = updated.status
-    message.value = `融资申请 #${finance.financeId} 状态已更新。`
-  } catch (err) {
-    error.value = err instanceof Error ? err.message : '融资状态更新失败。'
-  }
-}
-
 async function bulkUpdateOrders(status: number) {
   const targets = orders.value.filter((order) => selectedOrderIds.value.includes(order.orderId))
   if (!targets.length || !confirmAction(`确认批量${status === 1 ? '通过' : '拒绝'} ${targets.length} 条货源？`)) return
@@ -398,15 +381,6 @@ async function bulkUpdatePurchases(status: number) {
   selectedPurchaseIds.value = []
 }
 
-async function bulkUpdateFinances(status: number) {
-  const targets = finances.value.filter((finance) => selectedFinanceIds.value.includes(finance.financeId))
-  if (!targets.length || !confirmAction(`确认批量${status === 1 ? '通过' : '拒绝'} ${targets.length} 条融资申请？`)) return
-  for (const finance of targets) {
-    await updateFinanceStatus(finance, status, false)
-  }
-  selectedFinanceIds.value = []
-}
-
 onMounted(loadAdmin)
 </script>
 
@@ -416,7 +390,7 @@ onMounted(loadAdmin)
       <div>
         <span class="eyebrow"><AppIcon name="shield" />系统管理后台</span>
         <h1>农产品融销一体平台管理控制台</h1>
-        <p>集中处理用户角色、交易监管、融资审批和平台内容维护。</p>
+        <p>集中处理用户角色、交易监管、融资状态查看和平台内容维护。</p>
       </div>
       <button class="button button--ghost" type="button" @click="loadAdmin">
         <AppIcon name="search" />刷新
@@ -426,28 +400,43 @@ onMounted(loadAdmin)
     <p v-if="message" class="alert">{{ message }}</p>
     <p v-if="error" class="alert alert--error">{{ error }}</p>
 
-    <div class="admin-stat-cards">
-      <div v-for="stat in statCards" :key="stat.label" class="metric admin-stat-card">
-        <div class="admin-stat-card__header">
-          <span><AppIcon :name="stat.icon" /></span>
-          <small>{{ loading ? '正在加载' : stat.label }}</small>
-        </div>
-        <strong>{{ stat.value }}</strong>
-        <em>{{ stat.trend }}</em>
-      </div>
-    </div>
-
     <div class="admin-layout admin-shell-grid">
       <aside class="admin-sidebar" aria-label="管理员模块导航">
         <strong>系统管理</strong>
-        <a v-for="item in moduleLinks" :key="item.href" :href="item.href">
+        <button
+          v-for="item in moduleLinks"
+          :key="item.key"
+          class="admin-tab"
+          :class="{ 'admin-tab--active': activeAdminTab === item.key }"
+          type="button"
+          @click="activeAdminTab = item.key"
+        >
           <AppIcon :name="item.icon" />
           {{ item.label }}
-        </a>
+        </button>
       </aside>
 
       <div class="admin-main admin-dashboard-grid">
-    <section id="admin-users" class="section admin-card">
+    <section v-if="activeAdminTab === 'overview'" id="admin-overview-panel" class="section admin-card admin-card--overview">
+      <div class="section-title">
+        <div>
+          <h2>核心指标</h2>
+          <p>快速查看用户、交易、融资和内容的当前规模。</p>
+        </div>
+      </div>
+      <div class="admin-stat-cards">
+        <div v-for="stat in statCards" :key="stat.label" class="metric admin-stat-card">
+          <div class="admin-stat-card__header">
+            <span><AppIcon :name="stat.icon" /></span>
+            <small>{{ loading ? '正在加载' : stat.label }}</small>
+          </div>
+          <strong>{{ stat.value }}</strong>
+          <em>{{ stat.trend }}</em>
+        </div>
+      </div>
+    </section>
+
+    <section v-if="activeAdminTab === 'users'" id="admin-users" class="section admin-card">
       <div class="section-title">
         <div>
           <h2>用户角色</h2>
@@ -498,7 +487,7 @@ onMounted(loadAdmin)
       </div>
     </section>
 
-    <section id="admin-trade" class="section admin-card-grid admin-card-grid--two">
+    <section v-if="activeAdminTab === 'trade'" id="admin-trade" class="section admin-card-grid admin-card-grid--two">
       <div class="panel admin-card">
         <div class="section-title">
           <div>
@@ -591,11 +580,11 @@ onMounted(loadAdmin)
       </div>
     </section>
 
-    <section id="admin-finance" class="section admin-card">
+    <section v-if="activeAdminTab === 'finance'" id="admin-finance" class="section admin-card">
       <div class="section-title">
         <div>
-          <h2>融资审批</h2>
-          <p>银行和管理员共用状态字段处理融资申请。</p>
+          <h2>融资监管</h2>
+          <p>管理员查看银行审批进度和备注，具体通过或拒绝由银行角色处理。</p>
         </div>
         <label class="field compact-field">
           <span>状态筛选</span>
@@ -607,36 +596,27 @@ onMounted(loadAdmin)
           </select>
         </label>
       </div>
-      <div class="toolbar">
-        <button class="button button--small" type="button" :disabled="!selectedFinanceIds.length" @click="bulkUpdateFinances(1)">批量通过</button>
-        <button class="button button--danger button--small" type="button" :disabled="!selectedFinanceIds.length" @click="bulkUpdateFinances(2)">批量拒绝</button>
-      </div>
       <div class="table-wrap">
         <table>
           <thead>
             <tr>
-              <th>选择</th>
               <th>编号</th>
               <th>申请人</th>
               <th>金额</th>
               <th>状态</th>
-              <th>操作</th>
+              <th>银行备注</th>
             </tr>
           </thead>
           <tbody>
             <tr v-for="finance in pagedFinances" :key="finance.financeId">
-              <td><input type="checkbox" :checked="selectedFinanceIds.includes(finance.financeId)" @change="selectedFinanceIds = toggleSelection(selectedFinanceIds, finance.financeId)" /></td>
               <td>{{ finance.financeId }}</td>
               <td>{{ finance.realName || finance.ownName }}</td>
               <td>{{ finance.money ?? '-' }}</td>
               <td><span :class="statusTagClass(finance.status)">{{ approvalStatusLabel(finance.status) }}</span></td>
-              <td class="toolbar">
-                <button class="button button--small" type="button" @click="updateFinanceStatus(finance, 1)">通过</button>
-                <button class="button button--danger button--small" type="button" @click="updateFinanceStatus(finance, 2)">拒绝</button>
-              </td>
+              <td>{{ finance.remark || '待银行填写审批意见' }}</td>
             </tr>
             <tr v-if="!filteredFinances.length">
-              <td colspan="6">暂无符合条件的融资申请。</td>
+              <td colspan="5">暂无符合条件的融资申请。</td>
             </tr>
           </tbody>
         </table>
@@ -648,7 +628,7 @@ onMounted(loadAdmin)
       </div>
     </section>
 
-    <section id="admin-knowledge" class="section admin-card-grid admin-card-grid--two">
+    <section v-if="activeAdminTab === 'knowledge'" id="admin-knowledge" class="section admin-card-grid admin-card-grid--two">
       <form class="panel form admin-card" @submit.prevent="publishKnowledge">
         <div class="section-title">
           <div>

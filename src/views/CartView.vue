@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
+import { RouterLink } from 'vue-router'
 import AppIcon from '@/components/AppIcon.vue'
 import { api } from '@/api/client'
 import { useSessionStore } from '@/stores/session'
@@ -26,7 +27,6 @@ const cancelReason = ref('')
 const purchasePage = ref(1)
 const purchasePageSize = 5
 
-// 购物车页面会同时展示远程购物车、本地兜底数据和采购记录。
 const fallbackOrders: TradeOrder[] = [
   { orderId: 1, title: '富硒猕猴桃 20kg', type: '水果', price: 8.6, ownName: '吉首合作社', address: '湘西州' },
   { orderId: 2, title: '高山生态大米 50kg', type: '粮油', price: 5.2, ownName: '龙山农户', address: '龙山县' },
@@ -38,7 +38,6 @@ const fallbackCarts: ShoppingCart[] = [
 ]
 
 const orderMap = computed(() => new Map(orders.value.map((order) => [order.orderId, order])))
-// 表单默认带入当前登录用户，方便直接下单。
 const cartRows = computed(() =>
   carts.value.map((cart) => {
     const order = orderMap.value.get(cart.orderId)
@@ -52,6 +51,16 @@ const cartRows = computed(() =>
   }),
 )
 const totalPrice = computed(() => cartRows.value.reduce((sum, row) => sum + row.sum, 0))
+const cartItemCount = computed(() => cartRows.value.reduce((sum, row) => sum + row.count, 0))
+const activePurchaseCount = computed(() =>
+  purchases.value.filter((purchase) => (purchase.purchaseStatus ?? 0) !== 2 && (purchase.purchaseStatus ?? 0) !== 5).length,
+)
+const procurementStats = computed(() => [
+  { label: '待采购商品', value: cartRows.value.length },
+  { label: '采购件数', value: cartItemCount.value },
+  { label: '预计金额', value: `¥${totalPrice.value.toFixed(2)}` },
+  { label: '进行中订单', value: activePurchaseCount.value },
+])
 const pagedPurchases = computed(() => {
   const start = (purchasePage.value - 1) * purchasePageSize
   return purchases.value.slice(start, start + purchasePageSize)
@@ -59,11 +68,11 @@ const pagedPurchases = computed(() => {
 const purchasePageCount = computed(() => Math.max(1, Math.ceil(purchases.value.length / purchasePageSize)))
 
 function mergeOrders(remoteOrders: TradeOrder[], localOrders: TradeOrder[]) {
-  const orderMap = new Map<number, TradeOrder>()
+  const nextOrderMap = new Map<number, TradeOrder>()
   for (const order of [...remoteOrders, ...localOrders]) {
-    orderMap.set(order.orderId, order)
+    nextOrderMap.set(order.orderId, order)
   }
-  return [...orderMap.values()]
+  return [...nextOrderMap.values()]
 }
 
 function purchaseStatusLabel(status?: number) {
@@ -99,7 +108,6 @@ function changePurchasePage(delta: number) {
   purchasePage.value = Math.min(Math.max(1, purchasePage.value + delta), purchasePageCount.value)
 }
 
-// 加载购物车、货源和采购记录，接口失败时保留本地可用数据。
 async function loadCart() {
   loading.value = true
   error.value = ''
@@ -179,7 +187,6 @@ async function removeItem(cart: ShoppingCart) {
   }
 }
 
-// 提交采购单后清理已下单购物车项。
 async function createPurchase() {
   submitting.value = true
   message.value = ''
@@ -258,76 +265,79 @@ watch(purchasePageCount, () => {
 </script>
 
 <template>
-  <section class="page">
-    <div class="section-title">
+  <section class="page buyer-procurement-page">
+    <div class="buyer-procurement-hero">
       <div>
-        <span class="eyebrow"><AppIcon name="cart" />购物车</span>
-        <h2>选购清单与采购结算</h2>
-        <p>对接 `/api/trade/shopping-cart` 和 `/api/trade/purchases`。</p>
+        <span class="eyebrow"><AppIcon name="cart" />采购中心</span>
+        <h2>选品、核价、下单和跟踪集中处理</h2>
+        <p>把购物车、收货信息、订单状态放在同一个工作台里，减少买家在多个页面之间来回切换。</p>
       </div>
-      <button class="button button--ghost" type="button" @click="loadCart">
-        <AppIcon name="search" />刷新
-      </button>
+      <div class="buyer-procurement-actions">
+        <RouterLink class="button button--light" to="/trade"><AppIcon name="leaf" />继续选品</RouterLink>
+        <button class="button button--ghost" type="button" @click="loadCart">
+          <AppIcon name="search" />刷新
+        </button>
+      </div>
     </div>
 
     <p v-if="message" class="alert">{{ message }}</p>
     <p v-if="error" class="alert alert--error">{{ error }}</p>
 
-    <section class="grid grid--two">
-      <div class="panel">
+    <div class="buyer-procurement-stats">
+      <div v-for="stat in procurementStats" :key="stat.label" class="metric">
+        <strong>{{ stat.value }}</strong>
+        <span>{{ stat.label }}</span>
+      </div>
+    </div>
+
+    <section class="buyer-procurement-layout">
+      <div class="panel buyer-cart-panel">
         <div class="section-title">
           <div>
-            <h2>购物车明细</h2>
+            <h2>待采购清单</h2>
             <p>{{ loading ? '正在加载' : `共 ${cartRows.length} 条商品记录` }}</p>
           </div>
         </div>
-        <div v-if="cartRows.length" class="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>商品</th>
-                <th>单价</th>
-                <th>数量</th>
-                <th>小计</th>
-                <th>操作</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="row in cartRows" :key="row.shoppingId">
-                <td>{{ row.title }}</td>
-                <td>￥{{ row.price || '-' }}</td>
-                <td>
-                  <input
-                    class="inline-input"
-                    :value="row.count"
-                    type="number"
-                    min="1"
-                    @change="updateCount(row, Number(($event.target as HTMLInputElement).value))"
-                  />
-                </td>
-                <td>￥{{ row.sum.toFixed(2) }}</td>
-                <td>
-                  <button class="button button--danger button--small" type="button" @click="removeItem(row)">
-                    移除
-                  </button>
-                </td>
-              </tr>
-            </tbody>
-          </table>
+
+        <div v-if="cartRows.length" class="buyer-cart-list">
+          <article v-for="row in cartRows" :key="row.shoppingId" class="buyer-cart-item">
+            <div class="buyer-cart-item__main">
+              <span class="buyer-cart-item__icon"><AppIcon name="leaf" /></span>
+              <div>
+                <h3>{{ row.title }}</h3>
+                <p>{{ row.order?.ownName || '产地供货方' }} · {{ row.order?.address || '产地待补充' }}</p>
+              </div>
+            </div>
+            <div class="buyer-cart-item__meta">
+              <span><small>单价</small><strong>¥{{ row.price || '-' }}</strong></span>
+              <label class="compact-field">
+                <small>数量</small>
+                <input
+                  class="inline-input"
+                  :value="row.count"
+                  type="number"
+                  min="1"
+                  @change="updateCount(row, Number(($event.target as HTMLInputElement).value))"
+                />
+              </label>
+              <span><small>小计</small><strong>¥{{ row.sum.toFixed(2) }}</strong></span>
+              <button class="button button--danger button--small" type="button" @click="removeItem(row)">移除</button>
+            </div>
+          </article>
         </div>
         <div v-else class="empty">购物车暂无商品，请先到农产品交易页加入货源。</div>
       </div>
 
-      <form class="panel form" @submit.prevent="createPurchase">
+      <form class="panel form buyer-checkout-panel" @submit.prevent="createPurchase">
         <div class="section-title">
           <div>
-            <h2>生成采购订单</h2>
-            <p>确认收货地址后，按购物车明细创建采购记录。</p>
+            <h2>提交采购单</h2>
+            <p>确认账号、地址和金额后生成采购订单。</p>
           </div>
         </div>
-        <div class="metric">
-          <strong>￥{{ totalPrice.toFixed(2) }}</strong>
+        <div class="buyer-checkout-total">
           <span>预计采购金额</span>
+          <strong>¥{{ totalPrice.toFixed(2) }}</strong>
         </div>
         <label class="field"><span>采购账号</span><input :value="session.userName || 'buyer-demo'" disabled /></label>
         <label class="field"><span>收货地址</span><input v-model.trim="address" required /></label>
@@ -337,81 +347,62 @@ watch(purchasePageCount, () => {
       </form>
     </section>
 
-    <section class="section">
+    <section class="section buyer-order-section">
       <div class="section-title">
         <div>
-          <h2>采购记录</h2>
-          <p>展示当前买家已创建的采购订单。</p>
+          <h2>采购订单</h2>
+          <p>查看当前买家的采购订单、流转状态和明细。</p>
         </div>
       </div>
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>订单号</th>
-              <th>买家</th>
-              <th>金额</th>
-              <th>地址</th>
-              <th>状态</th>
-              <th>操作</th>
-            </tr>
-          </thead>
-          <tbody>
-            <template v-for="purchase in pagedPurchases" :key="purchase.purchaseId">
-              <tr>
-                <td>{{ purchase.purchaseId }}</td>
-                <td>{{ purchase.ownName }}</td>
-                <td>￥{{ purchase.totalPrice ?? '-' }}</td>
-                <td>{{ purchase.address }}</td>
-                <td><span :class="statusTagClass(purchase.purchaseStatus)">{{ purchaseStatusLabel(purchase.purchaseStatus) }}</span></td>
-                <td class="toolbar">
-                  <button class="button button--small" type="button" @click="expandedPurchaseId = expandedPurchaseId === purchase.purchaseId ? null : purchase.purchaseId">
-                    详情
-                  </button>
-                  <button v-if="(purchase.purchaseStatus ?? 0) === 0" class="button button--danger button--small" type="button" @click="updatePurchaseStatus(purchase, 2)">
-                    取消
-                  </button>
-                  <button v-if="purchase.purchaseStatus === 3" class="button button--small" type="button" @click="updatePurchaseStatus(purchase, 4)">
-                    确认收货
-                  </button>
-                  <button v-if="purchase.purchaseStatus === 4" class="button button--small" type="button" @click="updatePurchaseStatus(purchase, 5)">
-                    完成
-                  </button>
-                </td>
-              </tr>
-              <tr v-if="expandedPurchaseId === purchase.purchaseId">
-                <td colspan="6">
-                  <div class="detail-panel">
-                    <div class="compact-timeline">
-                      <span
-                        v-for="step in purchaseTimeline(purchase.purchaseStatus)"
-                        :key="step.label"
-                        :class="{ 'is-active': step.active, 'is-done': step.done }"
-                      >
-                        {{ step.label }}
-                      </span>
-                    </div>
-                    <div v-if="purchase.details?.length" class="mini-list">
-                      <span v-for="detail in purchase.details" :key="detail.orderId">
-                        {{ detailTitle(detail) }} · ￥{{ detail.unitPrice }}/单位 · {{ detail.count }} 件
-                      </span>
-                    </div>
-                    <p v-else class="empty">当前订单暂无明细，可能来自后端简化返回。</p>
-                    <label v-if="(purchase.purchaseStatus ?? 0) === 0" class="field compact-field">
-                      <span>取消原因</span>
-                      <input v-model.trim="cancelReason" placeholder="可选，填写取消说明" />
-                    </label>
-                    <p v-if="purchase.cancelReason">取消原因：{{ purchase.cancelReason }}</p>
-                  </div>
-                </td>
-              </tr>
-            </template>
-            <tr v-if="!purchases.length">
-              <td colspan="6">暂无采购记录。</td>
-            </tr>
-          </tbody>
-        </table>
+      <div v-if="purchases.length" class="buyer-order-list">
+        <article v-for="purchase in pagedPurchases" :key="purchase.purchaseId" class="buyer-order-card">
+          <header>
+            <div>
+              <strong>#{{ purchase.purchaseId }}</strong>
+              <span :class="statusTagClass(purchase.purchaseStatus)">{{ purchaseStatusLabel(purchase.purchaseStatus) }}</span>
+            </div>
+            <em>¥{{ purchase.totalPrice ?? '-' }}</em>
+          </header>
+          <p>{{ purchase.address || '收货地址待补充' }}</p>
+          <div class="compact-timeline">
+            <span
+              v-for="step in purchaseTimeline(purchase.purchaseStatus)"
+              :key="step.label"
+              :class="{ 'is-active': step.active, 'is-done': step.done }"
+            >
+              {{ step.label }}
+            </span>
+          </div>
+          <div v-if="expandedPurchaseId === purchase.purchaseId" class="detail-panel">
+            <div v-if="purchase.details?.length" class="mini-list">
+              <span v-for="detail in purchase.details" :key="detail.orderId">
+                {{ detailTitle(detail) }} · ¥{{ detail.unitPrice }}/单位 · {{ detail.count }} 件
+              </span>
+            </div>
+            <p v-else class="empty">当前订单暂无明细，可能来自后端简化返回。</p>
+            <label v-if="(purchase.purchaseStatus ?? 0) === 0" class="field compact-field">
+              <span>取消原因</span>
+              <input v-model.trim="cancelReason" placeholder="可选，填写取消说明" />
+            </label>
+            <p v-if="purchase.cancelReason">取消原因：{{ purchase.cancelReason }}</p>
+          </div>
+          <footer class="toolbar">
+            <button class="button button--small" type="button" @click="expandedPurchaseId = expandedPurchaseId === purchase.purchaseId ? null : purchase.purchaseId">
+              {{ expandedPurchaseId === purchase.purchaseId ? '收起' : '详情' }}
+            </button>
+            <button v-if="(purchase.purchaseStatus ?? 0) === 0" class="button button--danger button--small" type="button" @click="updatePurchaseStatus(purchase, 2)">
+              取消
+            </button>
+            <button v-if="purchase.purchaseStatus === 3" class="button button--small" type="button" @click="updatePurchaseStatus(purchase, 4)">
+              确认收货
+            </button>
+            <button v-if="purchase.purchaseStatus === 4" class="button button--small" type="button" @click="updatePurchaseStatus(purchase, 5)">
+              完成
+            </button>
+          </footer>
+        </article>
       </div>
+      <div v-else class="empty">暂无采购记录。</div>
       <div class="pager">
         <button class="button button--ghost button--small" type="button" @click="changePurchasePage(-1)">上一页</button>
         <span>第 {{ purchasePage }} / {{ purchasePageCount }} 页</span>

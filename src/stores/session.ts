@@ -57,13 +57,8 @@ export const useSessionStore = defineStore('session', () => {
   }
 
   async function register(payload: Partial<User> & { userName: string; password: string; role: string }) {
-    const data = await api.post<AuthResponse>('/api/auth/register', payload)
-    const returnedUser = data.user
-    persist(
-      returnedUser?.userName ?? data.userName ?? payload.userName,
-      returnedUser?.role ?? data.role ?? payload.role,
-      returnedUser?.nickName ?? returnedUser?.realName ?? payload.nickName,
-    )
+    await api.post<AuthResponse>('/api/auth/register', payload)
+    await login({ userName: payload.userName, password: payload.password, role: payload.role })
   }
 
   function setRole(nextRole: UserRole) {

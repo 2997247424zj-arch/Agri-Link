@@ -1,0 +1,66 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e3]:
+    - banner [ref=e4]:
+      - generic [ref=e5]:
+        - link "Agri-Link 首页" [ref=e6] [cursor=pointer]:
+          - /url: /
+          - img [ref=e8]
+          - generic [ref=e10]:
+            - strong [ref=e11]: Agri-Link
+            - generic [ref=e12]: 农产品融销一体平台
+        - navigation "主导航" [ref=e13]:
+          - link "首页" [ref=e14] [cursor=pointer]:
+            - /url: /
+            - img [ref=e15]
+            - text: 首页
+        - generic [ref=e17]:
+          - strong [ref=e19]: 访客
+          - link "登录" [ref=e20] [cursor=pointer]:
+            - /url: /auth
+            - img [ref=e21]
+            - text: 登录
+    - main [ref=e23]:
+      - generic [ref=e24]:
+        - generic [ref=e25]:
+          - generic [ref=e26]:
+            - img [ref=e27]
+            - text: 角色化访问控制
+          - heading "注册与登录入口" [level=1] [ref=e29]
+          - paragraph [ref=e30]: "后端使用轻量角色头 `X-User-Role` 控制权限。登录或注册后，前端会保存当前角色， 用于融资、交易、专家问答和后台管理接口联调。"
+          - generic [ref=e31]:
+            - generic [ref=e32]:
+              - strong [ref=e33]: 5 类
+              - text: 买家、农户、专家、银行、管理员
+            - generic [ref=e34]:
+              - strong [ref=e35]: 统一
+              - text: 账号、角色和业务入口
+        - generic [ref=e36]:
+          - tablist "登录注册切换" [ref=e37]:
+            - button "登录" [ref=e38] [cursor=pointer]
+            - button "注册" [ref=e39] [cursor=pointer]
+          - generic [ref=e40]:
+            - generic [ref=e41]:
+              - generic [ref=e42]: 账号
+              - textbox "账号" [ref=e43]:
+                - /placeholder: 请输入用户名
+            - generic [ref=e44]:
+              - generic [ref=e45]: 密码
+              - textbox "密码" [ref=e46]:
+                - /placeholder: 请输入密码
+            - generic [ref=e47]:
+              - generic [ref=e48]: 角色
+              - combobox "角色" [ref=e49] [cursor=pointer]:
+                - option "农户" [selected]
+                - option "买家"
+                - option "技术专家"
+                - option "银行"
+                - option "系统管理员"
+            - paragraph [ref=e50]: 请先登录后再访问该业务页面。
+            - button "登录平台" [ref=e51] [cursor=pointer]:
+              - img [ref=e52]
+              - text: 登录平台
+  - generic [ref=e54]:
+    - generic "Toggle devtools panel" [ref=e55] [cursor=pointer]:
+      - img [ref=e56]
+    - generic "Toggle Component Inspector" [ref=e61] [cursor=pointer]:
+      - img [ref=e62]

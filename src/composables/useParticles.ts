@@ -18,11 +18,17 @@ export function useParticles() {
   let width = 0
   let height = 0
   let dpr = 1
+  let lastDraw = 0
+
+  const reduceMotion =
+    typeof window !== 'undefined' &&
+    typeof window.matchMedia === 'function' &&
+    window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
   function resize() {
     const canvas = canvasRef.value
     if (!canvas) return
-    dpr = Math.min(window.devicePixelRatio || 1, 2)
+    dpr = Math.min(window.devicePixelRatio || 1, 1.5)
     width = window.innerWidth
     height = window.innerHeight
     canvas.width = Math.floor(width * dpr)
@@ -38,7 +44,7 @@ export function useParticles() {
     ctx?.setTransform(dpr, 0, 0, dpr, 0, 0)
 
     const isSmall = typeof window.matchMedia === 'function' && window.matchMedia('(max-width: 780px)').matches
-    const count = isSmall ? 24 : 42
+    const count = isSmall ? 12 : 24
     particles = Array.from({ length: count }, () => ({
       x: Math.random() * width,
       y: Math.random() * height,
@@ -70,19 +76,26 @@ export function useParticles() {
     if (particle.y > height + 20) particle.y = -20
   }
 
-  function draw() {
+  function draw(timestamp = 0) {
     if (!ctx) return
+    if (timestamp - lastDraw < 33) {
+      frame = window.requestAnimationFrame(draw)
+      return
+    }
+    lastDraw = timestamp
     ctx.clearRect(0, 0, width, height)
 
     particles.forEach((particle, index) => {
       moveParticle(particle)
 
-      for (let next = index + 1; next < particles.length; next += 1) {
+      for (let next = index + 1; next < particles.length; next += 2) {
         const other = particles[next]
         if (!other) continue
-        const distance = Math.hypot(particle.x - other.x, particle.y - other.y)
-        if (distance > 145) continue
-        ctx!.strokeStyle = `rgba(34, 197, 94, ${0.08 * (1 - distance / 145)})`
+        const dx = particle.x - other.x
+        const dy = particle.y - other.y
+        const distanceSq = dx * dx + dy * dy
+        if (distanceSq > 21025) continue
+        ctx!.strokeStyle = `rgba(34, 197, 94, ${0.08 * (1 - Math.sqrt(distanceSq) / 145)})`
         ctx!.lineWidth = 1
         ctx!.beginPath()
         ctx!.moveTo(particle.x, particle.y)
@@ -102,23 +115,42 @@ export function useParticles() {
     frame = window.requestAnimationFrame(draw)
   }
 
+  function start() {
+    if (!frame && ctx && document.visibilityState !== 'hidden') {
+      frame = window.requestAnimationFrame(draw)
+    }
+  }
+
+  function stop() {
+    if (!frame) return
+    window.cancelAnimationFrame(frame)
+    frame = 0
+  }
+
+  function handleVisibility() {
+    if (document.visibilityState === 'hidden') stop()
+    else start()
+  }
+
   function updateCursor(event: PointerEvent) {
     cursor.x = event.clientX
     cursor.y = event.clientY
   }
 
   onMounted(() => {
-    if (import.meta.env.MODE === 'test') return
+    if (import.meta.env.MODE === 'test' || reduceMotion) return
     resize()
     window.addEventListener('resize', resize, { passive: true })
     window.addEventListener('pointermove', updateCursor, { passive: true })
-    if (ctx) frame = window.requestAnimationFrame(draw)
+    document.addEventListener('visibilitychange', handleVisibility)
+    start()
   })
 
   onBeforeUnmount(() => {
     window.removeEventListener('resize', resize)
     window.removeEventListener('pointermove', updateCursor)
-    if (frame) window.cancelAnimationFrame(frame)
+    document.removeEventListener('visibilitychange', handleVisibility)
+    stop()
   })
 
   return { canvasRef }

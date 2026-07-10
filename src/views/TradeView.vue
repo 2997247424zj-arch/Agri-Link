@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import AppIcon from '@/components/AppIcon.vue'
 import { api } from '@/api/client'
 import { useSessionStore } from '@/stores/session'
@@ -7,6 +8,8 @@ import { upsertLocalCart } from '@/utils/localCart'
 import type { ShoppingCart, TradeOrder } from '@/types/domain'
 
 const session = useSessionStore()
+const route = useRoute()
+const router = useRouter()
 const orders = ref<TradeOrder[]>([])
 const keyword = ref('')
 const loading = ref(true)
@@ -17,6 +20,11 @@ const cartCounts = reactive<Record<number, number>>({})
 const editingOrderId = ref<number | null>(null)
 const orderPage = ref(1)
 const orderPageSize = 9
+type TradeTab = 'browse' | 'publish'
+const tradeTabs: Array<{ value: TradeTab; label: string }> = [
+  { value: 'browse', label: '货源浏览' },
+  { value: 'publish', label: '发布与管理' },
+]
 
 // 货源发布表单字段与后端 TradeOrderRequest 保持一致。
 const form = reactive({
@@ -68,7 +76,7 @@ const fallbackOrders: TradeOrder[] = [
     type: '粮油',
     price: 5.2,
     content: '稻谷自然晾晒，低温仓储，支持批量采购。',
-    ownName: '龙山农户',
+    ownName: 'farmer-demo',
     address: '龙山县',
     picture: 'tea.png',
     stock: 1200,
@@ -118,6 +126,14 @@ const ownOrders = computed(() => {
   const ownName = session.userName || 'farmer-demo'
   return orders.value.filter((order) => order.ownName === ownName || order.ownName === form.ownName)
 })
+const managedOrders = computed(() => (session.role === 'FARMER' ? ownOrders.value : []))
+const activeTab = computed<TradeTab>(() => (route.query.tab === 'publish' ? 'publish' : 'browse'))
+const ownOrderIds = computed(() => new Set(ownOrders.value.map((order) => order.orderId)))
+const canManageOrder = (order: TradeOrder) => session.role === 'FARMER' && ownOrderIds.value.has(order.orderId)
+
+function setTradeTab(tab: TradeTab) {
+  router.replace({ query: { ...route.query, tab } })
+}
 
 function orderStatusLabel(status?: number) {
   if (status === 1) return '已上架'
@@ -304,7 +320,7 @@ watch(orderPageCount, () => {
       <div>
         <span class="eyebrow"><AppIcon name="leaf" />农产品交易</span>
         <h2>货源浏览与农户发布</h2>
-        <p>对接 `/api/trade/orders`、购物车和农户货源发布接口。</p>
+        <p>流程：农户发布货源，买家浏览下单，平台跟踪采购状态。</p>
       </div>
       <div class="toolbar">
         <label class="field search-field">
@@ -320,6 +336,20 @@ watch(orderPageCount, () => {
     <p v-if="message" class="alert">{{ message }}</p>
     <p v-if="error" class="alert alert--error">{{ error }}</p>
 
+    <div class="tabs module-switcher" role="tablist" aria-label="农产品交易操作">
+      <button
+        v-for="tab in tradeTabs"
+        :key="tab.value"
+        class="tab"
+        type="button"
+        role="tab"
+        :aria-selected="activeTab === tab.value"
+        @click="setTradeTab(tab.value)"
+      >
+        {{ tab.label }}
+      </button>
+    </div>
+
     <div class="summary-strip">
       <div class="metric">
         <strong>{{ filteredOrders.length }}</strong>
@@ -334,56 +364,94 @@ watch(orderPageCount, () => {
         <span>当前业务角色</span>
       </div>
       <div class="metric">
-        <strong>{{ selectedCartCount }}</strong>
-        <span>列表加购数量</span>
+        <strong>{{ session.role === 'FARMER' ? ownOrders.length : selectedCartCount }}</strong>
+        <span>{{ session.role === 'FARMER' ? '我的货源' : '列表加购数量' }}</span>
       </div>
     </div>
 
-    <section class="section grid">
-      <article v-for="order in pagedOrders" :key="order.orderId" class="card product-card">
-        <div class="product-thumb">
-          <img v-if="imageSrc(order.picture)" :src="imageSrc(order.picture)" :alt="order.title" loading="lazy" />
-          <AppIcon v-else name="leaf" />
+    <form v-if="editingOrderId" class="section panel form order-edit-panel" @submit.prevent="saveOrder">
+      <div class="section-title">
+        <div>
+          <h2>编辑货源</h2>
+          <p>直接维护商品名称、价格、库存、产地和图文说明。</p>
         </div>
-        <div class="tag-row">
-          <span class="tag tag--green">{{ order.type || '农产品' }}</span>
-          <span class="tag">{{ order.address || '产地待补充' }}</span>
-          <span :class="orderStatusClass(order.orderStatus)">{{ orderStatusLabel(order.orderStatus) }}</span>
-        </div>
-        <h3>{{ order.title }}</h3>
-        <p>{{ order.content || '暂无货源详情' }}</p>
-        <div class="tag-row">
-          <span class="tag">{{ order.spec || '规格待补充' }}</span>
-          <span class="tag">库存 {{ order.stock ?? '-' }} {{ order.unit || '斤' }}</span>
-          <span class="tag tag--amber">起订 {{ order.minPurchase ?? 1 }} {{ order.unit || '斤' }}</span>
-        </div>
-        <div class="card__footer">
-          <strong class="price">￥{{ order.price ?? '-' }}/{{ order.unit || '斤' }}</strong>
-          <div class="cart-control">
-            <label class="inline-field">
-              <span>数量</span>
-              <input
-                class="inline-input"
-                :value="cartCounts[order.orderId] ?? 1"
-                type="number"
-                min="1"
-                @change="updateCartCount(order.orderId, Number(($event.target as HTMLInputElement).value))"
-              />
-            </label>
-            <button class="button button--ghost" type="button" @click="addToCart(order)">
-              <AppIcon name="cart" />加入购物车
-            </button>
-          </div>
-        </div>
-      </article>
-    </section>
-    <div class="pager">
-      <button class="button button--ghost button--small" type="button" @click="changeOrderPage(-1)">上一页</button>
-      <span>第 {{ orderPage }} / {{ orderPageCount }} 页</span>
-      <button class="button button--ghost button--small" type="button" @click="changeOrderPage(1)">下一页</button>
-    </div>
+      </div>
+      <label class="field"><span>商品名称</span><input v-model.trim="editForm.title" required /></label>
+      <label class="field"><span>品类</span><input v-model.trim="editForm.type" required /></label>
+      <label class="field"><span>单价</span><input v-model.number="editForm.price" type="number" min="0.01" step="0.01" required /></label>
+      <label class="field"><span>单位</span><input v-model.trim="editForm.unit" required /></label>
+      <label class="field"><span>规格</span><input v-model.trim="editForm.spec" /></label>
+      <label class="field"><span>库存</span><input v-model.number="editForm.stock" type="number" min="0" required /></label>
+      <label class="field"><span>最小起订量</span><input v-model.number="editForm.minPurchase" type="number" min="1" required /></label>
+      <label class="field"><span>发布账号</span><input v-model.trim="editForm.ownName" required /></label>
+      <label class="field"><span>产地地址</span><input v-model.trim="editForm.address" required /></label>
+      <label class="field"><span>图片文件名</span><input v-model.trim="editForm.picture" /></label>
+      <label class="field"><span>上传图片预览</span><input type="file" accept="image/*" @change="handleImageFile($event, editForm)" /></label>
+      <div v-if="imageSrc(editForm.picture)" class="image-preview">
+        <img :src="imageSrc(editForm.picture)" alt="货源图片预览" />
+      </div>
+      <label class="field"><span>货源说明</span><textarea v-model.trim="editForm.content" required /></label>
+      <div class="toolbar">
+        <button class="button button--green" type="submit" :disabled="submitting">
+          <AppIcon name="check" />{{ submitting ? '保存中' : '保存修改' }}
+        </button>
+        <button class="button button--ghost" type="button" @click="cancelEditOrder">取消</button>
+      </div>
+    </form>
 
-    <section class="section grid grid--two">
+    <template v-if="activeTab === 'browse'">
+      <section class="section grid">
+        <article v-for="order in pagedOrders" :key="order.orderId" class="card product-card">
+          <div class="product-thumb">
+            <img v-if="imageSrc(order.picture)" :src="imageSrc(order.picture)" :alt="order.title" loading="lazy" />
+            <AppIcon v-else name="leaf" />
+          </div>
+          <div class="tag-row">
+            <span class="tag tag--green">{{ order.type || '农产品' }}</span>
+            <span class="tag">{{ order.address || '产地待补充' }}</span>
+            <span :class="orderStatusClass(order.orderStatus)">{{ orderStatusLabel(order.orderStatus) }}</span>
+          </div>
+          <h3>{{ order.title }}</h3>
+          <p>{{ order.content || '暂无货源详情' }}</p>
+          <div class="tag-row">
+            <span class="tag">{{ order.spec || '规格待补充' }}</span>
+            <span class="tag">库存 {{ order.stock ?? '-' }} {{ order.unit || '斤' }}</span>
+            <span class="tag tag--amber">起订 {{ order.minPurchase ?? 1 }} {{ order.unit || '斤' }}</span>
+          </div>
+          <div class="card__footer">
+            <strong class="price">￥{{ order.price ?? '-' }}/{{ order.unit || '斤' }}</strong>
+            <div v-if="session.role === 'BUYER'" class="cart-control">
+              <label class="inline-field">
+                <span>数量</span>
+                <input
+                  class="inline-input"
+                  :value="cartCounts[order.orderId] ?? 1"
+                  type="number"
+                  min="1"
+                  @change="updateCartCount(order.orderId, Number(($event.target as HTMLInputElement).value))"
+                />
+              </label>
+              <button class="button button--ghost" type="button" @click="addToCart(order)">
+                <AppIcon name="cart" />加入购物车
+              </button>
+            </div>
+            <div v-else-if="canManageOrder(order)" class="toolbar">
+              <button class="button button--small" type="button" @click="startEditOrder(order)">编辑</button>
+              <button class="button button--small" type="button" @click="changeOrderStatus(order, 1)">上架</button>
+              <button class="button button--ghost button--small" type="button" @click="changeOrderStatus(order, 2)">下架</button>
+              <button class="button button--danger button--small" type="button" @click="deleteOrder(order)">删除</button>
+            </div>
+          </div>
+        </article>
+      </section>
+      <div class="pager">
+        <button class="button button--ghost button--small" type="button" @click="changeOrderPage(-1)">上一页</button>
+        <span>第 {{ orderPage }} / {{ orderPageCount }} 页</span>
+        <button class="button button--ghost button--small" type="button" @click="changeOrderPage(1)">下一页</button>
+      </div>
+    </template>
+
+    <section v-else class="section grid grid--two farmer-publish-layout">
       <form class="panel form" @submit.prevent="publishOrder">
         <div class="section-title">
           <div>
@@ -411,6 +479,31 @@ watch(orderPageCount, () => {
         </button>
       </form>
 
+      <div class="panel farmer-order-manager">
+        <div class="section-title">
+          <div>
+            <h2>我的商品管理</h2>
+            <p>已发布商品可在这里编辑、上架、下架或删除。</p>
+          </div>
+        </div>
+        <div class="mini-list">
+          <span v-for="order in managedOrders" :key="order.orderId" class="stack-row farmer-order-row">
+            <strong>{{ order.title }} · ￥{{ order.price ?? '-' }}/{{ order.unit || '斤' }}</strong>
+            <small>
+              {{ order.type || '农产品' }} · {{ order.address || '产地待补充' }}
+              <span :class="orderStatusClass(order.orderStatus)">{{ orderStatusLabel(order.orderStatus) }}</span>
+            </small>
+            <div class="toolbar">
+              <button class="button button--small" type="button" @click="startEditOrder(order)">编辑</button>
+              <button class="button button--small" type="button" @click="changeOrderStatus(order, 1)">上架</button>
+              <button class="button button--ghost button--small" type="button" @click="changeOrderStatus(order, 2)">下架</button>
+              <button class="button button--danger button--small" type="button" @click="deleteOrder(order)">删除</button>
+            </div>
+          </span>
+          <span v-if="!managedOrders.length">暂无自己的商品，发布后会出现在这里。</span>
+        </div>
+      </div>
+
       <div class="panel">
         <div class="section-title">
           <div>
@@ -424,67 +517,6 @@ watch(orderPageCount, () => {
           <div><span class="tag tag--green">3</span> 买家生成采购订单，管理员或业务方处理状态。</div>
           <div><span class="tag tag--green">4</span> 农户在个人中心查看我的发布和销售关联。</div>
         </div>
-      </div>
-    </section>
-
-    <section class="section grid grid--two">
-      <form class="panel form" @submit.prevent="saveOrder">
-        <div class="section-title">
-          <div>
-            <h2>维护货源</h2>
-            <p>选择已发布货源后，可修改基本信息或调整上架状态。</p>
-          </div>
-        </div>
-        <div v-if="editingOrderId" class="form">
-          <label class="field"><span>商品名称</span><input v-model.trim="editForm.title" required /></label>
-          <label class="field"><span>品类</span><input v-model.trim="editForm.type" required /></label>
-          <label class="field"><span>单价</span><input v-model.number="editForm.price" type="number" min="0.01" step="0.01" required /></label>
-          <label class="field"><span>单位</span><input v-model.trim="editForm.unit" required /></label>
-          <label class="field"><span>规格</span><input v-model.trim="editForm.spec" /></label>
-          <label class="field"><span>库存</span><input v-model.number="editForm.stock" type="number" min="0" required /></label>
-          <label class="field"><span>最小起订量</span><input v-model.number="editForm.minPurchase" type="number" min="1" required /></label>
-          <label class="field"><span>发布账号</span><input v-model.trim="editForm.ownName" required /></label>
-          <label class="field"><span>产地地址</span><input v-model.trim="editForm.address" required /></label>
-          <label class="field"><span>图片文件名</span><input v-model.trim="editForm.picture" /></label>
-          <label class="field"><span>上传图片预览</span><input type="file" accept="image/*" @change="handleImageFile($event, editForm)" /></label>
-          <div v-if="imageSrc(editForm.picture)" class="image-preview">
-            <img :src="imageSrc(editForm.picture)" alt="货源图片预览" />
-          </div>
-          <label class="field"><span>货源说明</span><textarea v-model.trim="editForm.content" required /></label>
-          <div class="toolbar">
-            <button class="button button--green" type="submit" :disabled="submitting">
-              <AppIcon name="check" />{{ submitting ? '保存中' : '保存修改' }}
-            </button>
-            <button class="button button--ghost" type="button" @click="cancelEditOrder">取消</button>
-          </div>
-        </div>
-        <div v-else class="empty">从右侧“我的货源”选择一条记录后进行维护。</div>
-      </form>
-
-      <div class="panel">
-        <div class="section-title">
-          <div>
-            <h2>我的货源</h2>
-            <p>当前账号发布的货源，可编辑、上架、下架或删除。</p>
-          </div>
-        </div>
-        <div v-if="ownOrders.length" class="mini-list">
-          <span v-for="order in ownOrders" :key="order.orderId" class="stack-row">
-            <strong>{{ order.title }} · ￥{{ order.price ?? '-' }}/{{ order.unit || '斤' }}</strong>
-            <small>
-              {{ order.type || '农产品' }} · {{ order.address || '产地待补充' }}
-              <span :class="orderStatusClass(order.orderStatus)">{{ orderStatusLabel(order.orderStatus) }}</span>
-            </small>
-            <em>{{ order.spec || '规格待补充' }} · 库存 {{ order.stock ?? '-' }} {{ order.unit || '斤' }} · 起订 {{ order.minPurchase ?? 1 }} {{ order.unit || '斤' }}</em>
-            <div class="toolbar">
-              <button class="button button--small" type="button" @click="startEditOrder(order)">编辑</button>
-              <button class="button button--small" type="button" @click="changeOrderStatus(order, 1)">上架</button>
-              <button class="button button--ghost button--small" type="button" @click="changeOrderStatus(order, 2)">下架</button>
-              <button class="button button--danger button--small" type="button" @click="deleteOrder(order)">删除</button>
-            </div>
-          </span>
-        </div>
-        <div v-else class="empty">当前账号暂无已发布货源。</div>
       </div>
     </section>
   </section>
