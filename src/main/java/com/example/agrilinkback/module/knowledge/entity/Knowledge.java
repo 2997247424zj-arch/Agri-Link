@@ -8,6 +8,7 @@ public record Knowledge(
         String content,
         String picPath,
         String ownName,
+        Integer status,
         LocalDateTime createTime,
         LocalDateTime updateTime
 ) {

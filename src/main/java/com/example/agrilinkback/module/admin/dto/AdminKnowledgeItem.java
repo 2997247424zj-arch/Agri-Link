@@ -25,7 +25,7 @@ public record AdminKnowledgeItem(
                 knowledge.title(),
                 knowledge.ownName(),
                 knowledge.content(),
-                1,
+                knowledge.status() == null ? 1 : knowledge.status(),
                 knowledge.createTime()
         );
     }

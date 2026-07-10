@@ -128,7 +128,9 @@ public class AdminService {
             Integer knowledgeId,
             AdminKnowledgeStatusRequest request
     ) {
-        return AdminKnowledgeItem.fromKnowledge(knowledgeService.getKnowledge(knowledgeId));
+        return AdminKnowledgeItem.fromKnowledge(
+                knowledgeService.updateKnowledgeStatus(knowledgeId, request.status())
+        );
     }
 
     public void deleteKnowledge(Integer knowledgeId) {

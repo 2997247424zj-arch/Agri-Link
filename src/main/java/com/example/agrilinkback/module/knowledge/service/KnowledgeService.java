@@ -41,6 +41,7 @@ public class KnowledgeService {
                 request.content(),
                 request.picPath(),
                 request.ownName(),
+                1,
                 now,
                 now
         );
@@ -56,10 +57,18 @@ public class KnowledgeService {
                 request.content(),
                 request.picPath(),
                 request.ownName(),
+                existing.status(),
                 existing.createTime(),
                 LocalDateTime.now()
         );
         knowledgeMapper.update(knowledge);
+        return getKnowledge(knowledgeId);
+    }
+
+    /** 上下架知识内容：status 1=已发布 2=已下架，写入 tb_knowledge.status。 */
+    public Knowledge updateKnowledgeStatus(Integer knowledgeId, Integer status) {
+        getKnowledge(knowledgeId);
+        knowledgeMapper.updateStatus(knowledgeId, status, LocalDateTime.now());
         return getKnowledge(knowledgeId);
     }
 

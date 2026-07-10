@@ -37,6 +37,7 @@ public class DatabaseSchemaCompatibilityInitializer implements ApplicationRunner
         addColumnIfMissing("tb_question", "attachments", "text");
         addColumnIfMissing("tb_reserve", "appointment_time", "varchar(64) default null");
         addColumnIfMissing("tb_reserve", "service_mode", "varchar(64) default null");
+        addColumnIfMissing("tb_knowledge", "status", "int default 1");
     }
 
     private void addColumnIfMissing(String tableName, String columnName, String columnDefinition) throws SQLException {

@@ -13,14 +13,14 @@ import org.apache.ibatis.annotations.Update;
 public interface KnowledgeMapper {
 
     @Select("""
-            select knowledge_id, title, content, pic_path, own_name, create_time, update_time
+            select knowledge_id, title, content, pic_path, own_name, coalesce(status, 1) as status, create_time, update_time
             from tb_knowledge
             order by update_time desc
             """)
     List<Knowledge> findAll();
 
     @Select("""
-            select knowledge_id, title, content, pic_path, own_name, create_time, update_time
+            select knowledge_id, title, content, pic_path, own_name, coalesce(status, 1) as status, create_time, update_time
             from tb_knowledge
             where knowledge_id = #{knowledgeId}
             """)
@@ -30,9 +30,9 @@ public interface KnowledgeMapper {
     Integer nextId();
 
     @Insert("""
-            insert into tb_knowledge (knowledge_id, title, content, pic_path, own_name, create_time, update_time)
+            insert into tb_knowledge (knowledge_id, title, content, pic_path, own_name, status, create_time, update_time)
             values (#{knowledge.knowledgeId}, #{knowledge.title}, #{knowledge.content}, #{knowledge.picPath},
-                    #{knowledge.ownName}, #{knowledge.createTime}, #{knowledge.updateTime})
+                    #{knowledge.ownName}, coalesce(#{knowledge.status}, 1), #{knowledge.createTime}, #{knowledge.updateTime})
             """)
     int insert(@Param("knowledge") Knowledge knowledge);
 
@@ -45,6 +45,18 @@ public interface KnowledgeMapper {
             where knowledge_id = #{knowledge.knowledgeId}
             """)
     int update(@Param("knowledge") Knowledge knowledge);
+
+    @Update("""
+            update tb_knowledge
+            set status = #{status},
+                update_time = #{updateTime}
+            where knowledge_id = #{knowledgeId}
+            """)
+    int updateStatus(
+            @Param("knowledgeId") Integer knowledgeId,
+            @Param("status") Integer status,
+            @Param("updateTime") java.time.LocalDateTime updateTime
+    );
 
     @Delete("delete from tb_knowledge where knowledge_id = #{knowledgeId}")
     int deleteByKnowledgeId(@Param("knowledgeId") Integer knowledgeId);
