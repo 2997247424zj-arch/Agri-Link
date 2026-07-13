@@ -46,12 +46,14 @@ export const useSessionStore = defineStore('session', () => {
     writeStorage('agri-link-display', displayName.value)
   }
 
-  async function login(payload: { userName: string; password: string; role: UserRole | string }) {
-    const data = await api.post<AuthResponse>('/api/auth/login', payload)
+  async function login(payload: { userName: string; password: string; role?: UserRole | string }) {
+    // 登录默认不带 role：后端按账号识别身份并返回真实角色，前端据此持久化。
+    const body = payload.role ? payload : { userName: payload.userName, password: payload.password }
+    const data = await api.post<AuthResponse>('/api/auth/login', body)
     const returnedUser = data.user
     persist(
       returnedUser?.userName ?? data.userName ?? payload.userName,
-      returnedUser?.role ?? data.role ?? payload.role,
+      returnedUser?.role ?? data.role ?? payload.role ?? 'FARMER',
       returnedUser?.nickName ?? returnedUser?.realName ?? data.nickName,
     )
   }

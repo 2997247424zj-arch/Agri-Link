@@ -2,6 +2,7 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import { RouterLink } from 'vue-router'
 import AppIcon from '@/components/AppIcon.vue'
+import Pager from '@/components/ui/Pager.vue'
 import { api } from '@/api/client'
 import { useSessionStore } from '@/stores/session'
 import {
@@ -403,11 +404,7 @@ watch(purchasePageCount, () => {
         </article>
       </div>
       <div v-else class="empty">暂无采购记录。</div>
-      <div class="pager">
-        <button class="button button--ghost button--small" type="button" @click="changePurchasePage(-1)">上一页</button>
-        <span>第 {{ purchasePage }} / {{ purchasePageCount }} 页</span>
-        <button class="button button--ghost button--small" type="button" @click="changePurchasePage(1)">下一页</button>
-      </div>
+      <Pager :page="purchasePage" :page-count="purchasePageCount" @change="changePurchasePage" />
     </section>
   </section>
 </template>

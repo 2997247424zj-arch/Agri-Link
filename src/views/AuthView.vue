@@ -84,7 +84,8 @@ async function submit() {
     }
 
     if (mode.value === 'login') {
-      await session.login({ userName, password: form.password, role: form.role })
+      // 登录不再要求选择角色：后端按账号自动识别身份并返回角色。
+      await session.login({ userName, password: form.password })
       message.value = `已登录：${session.displayName}（${session.roleLabel}）`
     } else {
       await session.register({ ...form, userName })
@@ -151,13 +152,14 @@ async function submit() {
           <span>密码</span>
           <input v-model="form.password" type="password" autocomplete="current-password" required placeholder="请输入密码" />
         </label>
-        <label class="field">
+        <label v-if="mode === 'register'" class="field">
           <span>角色</span>
           <select v-model="form.role">
             <option v-for="role in authRoles" :key="role.value" :value="role.value">{{ role.label }}</option>
           </select>
         </label>
-        <p class="form-note">{{ selectedRoleDescription }}</p>
+        <p v-if="mode === 'register'" class="form-note">{{ selectedRoleDescription }}</p>
+        <p v-else class="form-note">登录后将自动识别您的账号身份，无需手动选择角色。</p>
 
         <Transition name="auth-extra">
           <div v-if="mode === 'register'" class="auth-extra-grid">

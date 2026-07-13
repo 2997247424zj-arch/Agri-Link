@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
 import AppIcon from '@/components/AppIcon.vue'
+import Pager from '@/components/ui/Pager.vue'
 import { api } from '@/api/client'
 import type { AdminOverview, Finance, Purchase, TradeOrder, User, UserRole } from '@/types/domain'
 
@@ -480,11 +481,7 @@ onMounted(loadAdmin)
           </tbody>
         </table>
       </div>
-      <div class="pager">
-        <button class="button button--ghost button--small" type="button" @click="changeUserPage(-1)">上一页</button>
-        <span>第 {{ userPage }} / {{ pageCount(filteredUsers.length) }} 页</span>
-        <button class="button button--ghost button--small" type="button" @click="changeUserPage(1)">下一页</button>
-      </div>
+      <Pager :page="userPage" :page-count="pageCount(filteredUsers.length)" @change="changeUserPage" />
     </section>
 
     <section v-if="activeAdminTab === 'trade'" id="admin-trade" class="section admin-card-grid admin-card-grid--two">
@@ -526,11 +523,7 @@ onMounted(loadAdmin)
             </tbody>
           </table>
         </div>
-        <div class="pager">
-          <button class="button button--ghost button--small" type="button" @click="changeOrderPage(-1)">上一页</button>
-          <span>第 {{ orderPage }} / {{ pageCount(filteredOrders.length) }} 页</span>
-          <button class="button button--ghost button--small" type="button" @click="changeOrderPage(1)">下一页</button>
-        </div>
+        <Pager :page="orderPage" :page-count="pageCount(filteredOrders.length)" @change="changeOrderPage" />
       </div>
 
       <div class="panel admin-card">
@@ -572,11 +565,7 @@ onMounted(loadAdmin)
             </tbody>
           </table>
         </div>
-        <div class="pager">
-          <button class="button button--ghost button--small" type="button" @click="changePurchasePage(-1)">上一页</button>
-          <span>第 {{ purchasePage }} / {{ pageCount(filteredPurchases.length) }} 页</span>
-          <button class="button button--ghost button--small" type="button" @click="changePurchasePage(1)">下一页</button>
-        </div>
+        <Pager :page="purchasePage" :page-count="pageCount(filteredPurchases.length)" @change="changePurchasePage" />
       </div>
     </section>
 
@@ -621,11 +610,7 @@ onMounted(loadAdmin)
           </tbody>
         </table>
       </div>
-      <div class="pager">
-        <button class="button button--ghost button--small" type="button" @click="changeFinancePage(-1)">上一页</button>
-        <span>第 {{ financePage }} / {{ pageCount(filteredFinances.length) }} 页</span>
-        <button class="button button--ghost button--small" type="button" @click="changeFinancePage(1)">下一页</button>
-      </div>
+      <Pager :page="financePage" :page-count="pageCount(filteredFinances.length)" @change="changeFinancePage" />
     </section>
 
     <section v-if="activeAdminTab === 'knowledge'" id="admin-knowledge" class="section admin-card-grid admin-card-grid--two">
@@ -679,11 +664,7 @@ onMounted(loadAdmin)
           </span>
         </div>
         <div v-else class="empty">暂无资讯或知识内容。</div>
-        <div class="pager">
-          <button class="button button--ghost button--small" type="button" @click="changeKnowledgePage(-1)">上一页</button>
-          <span>第 {{ knowledgePage }} / {{ pageCount(knowledgeItems.length) }} 页</span>
-          <button class="button button--ghost button--small" type="button" @click="changeKnowledgePage(1)">下一页</button>
-        </div>
+        <Pager :page="knowledgePage" :page-count="pageCount(knowledgeItems.length)" @change="changeKnowledgePage" />
       </div>
     </section>
       </div>

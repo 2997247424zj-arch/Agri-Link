@@ -1,0 +1,15 @@
+// 全站图标名集合，供 AppIcon 及消费组件（PageHeader 等）共享，避免各处重复维护联合类型。
+export type IconName =
+  | 'leaf'
+  | 'bank'
+  | 'expert'
+  | 'cart'
+  | 'user'
+  | 'shield'
+  | 'arrow'
+  | 'search'
+  | 'plus'
+  | 'home'
+  | 'check'
+  | 'menu'
+  | 'logout'

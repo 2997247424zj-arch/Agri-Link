@@ -2,6 +2,11 @@
 import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import AppIcon from '@/components/AppIcon.vue'
+import AppImage from '@/components/AppImage.vue'
+import PageHeader from '@/components/ui/PageHeader.vue'
+import ModuleTabs from '@/components/ui/ModuleTabs.vue'
+import SummaryStrip from '@/components/ui/SummaryStrip.vue'
+import Pager from '@/components/ui/Pager.vue'
 import { api } from '@/api/client'
 import { useSessionStore } from '@/stores/session'
 import { upsertLocalCart } from '@/utils/localCart'
@@ -21,10 +26,19 @@ const editingOrderId = ref<number | null>(null)
 const orderPage = ref(1)
 const orderPageSize = 9
 type TradeTab = 'browse' | 'publish'
-const tradeTabs: Array<{ value: TradeTab; label: string }> = [
+const allTradeTabs: Array<{ value: TradeTab; label: string; farmerOnly?: boolean }> = [
   { value: 'browse', label: '货源浏览' },
-  { value: 'publish', label: '发布与管理' },
+  { value: 'publish', label: '发布与管理', farmerOnly: true },
 ]
+// 「发布与管理」仅农户可见；买家只做浏览与采购。
+const tradeTabs = computed(() =>
+  allTradeTabs.filter((tab) => !tab.farmerOnly || session.role === 'FARMER'),
+)
+// 买家查看的商品详情。
+const detailOrder = ref<TradeOrder | null>(null)
+function openOrderDetail(order: TradeOrder) {
+  detailOrder.value = order
+}
 
 // 货源发布表单字段与后端 TradeOrderRequest 保持一致。
 const form = reactive({
@@ -127,7 +141,10 @@ const ownOrders = computed(() => {
   return orders.value.filter((order) => order.ownName === ownName || order.ownName === form.ownName)
 })
 const managedOrders = computed(() => (session.role === 'FARMER' ? ownOrders.value : []))
-const activeTab = computed<TradeTab>(() => (route.query.tab === 'publish' ? 'publish' : 'browse'))
+const activeTab = computed<TradeTab>(() =>
+  // 非农户即使带 ?tab=publish 也强制回到浏览页。
+  route.query.tab === 'publish' && session.role === 'FARMER' ? 'publish' : 'browse',
+)
 const ownOrderIds = computed(() => new Set(ownOrders.value.map((order) => order.orderId)))
 const canManageOrder = (order: TradeOrder) => session.role === 'FARMER' && ownOrderIds.value.has(order.orderId)
 
@@ -316,13 +333,8 @@ watch(orderPageCount, () => {
 
 <template>
   <section class="page">
-    <div class="section-title">
-      <div>
-        <span class="eyebrow"><AppIcon name="leaf" />农产品交易</span>
-        <h2>货源浏览与农户发布</h2>
-        <p>流程：农户发布货源，买家浏览下单，平台跟踪采购状态。</p>
-      </div>
-      <div class="toolbar">
+    <PageHeader eyebrow="农产品交易" icon="leaf" title="货源浏览与农户发布" desc="流程：农户发布货源，买家浏览下单，平台跟踪采购状态。">
+      <template #actions>
         <label class="field search-field">
           <span>搜索货源</span>
           <input v-model.trim="keyword" placeholder="商品、类型、产地" />
@@ -330,44 +342,30 @@ watch(orderPageCount, () => {
         <button class="button button--ghost" type="button" @click="loadOrders">
           <AppIcon name="search" />刷新
         </button>
-      </div>
-    </div>
+      </template>
+    </PageHeader>
 
     <p v-if="message" class="alert">{{ message }}</p>
     <p v-if="error" class="alert alert--error">{{ error }}</p>
 
-    <div class="tabs module-switcher" role="tablist" aria-label="农产品交易操作">
-      <button
-        v-for="tab in tradeTabs"
-        :key="tab.value"
-        class="tab"
-        type="button"
-        role="tab"
-        :aria-selected="activeTab === tab.value"
-        @click="setTradeTab(tab.value)"
-      >
-        {{ tab.label }}
-      </button>
-    </div>
+    <ModuleTabs
+      :model-value="activeTab"
+      :options="tradeTabs"
+      aria-label="农产品交易操作"
+      @update:model-value="setTradeTab"
+    />
 
-    <div class="summary-strip">
-      <div class="metric">
-        <strong>{{ filteredOrders.length }}</strong>
-        <span>{{ loading ? '正在读取货源' : '当前可浏览货源' }}</span>
-      </div>
-      <div class="metric">
-        <strong>{{ new Set(orders.map((order) => order.type || '农产品')).size }}</strong>
-        <span>覆盖品类</span>
-      </div>
-      <div class="metric">
-        <strong>{{ session.roleLabel }}</strong>
-        <span>当前业务角色</span>
-      </div>
-      <div class="metric">
-        <strong>{{ session.role === 'FARMER' ? ownOrders.length : selectedCartCount }}</strong>
-        <span>{{ session.role === 'FARMER' ? '我的货源' : '列表加购数量' }}</span>
-      </div>
-    </div>
+    <SummaryStrip
+      :items="[
+        { value: filteredOrders.length, label: loading ? '正在读取货源' : '当前可浏览货源' },
+        { value: new Set(orders.map((order) => order.type || '农产品')).size, label: '覆盖品类' },
+        { value: session.roleLabel, label: '当前业务角色' },
+        {
+          value: session.role === 'FARMER' ? ownOrders.length : selectedCartCount,
+          label: session.role === 'FARMER' ? '我的货源' : '列表加购数量',
+        },
+      ]"
+    />
 
     <form v-if="editingOrderId" class="section panel form order-edit-panel" @submit.prevent="saveOrder">
       <div class="section-title">
@@ -402,10 +400,7 @@ watch(orderPageCount, () => {
     <template v-if="activeTab === 'browse'">
       <section class="section grid">
         <article v-for="order in pagedOrders" :key="order.orderId" class="card product-card">
-          <div class="product-thumb">
-            <img v-if="imageSrc(order.picture)" :src="imageSrc(order.picture)" :alt="order.title" loading="lazy" />
-            <AppIcon v-else name="leaf" />
-          </div>
+          <AppImage class="product-thumb" :src="imageSrc(order.picture)" :alt="order.title" ratio="16 / 10" icon="leaf" />
           <div class="tag-row">
             <span class="tag tag--green">{{ order.type || '农产品' }}</span>
             <span class="tag">{{ order.address || '产地待补充' }}</span>
@@ -431,6 +426,9 @@ watch(orderPageCount, () => {
                   @change="updateCartCount(order.orderId, Number(($event.target as HTMLInputElement).value))"
                 />
               </label>
+              <button class="button button--ghost button--small" type="button" @click="openOrderDetail(order)">
+                <AppIcon name="search" />详情
+              </button>
               <button class="button button--ghost" type="button" @click="addToCart(order)">
                 <AppIcon name="cart" />加入购物车
               </button>
@@ -441,14 +439,13 @@ watch(orderPageCount, () => {
               <button class="button button--ghost button--small" type="button" @click="changeOrderStatus(order, 2)">下架</button>
               <button class="button button--danger button--small" type="button" @click="deleteOrder(order)">删除</button>
             </div>
+            <button v-else class="button button--ghost button--small" type="button" @click="openOrderDetail(order)">
+              <AppIcon name="search" />查看详情
+            </button>
           </div>
         </article>
       </section>
-      <div class="pager">
-        <button class="button button--ghost button--small" type="button" @click="changeOrderPage(-1)">上一页</button>
-        <span>第 {{ orderPage }} / {{ orderPageCount }} 页</span>
-        <button class="button button--ghost button--small" type="button" @click="changeOrderPage(1)">下一页</button>
-      </div>
+      <Pager :page="orderPage" :page-count="orderPageCount" @change="changeOrderPage" />
     </template>
 
     <section v-else class="section grid grid--two farmer-publish-layout">
@@ -519,5 +516,51 @@ watch(orderPageCount, () => {
         </div>
       </div>
     </section>
+
+    <Transition name="modal-spring">
+      <div v-if="detailOrder" class="modal-overlay" role="presentation" @click.self="detailOrder = null">
+        <div class="modal modal--wide" role="dialog" aria-modal="true" aria-label="商品详情">
+          <div class="section-title">
+            <div>
+              <span class="eyebrow"><AppIcon name="leaf" />商品详情</span>
+              <h2>{{ detailOrder.title }}</h2>
+            </div>
+            <button class="button button--ghost button--small" type="button" @click="detailOrder = null">关闭</button>
+          </div>
+          <div class="grid grid--two order-detail-body">
+            <AppImage
+              class="order-detail-media"
+              :src="imageSrc(detailOrder.picture)"
+              :alt="detailOrder.title"
+              ratio="4 / 3"
+              icon="leaf"
+            />
+            <div class="order-detail-info">
+              <div class="tag-row">
+                <span class="tag tag--green">{{ detailOrder.type || '农产品' }}</span>
+                <span class="tag">{{ detailOrder.address || '产地待补充' }}</span>
+                <span :class="orderStatusClass(detailOrder.orderStatus)">{{ orderStatusLabel(detailOrder.orderStatus) }}</span>
+              </div>
+              <strong class="price">￥{{ detailOrder.price ?? '-' }}/{{ detailOrder.unit || '斤' }}</strong>
+              <dl class="order-detail-specs">
+                <div><dt>规格</dt><dd>{{ detailOrder.spec || '待补充' }}</dd></div>
+                <div><dt>库存</dt><dd>{{ detailOrder.stock ?? '-' }} {{ detailOrder.unit || '斤' }}</dd></div>
+                <div><dt>起订量</dt><dd>{{ detailOrder.minPurchase ?? 1 }} {{ detailOrder.unit || '斤' }}</dd></div>
+                <div><dt>供货方</dt><dd>{{ detailOrder.ownName || '产地供货方' }}</dd></div>
+              </dl>
+              <p class="order-detail-content">{{ detailOrder.content || '暂无货源详情。' }}</p>
+              <button
+                v-if="session.role === 'BUYER'"
+                class="button button--green"
+                type="button"
+                @click="addToCart(detailOrder); detailOrder = null"
+              >
+                <AppIcon name="cart" />加入购物车
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </Transition>
   </section>
 </template>

@@ -4319,126 +4319,32 @@ td select,
   }
 }
 
-/* 1920x1080 / 125% scaling: use float columns to avoid masonry gaps. */
+/* 90% browser zoom is the desktop baseline: use the full work area.
+ * The dense 12-column grid above owns the home layout at every width >= 1440px;
+ * it balances column heights automatically (no float `clear` dead space). */
 @media (min-width: 1440px) {
-  .home-page {
-    display: block;
-  }
-
-  .home-page::after {
-    display: block;
-    clear: both;
-    content: '';
-  }
-
-  .home-page > .portal-section {
-    margin-top: 10px;
-  }
-
-  .home-page > #home-dashboard,
-  .home-page > .admin-entry-section,
-  .home-page > #home-finance,
-  .home-page > #home-experts,
-  .home-page > #home-qa,
-  .home-page > #home-news {
-    float: right;
-    clear: right;
-    width: calc(40% - 5px);
-    margin-left: 10px;
-  }
-
-  .home-page > #home-capability,
-  .home-page > #home-services,
-  .home-page > #home-tips,
-  .home-page > #home-products {
-    float: left;
-    clear: left;
-    width: calc(60% - 5px);
-  }
-
-  .home-page > .portal-hero,
-  .home-page > .portal-alert {
-    float: none;
-    clear: both;
-    width: 100%;
-  }
-
-  .home-page > #home-dashboard {
-    margin-top: 10px;
+  .layout-content > .page,
+  .layout-content > .home-page,
+  .layout-content > .admin-page {
+    max-width: none;
   }
 }
 
 /* 1920x1080 at 90% browser zoom: CSS viewport is about 2133px wide.
- * Keep a readable two-column desktop composition instead of over-dense rails.
- */
+ * Keep the dense 12-column grid; just widen the frame and let cards breathe. */
 @media (min-width: 1900px) {
   :root {
-    --content-max-wide: 1840px;
-    --content-gutter-wide: 24px;
+    --content-max-wide: 100%;
+    --content-gutter-wide: clamp(16px, 1.4vw, 30px);
     --section-gap-wide: 12px;
   }
 
   .main-content.layout-content {
-    padding: 12px var(--content-gutter-wide) 18px;
-  }
-
-  .home-page {
-    display: block;
-  }
-
-  .home-page > .portal-hero,
-  .home-page > .portal-alert {
-    float: none;
-    clear: both;
-    width: 100%;
-    margin: 0;
-  }
-
-  .home-page > .portal-section {
-    margin-top: 12px;
-  }
-
-  .home-page > #home-dashboard,
-  .home-page > .admin-entry-section,
-  .home-page > #home-finance,
-  .home-page > #home-experts,
-  .home-page > #home-qa,
-  .home-page > #home-news {
-    float: right;
-    clear: right;
-    width: calc(38.5% - 6px);
-    margin-left: 12px;
-  }
-
-  .home-page > #home-capability,
-  .home-page > #home-services,
-  .home-page > #home-tips,
-  .home-page > #home-products {
-    float: left;
-    clear: left;
-    width: calc(61.5% - 6px);
+    padding: 12px var(--content-gutter-wide) 20px;
   }
 
   .portal-section {
     padding: 15px 18px;
-  }
-
-  .capability-grid {
-    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  }
-
-  .dashboard-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .finance-card-grid,
-  .service-grid,
-  .expert-strip {
-    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
-  }
-
-  .product-row {
-    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
   }
 
   .tips-list {
@@ -4446,19 +4352,11 @@ td select,
   }
 }
 
-/* 90% 缩放 / 超宽视口：让卡片真正吃满栏宽，避免末行挤在一侧。 */
+/* 90% 缩放 / 超宽视口：#home-news 缩略图在窄的右栏里保持紧凑比例。 */
 @media (min-width: 1440px) {
-  .home-page > #home-capability .capability-grid,
-  .home-page > #home-services .service-grid,
-  .home-page > #home-products .product-row {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .home-page > #home-finance .finance-card-grid,
-  .home-page > #home-experts .expert-strip,
-  .home-page > #home-dashboard .dashboard-grid,
-  .home-page > #home-dashboard .workflow-board {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+  .home-page > #home-products .product-tile img {
+    height: clamp(132px, 8.2vw, 188px);
+    aspect-ratio: auto;
   }
 
   .home-page > #home-news .news-item {
@@ -4761,5 +4659,307 @@ td select,
 
   .buyer-checkout-panel {
     position: static;
+  }
+}
+
+/* Desktop visual alignment pass: keep wide screens balanced without masonry gaps. */
+@media (min-width: 1440px) {
+  :root {
+    --content-max-wide: 1920px;
+    --content-gutter-wide: clamp(18px, 1.6vw, 32px);
+    --section-gap-wide: 14px;
+  }
+
+  .main-content.layout-content {
+    padding: 18px var(--content-gutter-wide) 28px;
+  }
+
+  .layout-content > .page,
+  .layout-content > .home-page,
+  .layout-content > .admin-page {
+    width: min(100%, var(--content-max-wide));
+    max-width: var(--content-max-wide);
+    margin-inline: auto;
+  }
+
+  .home-page > .portal-section {
+    height: auto;
+    border-color: rgba(183, 222, 196, 0.78);
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.94);
+    box-shadow: 0 10px 28px rgba(15, 82, 55, 0.07);
+  }
+
+  .portal-hero {
+    min-height: 244px;
+    border-radius: 20px;
+    box-shadow: 0 14px 32px rgba(15, 82, 55, 0.16);
+  }
+
+  .portal-hero__overlay {
+    min-height: 244px;
+    padding: 30px 36px;
+    background: linear-gradient(90deg, rgba(4, 88, 56, 0.93) 0%, rgba(4, 88, 56, 0.7) 52%, rgba(4, 88, 56, 0.1) 100%);
+  }
+
+  .portal-hero h1 {
+    max-width: 760px;
+    font-size: clamp(34px, 2.4vw, 46px);
+    letter-spacing: -0.03em;
+  }
+
+  .portal-hero p {
+    max-width: 760px;
+    font-size: 16px;
+  }
+
+  .capability-grid,
+  .dashboard-grid,
+  .service-grid,
+  .finance-card-grid,
+  .expert-strip,
+  .product-row,
+  .grid,
+  .record-grid,
+  .admin-card-grid,
+  .admin-stat-cards,
+  .summary-strip,
+  .role-stat-grid,
+  .buyer-order-list,
+  .buyer-procurement-stats {
+    grid-auto-rows: 1fr;
+  }
+
+  .capability-card,
+  .dashboard-card,
+  .service-card,
+  .finance-card,
+  .expert-card,
+  .product-tile,
+  .grid > *,
+  .record-grid > *,
+  .admin-card-grid > *,
+  .admin-stat-cards > *,
+  .summary-strip > *,
+  .role-stat-grid > *,
+  .buyer-order-list > *,
+  .buyer-procurement-stats > * {
+    height: 100%;
+  }
+
+  .home-page > #home-services .service-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .home-page > #home-capability .capability-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .home-page > #home-dashboard .dashboard-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .home-page > #home-dashboard .workflow-board {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .home-page > #home-finance .finance-card-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .home-page > #home-experts .expert-strip {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .home-page > #home-products .product-row {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+}
+
+/* =========================================================================
+ * 统一设计系统收敛 pass (2026-07-12)
+ * 目标：① 统一 token（间距标度 / 单一内容宽度 / 单一绿）；
+ *      ② 用「多列 masonry」替换手写 12 列 span 图，消除首页空绿盒/孤行；
+ *      ③ 统一图片降级（AppImage）。此块位于文件末尾，按源顺序覆盖之前的 pass。
+ * ========================================================================= */
+:root {
+  /* 间距标度：约 4px 网格 */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  /* 单一内容宽度 + 装订线（取代 --content-max-wide 的多次重声明） */
+  --content-max: 1680px;
+  --gutter: clamp(16px, 1.4vw, 30px);
+  --home-gap: var(--space-3);
+  /* 统一绿：让 app-* 指向语义主色，消除双绿 */
+  --app-primary: var(--color-green);
+  --app-primary-dark: var(--color-primary);
+}
+
+/* ---- 统一图片降级组件 ---- */
+.app-image {
+  position: relative;
+  display: block;
+  width: 100%;
+  overflow: hidden;
+  background: rgba(236, 250, 242, 0.6);
+}
+.app-image--rounded {
+  border-radius: var(--radius);
+}
+.app-image > img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.app-image--empty {
+  background:
+    linear-gradient(135deg, rgba(209, 250, 229, 0.85), rgba(236, 253, 245, 0.5));
+  box-shadow: inset 0 0 0 1px rgba(167, 213, 187, 0.5);
+}
+.app-image__placeholder {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: rgba(4, 120, 87, 0.5);
+}
+.app-image__placeholder .app-icon {
+  width: 34%;
+  max-width: 46px;
+  height: auto;
+  opacity: 0.7;
+}
+
+/* 首页资讯 / 产品卡改用 AppImage 后：媒体位样式挂在包裹层，
+ * 并中和旧的直接 <img> 规则（尤其是产品卡那层会透出的装饰绿渐变）。 */
+.news-item__media {
+  box-shadow: 0 12px 28px rgba(15, 82, 55, 0.1);
+}
+.product-tile__media {
+  margin-bottom: 10px;
+}
+.news-item .app-image > img,
+.product-tile .app-image > img {
+  aspect-ratio: auto;
+  margin: 0;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+}
+
+/* ---- 首页宽屏：多列 masonry，天然不会把任何 section 留空轨 ----
+ * 覆盖之前所有 @media(min-width:1440px) 里对 .home-page 的 grid 设定。 */
+@media (min-width: 1440px) {
+  .layout-content > .page,
+  .layout-content > .home-page,
+  .layout-content > .admin-page {
+    width: min(100%, var(--content-max));
+    max-width: var(--content-max);
+    margin-inline: auto;
+  }
+
+  .main-content.layout-content {
+    padding: 16px var(--gutter) 28px;
+  }
+
+  /* 关键：从 12 列 grid 切回多列流式布局 */
+  .home-page {
+    display: block;
+    columns: 2;
+    column-gap: var(--home-gap);
+    grid-template-columns: none;
+  }
+
+  .home-page > .portal-section,
+  .home-page > .portal-alert {
+    width: 100%;
+    margin: 0 0 var(--home-gap);
+    break-inside: avoid;
+    /* 重置旧 span 图遗留的行列定位（保留各 section 自身 display） */
+    grid-column: auto;
+    grid-row: auto;
+    order: 0;
+    height: auto;
+  }
+
+  /* hero 与告警横跨整宽 */
+  .home-page > .portal-hero,
+  .home-page > .portal-alert,
+  .home-page > .admin-entry-section {
+    column-span: all;
+    margin: 0 0 var(--home-gap);
+  }
+
+  /* qa 绿条不再被拉高成空盒：正常内容高度即可；
+   * 并恢复其绿色背景（宽屏 pass 曾把所有 home portal-section 刷白） */
+  .home-page > #home-qa {
+    height: auto;
+    border-color: rgba(255, 255, 255, 0.24);
+    background:
+      linear-gradient(115deg, rgba(6, 95, 70, 0.92), rgba(5, 150, 105, 0.82)),
+      linear-gradient(90deg, #0b6f38, #128448);
+    box-shadow: var(--shadow-md);
+  }
+}
+
+@media (min-width: 1900px) {
+  :root {
+    --content-max: 100%;
+    --home-gap: var(--space-4);
+  }
+  .home-page {
+    columns: 3;
+  }
+}
+
+/* ---- 买家商品详情弹窗 ---- */
+.order-detail-body {
+  align-items: start;
+  gap: var(--space-4);
+}
+.order-detail-media {
+  align-self: stretch;
+}
+.order-detail-info {
+  display: grid;
+  gap: var(--space-3);
+  align-content: start;
+}
+.order-detail-info .price {
+  font-size: 24px;
+}
+.order-detail-specs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-2) var(--space-4);
+  margin: 0;
+}
+.order-detail-specs div {
+  display: flex;
+  gap: 6px;
+  align-items: baseline;
+}
+.order-detail-specs dt {
+  color: var(--muted, #6b7280);
+  font-size: 13px;
+}
+.order-detail-specs dd {
+  margin: 0;
+  font-weight: 600;
+}
+.order-detail-content {
+  margin: 0;
+  line-height: 1.6;
+  color: var(--muted, #4b5563);
+}
+@media (max-width: 767px) {
+  .order-detail-specs {
+    grid-template-columns: 1fr;
   }
 }

@@ -1,18 +1,5 @@
 <script setup lang="ts">
-type IconName =
-  | 'leaf'
-  | 'bank'
-  | 'expert'
-  | 'cart'
-  | 'user'
-  | 'shield'
-  | 'arrow'
-  | 'search'
-  | 'plus'
-  | 'home'
-  | 'check'
-  | 'menu'
-  | 'logout'
+import type { IconName } from '@/components/icons'
 
 defineProps<{
   name: IconName

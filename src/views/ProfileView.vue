@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
 import AppIcon from '@/components/AppIcon.vue'
+import PageHeader from '@/components/ui/PageHeader.vue'
+import SummaryStrip from '@/components/ui/SummaryStrip.vue'
 import { api } from '@/api/client'
 import { useSessionStore } from '@/stores/session'
 import type { Finance, Purchase, TradeOrder, User, UserRole } from '@/types/domain'
@@ -275,26 +277,21 @@ onMounted(loadProfile)
 
 <template>
   <section class="page">
-    <div class="section-title">
-      <div>
-        <span class="eyebrow"><AppIcon name="user" />个人中心</span>
-        <h2>资料维护与业务记录</h2>
-        <p>对接 `/api/users/{userName}`、我的货源、采购记录和融资申请。</p>
-      </div>
-      <button class="button button--ghost" type="button" @click="loadProfile">
-        <AppIcon name="search" />刷新
-      </button>
-    </div>
+    <PageHeader eyebrow="个人中心" icon="user" title="资料维护与业务记录" desc="对接 `/api/users/{userName}`、我的货源、采购记录和融资申请。">
+      <template #actions>
+        <button class="button button--ghost" type="button" @click="loadProfile">
+          <AppIcon name="search" />刷新
+        </button>
+      </template>
+    </PageHeader>
 
     <p v-if="message" class="alert">{{ message }}</p>
     <p v-if="error" class="alert alert--error">{{ error }}</p>
 
-    <div class="summary-strip profile-summary-strip" :class="{ 'profile-summary-strip--buyer': profile.role === 'BUYER' }">
-      <div v-for="card in profileSummaryCards" :key="card.label" class="metric">
-        <strong>{{ card.value }}</strong>
-        <span>{{ card.label }}</span>
-      </div>
-    </div>
+    <SummaryStrip
+      :items="profileSummaryCards"
+      :extra-class="profile.role === 'BUYER' ? 'profile-summary-strip profile-summary-strip--buyer' : 'profile-summary-strip'"
+    />
 
     <section class="section profile-workspace">
       <form class="panel form" @submit.prevent="saveProfile">

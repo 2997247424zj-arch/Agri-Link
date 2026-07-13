@@ -2,6 +2,10 @@
 import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import AppIcon from '@/components/AppIcon.vue'
+import PageHeader from '@/components/ui/PageHeader.vue'
+import ModuleTabs from '@/components/ui/ModuleTabs.vue'
+import SummaryStrip from '@/components/ui/SummaryStrip.vue'
+import Pager from '@/components/ui/Pager.vue'
 import { api } from '@/api/client'
 import { useSessionStore } from '@/stores/session'
 import type { Bank, Finance, FinancingIntention } from '@/types/domain'
@@ -27,7 +31,8 @@ const applicationPageSize = 5
 const matchModalOpen = ref(false)
 type FinanceTab = 'intro' | 'apply' | 'result'
 const financeTabsAll: Array<{ value: FinanceTab; label: string; roles: Array<'FARMER' | 'BANK'> }> = [
-  { value: 'intro', label: '基础信息介绍', roles: ['FARMER', 'BANK'] },
+  // 基础信息介绍是农户挑选银行产品的入口，银行端不应浏览同业产品目录。
+  { value: 'intro', label: '基础信息介绍', roles: ['FARMER'] },
   { value: 'apply', label: '融资申请及意向登记', roles: ['FARMER'] },
   { value: 'result', label: '查看审批结果', roles: ['FARMER', 'BANK'] },
 ]
@@ -116,9 +121,9 @@ const applicationPageCount = computed(() =>
   Math.max(1, Math.ceil(filteredApplications.value.length / applicationPageSize)),
 )
 const activeTab = computed<FinanceTab>(() => {
+  // 银行端没有「基础信息介绍」/「融资申请」，统一落到审批结果页。
+  if (session.role === 'BANK') return 'result'
   const requested = route.query.tab === 'apply' || route.query.tab === 'result' ? route.query.tab : 'intro'
-  // BANK 不允许进入"融资申请"填单页
-  if (requested === 'apply' && session.role === 'BANK') return 'intro'
   return requested
 })
 const isBankRole = computed(() => session.role === 'BANK')
@@ -319,55 +324,33 @@ watch(applicationPageCount, () => {
 
 <template>
   <section class="page">
-    <div class="section-title">
-      <div>
-        <span class="eyebrow"><AppIcon name="bank" />融资服务</span>
-        <h2>融资产品、意向匹配与审批</h2>
-        <p>对接银行产品、融资申请、融资意向和银行端审批接口。</p>
-      </div>
-      <div class="toolbar">
+    <PageHeader eyebrow="融资服务" icon="bank" title="融资产品、意向匹配与审批" desc="对接银行产品、融资申请、融资意向和银行端审批接口。">
+      <template #actions>
         <button class="button" type="button" @click="loadMatches"><AppIcon name="search" />按金额匹配</button>
         <button v-if="isBankRole" class="button button--ghost" type="button" @click="loadFarmerMatches">
           <AppIcon name="expert" />匹配农户
         </button>
-      </div>
-    </div>
+      </template>
+    </PageHeader>
 
     <p v-if="message" class="alert">{{ message }}</p>
     <p v-if="error" class="alert alert--error">{{ error }}</p>
 
-    <div class="tabs module-switcher" role="tablist" aria-label="融资申请操作">
-      <button
-        v-for="tab in financeTabs"
-        :key="tab.value"
-        class="tab"
-        type="button"
-        role="tab"
-        :aria-selected="activeTab === tab.value"
-        @click="setFinanceTab(tab.value)"
-      >
-        {{ tab.label }}
-      </button>
-    </div>
+    <ModuleTabs
+      :model-value="activeTab"
+      :options="financeTabs"
+      aria-label="融资申请操作"
+      @update:model-value="setFinanceTab"
+    />
 
-    <div class="summary-strip">
-      <div class="metric">
-        <strong>{{ banks.length }}</strong>
-        <span>{{ loading ? '正在加载产品' : '银行产品' }}</span>
-      </div>
-      <div class="metric">
-        <strong>{{ intentions.length }}</strong>
-        <span>融资意向</span>
-      </div>
-      <div class="metric">
-        <strong>{{ pendingApplications.length }}</strong>
-        <span>待审批申请</span>
-      </div>
-      <div class="metric">
-        <strong>{{ session.roleLabel }}</strong>
-        <span>当前角色</span>
-      </div>
-    </div>
+    <SummaryStrip
+      :items="[
+        { value: banks.length, label: loading ? '正在加载产品' : '银行产品' },
+        { value: intentions.length, label: '融资意向' },
+        { value: pendingApplications.length, label: '待审批申请' },
+        { value: session.roleLabel, label: '当前角色' },
+      ]"
+    />
 
     <section v-if="activeTab === 'intro'" class="section">
       <div class="grid">
@@ -538,11 +521,7 @@ watch(applicationPageCount, () => {
             </tbody>
           </table>
         </div>
-        <div class="pager">
-          <button class="button button--ghost button--small" type="button" @click="changeApplicationPage(-1)">上一页</button>
-          <span>第 {{ applicationPage }} / {{ applicationPageCount }} 页</span>
-          <button class="button button--ghost button--small" type="button" @click="changeApplicationPage(1)">下一页</button>
-        </div>
+        <Pager :page="applicationPage" :page-count="applicationPageCount" @change="changeApplicationPage" />
       </div>
     </section>
 

@@ -103,13 +103,14 @@ export function useParticles() {
         ctx!.stroke()
       }
 
-      const gradient = ctx!.createRadialGradient(particle.x, particle.y, 0, particle.x, particle.y, particle.r * 5)
-      gradient.addColorStop(0, `rgba(34, 197, 94, ${particle.alpha})`)
-      gradient.addColorStop(1, 'rgba(34, 197, 94, 0)')
-      ctx!.fillStyle = gradient
+      // 之前每个粒子每帧都 createRadialGradient + fill，开销大且是卡顿来源之一。
+      // 改为一次性设定 fillStyle + globalAlpha 的实心圆点，观感接近但主线程绘制成本大幅下降。
+      ctx!.globalAlpha = particle.alpha
+      ctx!.fillStyle = 'rgba(34, 197, 94, 1)'
       ctx!.beginPath()
-      ctx!.arc(particle.x, particle.y, particle.r * 5, 0, Math.PI * 2)
+      ctx!.arc(particle.x, particle.y, particle.r * 2.2, 0, Math.PI * 2)
       ctx!.fill()
+      ctx!.globalAlpha = 1
     })
 
     frame = window.requestAnimationFrame(draw)

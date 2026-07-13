@@ -2,6 +2,7 @@
 import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import AppIcon from '@/components/AppIcon.vue'
+import AppImage from '@/components/AppImage.vue'
 import { api } from '@/api/client'
 import { useSessionStore } from '@/stores/session'
 import type { Bank, Expert, Knowledge, TradeOrder, UserRole } from '@/types/domain'
@@ -80,17 +81,25 @@ const fallbackNews = [
 ]
 const knowledgeList = ref<Knowledge[]>([])
 
+// 资讯无自带配图时，按序轮换占位图，避免所有卡片显示同一张
+const newsFallbackImages = [
+  '/file/info/20e7a0d77ecf4731b28ebc1d6ca22587.jpg',
+  '/file/info/3c26336725224041b2a2f4542020b018.jpg',
+  '/file/info/47fc92e1068d4c20833e4e197aec0b0d.jpg',
+  '/file/info/b62d1d12d2bc4940956c92b79509efee.jpg',
+]
+
 const visibleBanks = computed(() => (banks.value.length ? banks.value : fallbackBanks).slice(0, 4))
 const visibleExperts = computed(() => (experts.value.length ? experts.value : fallbackExperts).slice(0, 5))
 const visibleOrders = computed(() => (orders.value.length ? orders.value : fallbackOrders).slice(0, 5))
 const visibleNews = computed(() => {
   if (knowledgeList.value.length) {
-    return knowledgeList.value.slice(0, 4).map((k) => ({
+    return knowledgeList.value.slice(0, 4).map((k, index) => ({
       title: k.title,
       desc: k.content?.slice(0, 80) || k.category || '平台资讯',
       image: k.picture?.startsWith('/') || k.picture?.startsWith('http')
         ? k.picture
-        : k.picture ? `/file/info/${k.picture}` : '/file/info/3c26336725224041b2a2f4542020b018.jpg',
+        : k.picture ? `/file/info/${k.picture}` : newsFallbackImages[index % newsFallbackImages.length],
     }))
   }
   return fallbackNews
@@ -410,6 +419,21 @@ onMounted(async () => {
       <RouterLink class="button button--green" to="/admin"><AppIcon name="shield" />进入系统后台</RouterLink>
     </section>
 
+    <section class="portal-section" id="home-services">
+      <div class="portal-heading">
+        <h2>核心服务</h2>
+        <p>围绕融、销、技、管四类业务建立统一入口</p>
+      </div>
+      <div class="service-grid">
+        <RouterLink v-for="item in visibleServiceCards" :key="item.title" class="service-card" :to="item.to">
+          <span><AppIcon :name="item.icon" /></span>
+          <strong>{{ item.title }}</strong>
+          <p>{{ item.desc }}</p>
+          <em>{{ item.metric }}</em>
+        </RouterLink>
+      </div>
+    </section>
+
     <section v-if="showFinanceSection" class="portal-section" id="home-finance">
       <div class="portal-heading">
         <h2>金融产品</h2>
@@ -427,45 +451,6 @@ onMounted(async () => {
           </div>
         </article>
       </div>
-    </section>
-
-    <section class="portal-section" id="home-services">
-      <div class="portal-heading">
-        <h2>核心服务</h2>
-        <p>围绕融、销、技、管四类业务建立统一入口</p>
-      </div>
-      <div class="service-grid">
-        <RouterLink v-for="item in visibleServiceCards" :key="item.title" class="service-card" :to="item.to">
-          <span><AppIcon :name="item.icon" /></span>
-          <strong>{{ item.title }}</strong>
-          <p>{{ item.desc }}</p>
-          <em>{{ item.metric }}</em>
-        </RouterLink>
-      </div>
-    </section>
-
-    <section v-if="showExpertSection" class="portal-section" id="home-experts">
-      <div class="portal-heading">
-        <h2>专家团队</h2>
-        <p>覆盖种植、植保、品牌和产销运营</p>
-      </div>
-      <div class="expert-strip">
-        <article v-for="(expert, index) in visibleExperts" :key="expert.userName" class="expert-card">
-          <img :src="`/file/avatar/expert0${(index % 5) + 1}.png`" :alt="expert.realName || expert.userName" loading="lazy" />
-          <h3>{{ expert.realName || expert.userName }}</h3>
-          <p>{{ expert.profession || '农业综合服务' }}</p>
-          <span>{{ expert.position || '平台专家' }}</span>
-        </article>
-      </div>
-    </section>
-
-    <section v-if="showExpertSection" class="portal-section qa-section" id="home-qa">
-      <div class="qa-badge">Q&A</div>
-      <div>
-        <h2>专家问答与预约指导</h2>
-        <p>农户可提交作物、土壤、病虫害和销售运营问题，专家端可在线答复或处理预约。</p>
-      </div>
-      <RouterLink class="button button--green" to="/experts"><AppIcon name="arrow" />进入专家服务</RouterLink>
     </section>
 
     <section class="portal-section tips-section" id="home-tips" aria-label="农作物栽培小技巧">
@@ -514,6 +499,30 @@ onMounted(async () => {
       </div>
     </section>
 
+    <section v-if="showExpertSection" class="portal-section" id="home-experts">
+      <div class="portal-heading">
+        <h2>专家团队</h2>
+        <p>覆盖种植、植保、品牌和产销运营</p>
+      </div>
+      <div class="expert-strip">
+        <article v-for="(expert, index) in visibleExperts" :key="expert.userName" class="expert-card">
+          <img :src="`/file/avatar/expert0${(index % 5) + 1}.png`" :alt="expert.realName || expert.userName" loading="lazy" />
+          <h3>{{ expert.realName || expert.userName }}</h3>
+          <p>{{ expert.profession || '农业综合服务' }}</p>
+          <span>{{ expert.position || '平台专家' }}</span>
+        </article>
+      </div>
+    </section>
+
+    <section v-if="showExpertSection" class="portal-section qa-section" id="home-qa">
+      <div class="qa-badge">Q&A</div>
+      <div>
+        <h2>专家问答与预约指导</h2>
+        <p>农户可提交作物、土壤、病虫害和销售运营问题，专家端可在线答复或处理预约。</p>
+      </div>
+      <RouterLink class="button button--green" to="/experts"><AppIcon name="arrow" />进入专家服务</RouterLink>
+    </section>
+
     <section v-if="!showAdminOnly" class="portal-section" id="home-news">
       <div class="portal-heading">
         <h2>平台资讯</h2>
@@ -521,7 +530,7 @@ onMounted(async () => {
       </div>
       <div class="news-list">
         <article v-for="item in visibleNews" :key="item.title" class="news-item">
-          <img :src="item.image" :alt="item.title" loading="lazy" />
+          <AppImage class="news-item__media" :src="item.image" :alt="item.title" ratio="16 / 9" icon="leaf" />
           <div>
             <h3>{{ item.title }}</h3>
             <p>{{ item.desc }}</p>
@@ -538,7 +547,7 @@ onMounted(async () => {
       </div>
       <div class="product-row">
         <article v-for="order in visibleOrders" :key="order.orderId" class="product-tile">
-          <img :src="imageSrc(order.picture)" :alt="order.title" loading="lazy" />
+          <AppImage class="product-tile__media" :src="imageSrc(order.picture)" :alt="order.title" ratio="1 / 0.82" icon="leaf" />
           <h3>{{ order.title }}</h3>
           <p>{{ order.address || '产地待补充' }} · {{ order.type || '农产品' }}</p>
           <strong>￥{{ order.price ?? '-' }}</strong>
