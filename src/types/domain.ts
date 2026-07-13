@@ -9,6 +9,14 @@ export interface ApiResponse<T> {
   timestamp: string
 }
 
+export interface FileUploadResponse {
+  fileName: string
+  originalName: string
+  contentType: string
+  size: number
+  url: string
+}
+
 export interface User {
   userName: string
   password?: string
@@ -38,6 +46,15 @@ export interface Bank {
   money?: number
   rate?: number
   repayment?: string
+}
+
+export interface Address {
+  id: number
+  ownName: string
+  consignee: string
+  phone: string
+  addressDetail: string
+  isDefault: number
 }
 
 // 交易、购物车与采购订单相关类型。
@@ -185,6 +202,8 @@ export interface Knowledge {
   knowledgeId: number
   title: string
   content?: string
+  picPath?: string
+  ownName?: string
   picture?: string
   userName?: string
   category?: string

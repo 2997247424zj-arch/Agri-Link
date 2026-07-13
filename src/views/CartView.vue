@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { RouterLink } from 'vue-router'
 import AppIcon from '@/components/AppIcon.vue'
 import Pager from '@/components/ui/Pager.vue'
@@ -11,13 +11,15 @@ import {
   removeLocalCartItem,
   updateLocalCartCount,
 } from '@/utils/localCart'
-import type { Purchase, ShoppingCart, TradeOrder } from '@/types/domain'
+import type { Address, Purchase, ShoppingCart, TradeOrder } from '@/types/domain'
 
 const session = useSessionStore()
 const carts = ref<ShoppingCart[]>([])
 const orders = ref<TradeOrder[]>([])
 const purchases = ref<Purchase[]>([])
+const addresses = ref<Address[]>([])
 const address = ref('湘西州吉首市收货点')
+const selectedAddressId = ref<number | null>(null)
 const loading = ref(true)
 const submitting = ref(false)
 const message = ref('')
@@ -27,6 +29,12 @@ const expandedPurchaseId = ref<number | null>(null)
 const cancelReason = ref('')
 const purchasePage = ref(1)
 const purchasePageSize = 5
+const addressForm = reactive({
+  consignee: '',
+  phone: '',
+  addressDetail: '',
+  isDefault: 0,
+})
 
 const fallbackOrders: TradeOrder[] = [
   { orderId: 1, title: '富硒猕猴桃 20kg', type: '水果', price: 8.6, ownName: '吉首合作社', address: '湘西州' },
@@ -117,18 +125,22 @@ async function loadCart() {
   const localEntries = readLocalCart(ownName)
   let cartFailed = false
   try {
-    const [cartData, orderData, purchaseData] = await Promise.all([
+    const [cartData, orderData, purchaseData, addressData] = await Promise.all([
       api.get<ShoppingCart[]>(`/api/trade/shopping-cart/owners/${encodeURIComponent(ownName)}`).catch(() => {
         cartFailed = true
         return [] as ShoppingCart[]
       }),
       api.get<TradeOrder[]>('/api/trade/orders').catch(() => fallbackOrders),
       api.get<Purchase[]>(`/api/trade/purchases/owners/${encodeURIComponent(ownName)}`).catch(() => []),
+      api.get<Address[]>(`/api/addresses/owners/${encodeURIComponent(ownName)}`).catch(() => []),
     ])
     const localCarts = localEntries.map((entry) => entry.cart)
     carts.value = cartData?.length || localCarts.length ? [...(cartData ?? []), ...localCarts] : fallbackCarts
     orders.value = mergeOrders(orderData?.length ? orderData : fallbackOrders, localEntries.map((entry) => entry.order))
     purchases.value = purchaseData ?? []
+    addresses.value = addressData ?? []
+    const defaultAddress = addresses.value.find((item) => item.isDefault === 1) ?? addresses.value[0]
+    if (defaultAddress) selectAddress(defaultAddress)
     localShoppingIds.value = new Set(localCarts.map((cart) => cart.shoppingId))
     if (cartFailed && localCarts.length) {
       message.value = '后端购物车暂不可用，已读取本地保存的加购记录。'
@@ -141,6 +153,62 @@ async function loadCart() {
     error.value = err instanceof Error ? `后端暂不可用：${err.message}` : '后端暂不可用，已显示演示购物车。'
   } finally {
     loading.value = false
+  }
+}
+
+function selectAddress(item: Address) {
+  selectedAddressId.value = item.id
+  address.value = `${item.consignee} ${item.phone} ${item.addressDetail}`
+}
+
+async function createAddress() {
+  message.value = ''
+  error.value = ''
+  try {
+    const created = await api.post<Address>('/api/addresses', {
+      ownName: session.userName || 'buyer-demo',
+      ...addressForm,
+    }, { role: 'BUYER' })
+    if (created.isDefault === 1) {
+      addresses.value.forEach((item) => { item.isDefault = 0 })
+    }
+    addresses.value = [created, ...addresses.value]
+    selectAddress(created)
+    Object.assign(addressForm, { consignee: '', phone: '', addressDetail: '', isDefault: 0 })
+    message.value = '收货地址已新增并选中。'
+  } catch (err) {
+    error.value = err instanceof Error ? err.message : '收货地址新增失败。'
+  }
+}
+
+async function setDefaultAddress(item: Address) {
+  message.value = ''
+  error.value = ''
+  try {
+    const updated = await api.put<Address>(`/api/addresses/${item.id}`, { ...item, isDefault: 1 }, { role: 'BUYER' })
+    addresses.value.forEach((addressItem) => { addressItem.isDefault = addressItem.id === item.id ? 1 : 0 })
+    Object.assign(item, updated)
+    selectAddress(item)
+    message.value = '默认收货地址已更新。'
+  } catch (err) {
+    error.value = err instanceof Error ? err.message : '默认地址更新失败。'
+  }
+}
+
+async function deleteAddress(item: Address) {
+  if (typeof window !== 'undefined' && !window.confirm(`确认删除「${item.addressDetail}」？`)) return
+  message.value = ''
+  error.value = ''
+  try {
+    await api.delete<void>(`/api/addresses/${item.id}`, { role: 'BUYER' })
+    addresses.value = addresses.value.filter((addressItem) => addressItem.id !== item.id)
+    if (selectedAddressId.value === item.id) {
+      selectedAddressId.value = null
+      address.value = ''
+    }
+    message.value = '收货地址已删除。'
+  } catch (err) {
+    error.value = err instanceof Error ? err.message : '收货地址删除失败。'
   }
 }
 
@@ -291,6 +359,34 @@ watch(purchasePageCount, () => {
       </div>
     </div>
 
+    <section class="panel address-book">
+      <div class="section-title">
+        <div><h2>收货地址簿</h2><p>选择已有地址，或新增常用收货信息。</p></div>
+      </div>
+      <div v-if="addresses.length" class="address-grid">
+        <article v-for="item in addresses" :key="item.id" class="address-card" :class="{ 'is-selected': selectedAddressId === item.id }">
+          <div>
+            <strong>{{ item.consignee }} · {{ item.phone }}</strong>
+            <p>{{ item.addressDetail }}</p>
+            <span v-if="item.isDefault === 1" class="tag tag--green">默认地址</span>
+          </div>
+          <div class="toolbar">
+            <button class="button button--small" type="button" @click="selectAddress(item)">选择</button>
+            <button v-if="item.isDefault !== 1" class="button button--ghost button--small" type="button" @click="setDefaultAddress(item)">设为默认</button>
+            <button class="button button--danger button--small" type="button" @click="deleteAddress(item)">删除</button>
+          </div>
+        </article>
+      </div>
+      <div v-else class="empty">暂无地址，请先新增收货地址。</div>
+      <form class="address-form" @submit.prevent="createAddress">
+        <label class="field"><span>收货人</span><input v-model.trim="addressForm.consignee" required /></label>
+        <label class="field"><span>联系电话</span><input v-model.trim="addressForm.phone" type="tel" required /></label>
+        <label class="field address-form__detail"><span>详细地址</span><input v-model.trim="addressForm.addressDetail" required /></label>
+        <label class="check-field"><input v-model="addressForm.isDefault" type="checkbox" :true-value="1" :false-value="0" />设为默认地址</label>
+        <button class="button button--green" type="submit"><AppIcon name="plus" />新增地址</button>
+      </form>
+    </section>
+
     <section class="buyer-procurement-layout">
       <div class="panel buyer-cart-panel">
         <div class="section-title">
@@ -341,7 +437,7 @@ watch(purchasePageCount, () => {
           <strong>¥{{ totalPrice.toFixed(2) }}</strong>
         </div>
         <label class="field"><span>采购账号</span><input :value="session.userName || 'buyer-demo'" disabled /></label>
-        <label class="field"><span>收货地址</span><input v-model.trim="address" required /></label>
+        <label class="field"><span>收货地址</span><textarea v-model.trim="address" required /></label>
         <button class="button button--green" type="submit" :disabled="submitting || !cartRows.length">
           <AppIcon name="check" />{{ submitting ? '提交中' : '提交采购订单' }}
         </button>

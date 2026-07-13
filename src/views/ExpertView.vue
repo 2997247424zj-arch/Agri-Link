@@ -2,12 +2,13 @@
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import AppIcon from '@/components/AppIcon.vue'
+import AppImage from '@/components/AppImage.vue'
 import PageHeader from '@/components/ui/PageHeader.vue'
 import ModuleTabs from '@/components/ui/ModuleTabs.vue'
 import SummaryStrip from '@/components/ui/SummaryStrip.vue'
-import { api } from '@/api/client'
+import { api, resolveAssetUrl, uploadImage } from '@/api/client'
 import { useSessionStore } from '@/stores/session'
-import type { Expert, Question, Reserve } from '@/types/domain'
+import type { Expert, Knowledge, Question, Reserve } from '@/types/domain'
 
 const session = useSessionStore()
 const route = useRoute()
@@ -15,20 +16,36 @@ const router = useRouter()
 const experts = ref<Expert[]>([])
 const questions = ref<Question[]>([])
 const reserves = ref<Reserve[]>([])
+const knowledgeList = ref<Knowledge[]>([])
 const message = ref('')
 const error = ref('')
 const submitting = ref(false)
+const uploadingImages = ref(false)
 const questionAnswers = reactive<Record<number, string>>({})
 const reserveAnswers = reactive<Record<number, string>>({})
 const expertKeyword = ref('')
 const plantFilter = ref('')
 const selectedExpert = ref<Expert | null>(null)
 const consultModalOpen = ref(false)
-type ExpertTab = 'experts' | 'records'
-const expertTabs: Array<{ value: ExpertTab; label: string }> = [
-  { value: 'experts', label: '专家列表' },
-  { value: 'records', label: '我的咨询' },
-]
+type ExpertTab = 'experts' | 'records' | 'knowledge'
+const expertTabs = computed<Array<{ value: ExpertTab; label: string }>>(() =>
+  isExpertRole.value
+    ? [
+        { value: 'records', label: '咨询工单' },
+        { value: 'knowledge', label: '知识发布' },
+      ]
+    : [
+        { value: 'experts', label: '专家列表' },
+        { value: 'records', label: '我的咨询' },
+      ],
+)
+
+const knowledgeForm = reactive({
+  title: '',
+  content: '',
+  picPath: '',
+  ownName: session.userName || 'expert-demo',
+})
 
 // 专家页同时覆盖专家列表、在线问答和预约服务。
 const reserveForm = reactive({
@@ -153,7 +170,13 @@ const filteredReserves = computed(() => {
     return String(reserve.plantName ?? '').toLowerCase().includes(text)
   })
 })
-const activeTab = computed<ExpertTab>(() => (route.query.tab === 'records' ? 'records' : 'experts'))
+const myKnowledge = computed(() =>
+  knowledgeList.value.filter((item) => (item.ownName || item.userName) === (session.userName || 'expert-demo')),
+)
+const activeTab = computed<ExpertTab>(() => {
+  if (isExpertRole.value) return route.query.tab === 'knowledge' ? 'knowledge' : 'records'
+  return route.query.tab === 'records' ? 'records' : 'experts'
+})
 const isFarmerRole = computed(() => session.role === 'FARMER')
 const isExpertRole = computed(() => session.role === 'EXPERT')
 
@@ -181,17 +204,48 @@ function statusTagClass(status?: number) {
   return 'tag tag--amber'
 }
 
-// 附件转为 base64，便于演示环境直接提交。
-function handleQuestionAttachment(event: Event) {
-  const files = [...((event.target as HTMLInputElement).files ?? [])].slice(0, 3)
-  questionForm.attachments = []
+function legacyOrderImageSrc(src?: string) {
+  if (!src) return ''
+  return resolveAssetUrl(src.startsWith('/') || src.startsWith('http') || src.startsWith('data:') ? src : `/file/order/${src}`)
+}
 
-  for (const file of files) {
-    const reader = new FileReader()
-    reader.onload = () => {
-      questionForm.attachments.push(String(reader.result || ''))
-    }
-    reader.readAsDataURL(file)
+async function handleQuestionAttachment(event: Event) {
+  const input = event.target as HTMLInputElement
+  const files = [...(input.files ?? [])].slice(0, 3)
+  if (!files.length) return
+
+  uploadingImages.value = true
+  message.value = ''
+  error.value = ''
+  try {
+    const uploaded = await Promise.all(files.map((file) => uploadImage(file, 'FARMER')))
+    questionForm.attachments = uploaded.map((item) => item.url)
+    message.value = `已上传 ${uploaded.length} 张症状图片，可提交咨询。`
+  } catch (err) {
+    error.value = err instanceof Error ? err.message : '症状图片上传失败。'
+  } finally {
+    uploadingImages.value = false
+    input.value = ''
+  }
+}
+
+async function handleKnowledgeImage(event: Event) {
+  const input = event.target as HTMLInputElement
+  const file = input.files?.[0]
+  if (!file) return
+
+  uploadingImages.value = true
+  message.value = ''
+  error.value = ''
+  try {
+    const uploaded = await uploadImage(file, 'EXPERT')
+    knowledgeForm.picPath = uploaded.url
+    message.value = `配图「${uploaded.originalName}」已上传，可发布知识。`
+  } catch (err) {
+    error.value = err instanceof Error ? err.message : '知识配图上传失败。'
+  } finally {
+    uploadingImages.value = false
+    input.value = ''
   }
 }
 
@@ -199,14 +253,16 @@ function handleQuestionAttachment(event: Event) {
 async function loadExperts() {
   error.value = ''
   try {
-    const [expertData, questionData, reserveData] = await Promise.all([
+    const [expertData, questionData, reserveData, knowledgeData] = await Promise.all([
       api.get<Expert[]>('/api/experts'),
       api.get<Question[]>('/api/consultation/questions').catch(() => fallbackQuestions),
       api.get<Reserve[]>('/api/consultation/reserves').catch(() => fallbackReserves),
+      api.get<Knowledge[]>('/api/knowledge').catch(() => []),
     ])
     experts.value = expertData?.length ? expertData : fallbackExperts
     questions.value = questionData?.length ? questionData : fallbackQuestions
     reserves.value = reserveData?.length ? reserveData : fallbackReserves
+    knowledgeList.value = knowledgeData ?? []
     reserveForm.expertName = experts.value[0]?.userName ?? ''
     questionForm.expertName = experts.value[0]?.userName ?? ''
   } catch (err) {
@@ -216,6 +272,37 @@ async function loadExperts() {
     reserveForm.expertName = fallbackExperts[0]?.userName ?? ''
     questionForm.expertName = fallbackExperts[0]?.userName ?? ''
     error.value = err instanceof Error ? `后端暂不可用：${err.message}` : '后端暂不可用，已显示演示专家。'
+  }
+}
+
+async function publishKnowledge() {
+  submitting.value = true
+  message.value = ''
+  error.value = ''
+  try {
+    const created = await api.post<Knowledge>('/api/knowledge', knowledgeForm, { role: 'EXPERT' })
+    knowledgeList.value = [created, ...knowledgeList.value]
+    knowledgeForm.title = ''
+    knowledgeForm.content = ''
+    knowledgeForm.picPath = ''
+    message.value = '农业知识已发布。'
+  } catch (err) {
+    error.value = err instanceof Error ? err.message : '农业知识发布失败。'
+  } finally {
+    submitting.value = false
+  }
+}
+
+async function deleteKnowledge(item: Knowledge) {
+  if (typeof window !== 'undefined' && !window.confirm(`确认删除知识「${item.title}」？`)) return
+  message.value = ''
+  error.value = ''
+  try {
+    await api.delete<void>(`/api/knowledge/${item.knowledgeId}`, { role: 'EXPERT' })
+    knowledgeList.value = knowledgeList.value.filter((knowledge) => knowledge.knowledgeId !== item.knowledgeId)
+    message.value = '农业知识已删除。'
+  } catch (err) {
+    error.value = err instanceof Error ? err.message : '农业知识删除失败。'
   }
 }
 
@@ -326,7 +413,6 @@ onMounted(loadExperts)
     <p v-if="error" class="alert alert--error">{{ error }}</p>
 
     <ModuleTabs
-      v-if="isFarmerRole"
       :model-value="activeTab"
       :options="expertTabs"
       aria-label="专家助力操作"
@@ -361,7 +447,7 @@ onMounted(loadExperts)
       </div>
     </section>
 
-    <section v-if="activeTab === 'experts' || isExpertRole" class="section grid">
+    <section v-if="activeTab === 'experts'" class="section grid">
       <article
         v-for="expert in filteredExperts"
         :key="expert.userName"
@@ -385,7 +471,7 @@ onMounted(loadExperts)
       </article>
     </section>
 
-    <section v-if="activeTab === 'records' || isExpertRole" class="section grid grid--two">
+    <section v-if="activeTab === 'records'" class="section grid grid--two">
       <div class="panel">
         <div class="section-title">
           <div>
@@ -402,7 +488,7 @@ onMounted(loadExperts)
             </small>
             <em>{{ question.question || question.content || '暂无详细内容' }}</em>
             <div v-if="question.attachments?.length" class="attachment-grid">
-              <img v-for="(image, index) in question.attachments" :key="index" :src="image" alt="症状图片" />
+              <AppImage v-for="image in question.attachments" :key="image" :src="legacyOrderImageSrc(image)" fallback-src="/file/order/W020230811400645740814_ORIGIN.jpg" alt="症状图片" ratio="4 / 3" icon="leaf" />
             </div>
             <textarea v-if="isExpertRole && (question.status ?? 0) === 0" v-model="questionAnswers[question.id || question.questionId || 0]" placeholder="填写专家答复" />
             <div v-if="isExpertRole && (question.status ?? 0) === 0" class="toolbar">
@@ -443,6 +529,37 @@ onMounted(loadExperts)
       </div>
     </section>
 
+    <section v-if="activeTab === 'knowledge'" class="section grid grid--two">
+      <form class="panel form" @submit.prevent="publishKnowledge">
+        <div class="section-title">
+          <div><h2>发布农业知识</h2><p>将咨询经验沉淀为农技文章，发布后同步展示在平台资讯。</p></div>
+        </div>
+        <label class="field"><span>标题</span><input v-model.trim="knowledgeForm.title" required /></label>
+        <label class="field"><span>配图路径</span><input v-model.trim="knowledgeForm.picPath" placeholder="可选，例如 /file/info/example.jpg" /></label>
+        <label class="field"><span>{{ uploadingImages ? '图片上传中' : '从电脑上传配图' }}</span><input type="file" accept="image/*" :disabled="uploadingImages" @change="handleKnowledgeImage" /></label>
+        <div v-if="knowledgeForm.picPath" class="image-preview">
+          <img :src="resolveAssetUrl(knowledgeForm.picPath)" alt="知识配图预览" />
+        </div>
+        <label class="field"><span>正文</span><textarea v-model.trim="knowledgeForm.content" required /></label>
+        <button class="button button--green" type="submit" :disabled="submitting || uploadingImages">
+          <AppIcon name="plus" />{{ submitting ? '发布中' : '发布知识' }}
+        </button>
+      </form>
+      <div class="panel">
+        <div class="section-title"><div><h2>我的知识</h2><p>共 {{ myKnowledge.length }} 篇。</p></div></div>
+        <div v-if="myKnowledge.length" class="mini-list">
+          <span v-for="item in myKnowledge" :key="item.knowledgeId" class="stack-row">
+            <AppImage v-if="item.picPath || item.picture" :src="legacyOrderImageSrc(item.picPath || item.picture)" fallback-src="/file/order/12be19984e374bcfbf06561571365d07.jpg" :alt="item.title" ratio="16 / 8" icon="leaf" />
+            <strong>{{ item.title }}</strong>
+            <small><span :class="item.status === 2 ? 'tag tag--red' : 'tag tag--green'">{{ item.status === 2 ? '已下架' : '已发布' }}</span></small>
+            <em>{{ item.content || '暂无正文' }}</em>
+            <div class="toolbar"><button class="button button--danger button--small" type="button" @click="deleteKnowledge(item)">删除</button></div>
+          </span>
+        </div>
+        <div v-else class="empty">暂未发布农业知识。</div>
+      </div>
+    </section>
+
     <Transition name="modal-spring">
       <div v-if="consultModalOpen" class="modal-overlay" role="presentation" @click.self="consultModalOpen = false">
         <div class="modal modal--wide" role="dialog" aria-modal="true" aria-label="专家咨询">
@@ -456,7 +573,7 @@ onMounted(loadExperts)
           <div class="grid grid--two">
             <form class="form" @submit.prevent="submitReserve">
               <h3>咨询预约</h3>
-              <label class="field"><span>农户账号</span><input v-model.trim="reserveForm.questioner" required /></label>
+              <label class="field"><span>农户账号</span><input v-model.trim="reserveForm.questioner" disabled /></label>
               <label class="field"><span>联系电话</span><input v-model.trim="reserveForm.phone" type="tel" required /></label>
               <label class="field"><span>作物名称</span><input v-model.trim="reserveForm.plantName" required /></label>
               <label class="field"><span>预约时间</span><input v-model="reserveForm.appointmentTime" type="datetime-local" required /></label>
@@ -476,16 +593,16 @@ onMounted(loadExperts)
             </form>
             <form class="form" @submit.prevent="submitQuestion">
               <h3>在线问答</h3>
-              <label class="field"><span>提问人</span><input v-model.trim="questionForm.questioner" required /></label>
+              <label class="field"><span>提问人</span><input v-model.trim="questionForm.questioner" disabled /></label>
               <label class="field"><span>联系电话</span><input v-model.trim="questionForm.phone" type="tel" required /></label>
               <label class="field"><span>作物名称</span><input v-model.trim="questionForm.plantName" required /></label>
               <label class="field"><span>标题</span><input v-model.trim="questionForm.title" required /></label>
-              <label class="field"><span>症状图片</span><input type="file" accept="image/*" multiple @change="handleQuestionAttachment" /></label>
+              <label class="field"><span>{{ uploadingImages ? '图片上传中' : '症状图片（最多 3 张）' }}</span><input type="file" accept="image/*" multiple :disabled="uploadingImages" @change="handleQuestionAttachment" /></label>
               <div v-if="questionForm.attachments.length" class="attachment-grid">
-                <img v-for="(image, index) in questionForm.attachments" :key="index" :src="image" alt="症状图片预览" />
+                <AppImage v-for="image in questionForm.attachments" :key="image" :src="legacyOrderImageSrc(image)" fallback-src="/file/order/W020230811400645740814_ORIGIN.jpg" alt="症状图片预览" ratio="4 / 3" icon="leaf" />
               </div>
               <label class="field"><span>问题描述</span><textarea v-model.trim="questionForm.question" required /></label>
-              <button class="button" type="submit" :disabled="submitting">
+              <button class="button" type="submit" :disabled="submitting || uploadingImages">
                 <AppIcon name="plus" />发布问题
               </button>
             </form>

@@ -1,8 +1,8 @@
-import type { ApiResponse, UserRole } from '@/types/domain'
+import type { ApiResponse, FileUploadResponse, UserRole } from '@/types/domain'
 import { measureApi } from '@/utils/performance'
 
 // 默认连接本地后端，可通过 .env 覆盖。
-const API_BASE = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:9091'
+const API_BASE = (import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:9091').replace(/\/$/, '')
 const pendingGets = new Map<string, Promise<unknown>>()
 
 interface RequestOptions extends RequestInit {
@@ -74,6 +74,19 @@ export async function request<T>(path: string, options: RequestOptions = {}): Pr
     const endedAt = typeof performance === 'undefined' ? Date.now() : performance.now()
     measureApi(path, endedAt - startedAt, method)
   }
+}
+
+// 后端上传接口返回 /files/** 相对路径，开发环境需补上后端端口；
+// public/file、data URL、blob URL 和外部图片仍按原地址加载。
+export function resolveAssetUrl(src?: string) {
+  if (!src) return ''
+  return src.startsWith('/files/') ? `${API_BASE}${src}` : src
+}
+
+export function uploadImage(file: File, role?: UserRole | string) {
+  const body = new FormData()
+  body.append('file', file)
+  return request<FileUploadResponse>('/api/files/images', { method: 'POST', body, role })
 }
 
 export const api = {

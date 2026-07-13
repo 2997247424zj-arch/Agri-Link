@@ -70,6 +70,7 @@ function closeSidebarPreview() {
 
 <template>
   <div ref="shellRef" class="app-shell" :class="{ 'app-shell--auth': isAuth, 'app-shell--sidebar-open': sidebarOpen }">
+    <a class="skip-link" href="#main-content">跳到主要内容</a>
     <canvas ref="canvasRef" class="ambient-particles" aria-hidden="true"></canvas>
     <div class="ambient-spotlight" aria-hidden="true"></div>
 
@@ -80,6 +81,8 @@ function closeSidebarPreview() {
       :role-code="roleCode"
       :avatar-text="avatarText"
       :display-name="session.displayName"
+      :nav-items="visibleNavItems"
+      :profile-item="visibleProfileItem"
       @toggle-sidebar="toggleSidebar"
       @logout="logout"
     />
@@ -106,12 +109,12 @@ function closeSidebarPreview() {
         @click="closeMobileSidebar"
       ></button>
 
-      <main class="main-content layout-content" aria-live="polite">
+      <main id="main-content" class="main-content layout-content" aria-live="polite">
         <slot />
       </main>
     </div>
 
-    <main v-else class="main-content auth-content" aria-live="polite">
+    <main v-else id="main-content" class="main-content auth-content" aria-live="polite">
       <slot />
     </main>
   </div>

@@ -48,6 +48,19 @@ const roleDescriptions: Record<UserRole, string> = {
   SYSTEM_ADMIN: '管理用户、交易、融资和内容。',
 }
 
+const demoAccounts: Array<{
+  userName: string
+  role: UserRole
+  label: string
+  focus: string
+}> = [
+  { userName: 'dev_farmer', role: 'FARMER', label: '农户示例', focus: '发布货源、申请融资、发起专家咨询' },
+  { userName: 'dev_buyer', role: 'BUYER', label: '买家示例', focus: '选购商品、管理地址、购物车和采购单' },
+  { userName: 'dev_expert', role: 'EXPERT', label: '专家示例', focus: '处理问答预约、查看症状图片、发布知识' },
+  { userName: 'dev_bank', role: 'BANK', label: '银行示例', focus: '维护贷款产品、查看材料、处理融资审批' },
+  { userName: 'dev_admin', role: 'SYSTEM_ADMIN', label: '管理员示例', focus: '监管用户、交易、融资和平台资讯' },
+]
+
 const authRoles = computed(() =>
   mode.value === 'register' ? roles.filter((role) => role.value !== 'SYSTEM_ADMIN') : roles,
 )
@@ -58,6 +71,17 @@ const accountPlaceholder = computed(() =>
 )
 const accountAutocomplete = computed(() => (accountMode.value === 'netease' ? 'email' : 'username'))
 const accountType = computed(() => (accountMode.value === 'netease' ? 'email' : 'text'))
+const selectedDemoAccount = computed(() => demoAccounts.find((account) => account.userName === form.userName))
+
+function applyDemoAccount(account: (typeof demoAccounts)[number]) {
+  mode.value = 'login'
+  accountMode.value = 'account'
+  form.userName = account.userName
+  form.password = 'Test@123456'
+  form.role = account.role
+  message.value = ''
+  error.value = ''
+}
 
 function switchMode(nextMode: 'login' | 'register') {
   mode.value = nextMode
@@ -136,6 +160,28 @@ async function submit() {
           <button type="button" :aria-selected="accountMode === 'netease'" @click="accountMode = 'netease'">
             163 邮箱
           </button>
+        </div>
+
+        <div v-if="mode === 'login'" class="demo-account-panel">
+          <div class="demo-account-heading">
+            <strong>示例账号快速体验</strong>
+            <small>统一密码：Test@123456</small>
+          </div>
+          <div class="demo-account-grid">
+            <button
+              v-for="account in demoAccounts"
+              :key="account.userName"
+              type="button"
+              :aria-pressed="selectedDemoAccount?.userName === account.userName"
+              @click="applyDemoAccount(account)"
+            >
+              <strong>{{ account.label }}</strong>
+              <small>{{ account.userName }}</small>
+            </button>
+          </div>
+          <p v-if="selectedDemoAccount" class="demo-account-detail">
+            <AppIcon name="check" />{{ selectedDemoAccount.focus }}
+          </p>
         </div>
 
         <label class="field">

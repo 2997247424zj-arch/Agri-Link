@@ -1,15 +1,17 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
 import AppIcon from '@/components/AppIcon.vue'
+import AppImage from '@/components/AppImage.vue'
 import PageHeader from '@/components/ui/PageHeader.vue'
 import SummaryStrip from '@/components/ui/SummaryStrip.vue'
-import { api } from '@/api/client'
+import { api, resolveAssetUrl, uploadImage } from '@/api/client'
 import { useSessionStore } from '@/stores/session'
-import type { Finance, Purchase, TradeOrder, User, UserRole } from '@/types/domain'
+import type { Finance, Purchase, TradeOrder, User } from '@/types/domain'
 
 const session = useSessionStore()
 const loading = ref(true)
 const saving = ref(false)
+const uploadingAvatar = ref(false)
 const message = ref('')
 const error = ref('')
 const myOrders = ref<TradeOrder[]>([])
@@ -44,14 +46,6 @@ const roleProfile = reactive({
   bankName: '乡村振兴信用贷服务部',
   buyerType: '社区团购采购',
 })
-
-const roles: Array<{ value: UserRole; label: string }> = [
-  { value: 'FARMER', label: '农户' },
-  { value: 'BUYER', label: '买家' },
-  { value: 'EXPERT', label: '技术专家' },
-  { value: 'BANK', label: '银行' },
-  { value: 'SYSTEM_ADMIN', label: '系统管理员' },
-]
 
 const fallbackOrders: TradeOrder[] = [
   { orderId: 1, title: '高山生态大米 50kg', type: '粮油', price: 5.2, ownName: 'farmer-demo', address: '龙山县', orderStatus: 0 },
@@ -179,15 +173,29 @@ function statusTagClass(status?: number) {
   return 'tag tag--amber'
 }
 
-function handleAvatarFile(event: Event) {
-  const file = (event.target as HTMLInputElement).files?.[0]
+function avatarSrc(src?: string) {
+  if (!src) return ''
+  return resolveAssetUrl(src.startsWith('/') || src.startsWith('http') || src.startsWith('data:') ? src : `/file/avatar/${src}`)
+}
+
+async function handleAvatarFile(event: Event) {
+  const input = event.target as HTMLInputElement
+  const file = input.files?.[0]
   if (!file) return
 
-  const reader = new FileReader()
-  reader.onload = () => {
-    profile.avatar = String(reader.result || '')
+  uploadingAvatar.value = true
+  message.value = ''
+  error.value = ''
+  try {
+    const uploaded = await uploadImage(file, session.role)
+    profile.avatar = uploaded.url
+    message.value = `头像「${uploaded.originalName}」已上传，请保存个人资料。`
+  } catch (err) {
+    error.value = err instanceof Error ? err.message : '头像上传失败。'
+  } finally {
+    uploadingAvatar.value = false
+    input.value = ''
   }
-  reader.readAsDataURL(file)
 }
 
 // 不同角色只加载自身相关的业务记录。
@@ -252,8 +260,6 @@ async function saveProfile() {
       realName: profile.realName,
     })
     applyUser(saved)
-    if (profile.role) session.setRole(profile.role as UserRole)
-
     // 若填写了新密码，走专门的改密码接口（后端 UserRequest 不含 newPassword 字段）
     if (newPassword.value.trim()) {
       await api.patch<User>(`/api/users/${encodeURIComponent(userName)}/password`, {
@@ -301,18 +307,18 @@ onMounted(loadProfile)
             <p>用于登录、融资申请、交易发布和专家服务识别。</p>
           </div>
         </div>
-        <label class="field"><span>账号</span><input v-model.trim="profile.userName" required /></label>
+        <label class="field"><span>账号</span><input v-model.trim="profile.userName" disabled /></label>
         <label class="field"><span>当前密码</span><input v-model="profile.password" type="password" required /></label>
         <label class="field"><span>新密码</span><input v-model="newPassword" type="password" placeholder="不修改可留空" /></label>
-        <label class="field"><span>头像上传</span><input type="file" accept="image/*" @change="handleAvatarFile" /></label>
+        <label class="field"><span>{{ uploadingAvatar ? '头像上传中' : '从电脑上传头像' }}</span><input type="file" accept="image/*" :disabled="uploadingAvatar" @change="handleAvatarFile" /></label>
         <div v-if="profile.avatar" class="avatar-preview">
-          <img :src="profile.avatar" alt="头像预览" />
+          <AppImage :src="avatarSrc(profile.avatar)" fallback-src="/file/avatar/avatar.png" alt="头像预览" ratio="1 / 1" icon="user" />
         </div>
         <label class="field"><span>昵称</span><input v-model.trim="profile.nickName" /></label>
         <label class="field"><span>真实姓名</span><input v-model.trim="profile.realName" /></label>
         <label class="field"><span>手机号</span><input v-model.trim="profile.phone" type="tel" /></label>
         <label class="field"><span>身份号码</span><input v-model.trim="profile.identityNum" /></label>
-        <label class="field"><span>角色</span><select v-model="profile.role"><option v-for="role in roles" :key="role.value" :value="role.value">{{ role.label }}</option></select></label>
+        <label class="field"><span>角色</span><input :value="session.roleLabel" disabled /></label>
         <label class="field"><span>地址</span><textarea v-model.trim="profile.address" /></label>
         <div class="panel-lite">
           <h3>角色专属资料</h3>
@@ -323,7 +329,7 @@ onMounted(loadProfile)
           <label v-if="profile.role === 'BANK'" class="field"><span>机构/产品</span><input v-model.trim="roleProfile.bankName" /></label>
           <p v-if="profile.role === 'SYSTEM_ADMIN'">管理员角色用于平台用户、交易、融资和内容监管。</p>
         </div>
-        <button class="button button--green" type="submit" :disabled="saving">
+        <button class="button button--green" type="submit" :disabled="saving || uploadingAvatar">
           <AppIcon name="check" />{{ saving ? '保存中' : '保存资料' }}
         </button>
       </form>

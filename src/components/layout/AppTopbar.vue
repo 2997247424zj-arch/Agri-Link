@@ -1,15 +1,26 @@
 <script setup lang="ts">
 import { RouterLink } from 'vue-router'
 import AppIcon from '@/components/AppIcon.vue'
+import type { NavItem } from './navigation'
 
-defineProps<{
+const props = defineProps<{
   isAuth: boolean
   isLoggedIn: boolean
   roleTitle: string
   roleCode: string
   avatarText: string
   displayName: string
+  navItems: NavItem[]
+  profileItem: NavItem | null
 }>()
+
+const publicNavItems = [
+  { to: '/', label: '首页' },
+  { to: '/#home-capability', label: '平台能力' },
+  { to: '/#home-finance', label: '金融服务' },
+  { to: '/#home-experts', label: '专家支持' },
+  { to: '/#home-products', label: '产品市场' },
+]
 
 const emit = defineEmits<{
   (e: 'toggle-sidebar'): void
@@ -38,6 +49,16 @@ const emit = defineEmits<{
         </span>
       </RouterLink>
 
+      <nav v-if="!isAuth" class="topbar__nav" aria-label="主导航">
+        <RouterLink
+          v-for="item in isLoggedIn ? props.navItems : publicNavItems"
+          :key="item.to"
+          :to="item.to"
+        >
+          {{ item.label }}
+        </RouterLink>
+      </nav>
+
       <div class="topbar__actions">
         <RouterLink v-if="isAuth" class="button button--ghost" to="/">
           <AppIcon name="home" />
@@ -47,14 +68,14 @@ const emit = defineEmits<{
           <AppIcon name="user" />
           登录
         </RouterLink>
-        <div v-else class="session-user">
+        <RouterLink v-else-if="profileItem" :to="profileItem.to" class="session-user" aria-label="进入个人中心">
           <span class="session-user__avatar">{{ avatarText }}</span>
           <span class="session-user__text">
             <strong>{{ roleTitle }}</strong>
             <small>{{ roleCode }}</small>
           </span>
           <span class="session-user__name">{{ displayName }}</span>
-        </div>
+        </RouterLink>
         <button
           v-if="isLoggedIn && !isAuth"
           class="button button--ghost logout-button"

@@ -52,10 +52,15 @@ const fallbackExperts: Expert[] = [
 ]
 
 const fallbackOrders: TradeOrder[] = [
-  { orderId: 1, title: '富硒猕猴桃 20kg', type: '水果', price: 8.6, ownName: '吉首合作社', address: '湘西州', picture: 'watermelon_20250513154759.png' },
-  { orderId: 2, title: '高山生态大米 50kg', type: '粮油', price: 5.2, ownName: '龙山农户', address: '龙山县', picture: 'tea.png' },
+  { orderId: 1, title: '黄瓤西瓜 20kg', type: '水果', price: 6.8, ownName: '吉首合作社', address: '湘西州', picture: 'watermelon_20250513154759.png' },
+  { orderId: 2, title: '明前碧螺春 500g', type: '茶叶', price: 68, ownName: '保靖茶园', address: '保靖县', picture: 'tea.png' },
   { orderId: 3, title: '紫皮洋葱 10kg', type: '蔬菜', price: 2.8, ownName: '保靖基地', address: '保靖县', picture: 'yangcong_20250513154843.png' },
-  { orderId: 4, title: '精品黄桃礼盒', type: '水果', price: 12.8, ownName: '凤凰果园', address: '凤凰县', picture: 'W020230811400645740814_ORIGIN.jpg' },
+  { orderId: 4, title: '新鲜水蜜桃 5kg', type: '水果', price: 12.8, ownName: '凤凰果园', address: '凤凰县', picture: 'ff485f0e71684f6fb48c23021ebf1408.jpg' },
+  { orderId: 5, title: '湘西折耳根 5kg', type: '蔬菜', price: 9.9, ownName: '永顺种植户', address: '永顺县', picture: 'zheergen_20250513155020.png' },
+  { orderId: 6, title: '高山甜玉米 10kg', type: '粮食', price: 4.6, ownName: '花垣合作社', address: '花垣县', picture: '71ea0e08a7ce4bb697b1d6b87a113379.webp' },
+  { orderId: 7, title: '大棚鲜草莓 3kg', type: '水果', price: 38, ownName: '泸溪农场', address: '泸溪县', picture: '75e4ef70b5a64dbd9a8736446014ce27.jpg' },
+  { orderId: 8, title: '高山生态大米 50kg', type: '粮油', price: 5.2, ownName: '龙山农户', address: '龙山县', picture: '02d69a4b9ad5439e9840a357fb509734.webp' },
+  { orderId: 9, title: '时令鲜蔬组合 10kg', type: '蔬菜', price: 6.5, ownName: '吉首鲜蔬基地', address: '吉首市', picture: '新鲜蔬菜.png' },
 ]
 
 const serviceCards: Array<{
@@ -76,33 +81,55 @@ const serviceCards: Array<{
 ] as const
 
 const fallbackNews = [
-  { title: '春耕金融服务专区上线', desc: '围绕种子、农资和农机采购场景，提供额度匹配和申请进度管理。', image: '/file/info/20e7a0d77ecf4731b28ebc1d6ca22587.jpg' },
-  { title: '绿色农产品产销对接', desc: '支持合作社发布稳定货源，买家可按品类、产地和价格快速筛选采购。', image: '/file/info/b62d1d12d2bc4940956c92b79509efee.jpg' },
+  { title: '春耕生产服务专区上线', desc: '围绕种子、农资和农机采购场景，提供货源、融资和技术服务协同。', image: '/file/order/12be19984e374bcfbf06561571365d07.jpg' },
+  { title: '绿色农产品产销对接', desc: '支持合作社发布稳定货源，买家可按品类、产地和价格快速筛选采购。', image: '/file/info/3c26336725224041b2a2f4542020b018.jpg' },
+  { title: '玉米病害线上诊断提醒', desc: '发现叶片斑枯、长势异常时可上传现场图片，由平台专家辅助判断。', image: '/file/order/W020230811400645740814_ORIGIN.jpg' },
+  { title: '湘西特色茶叶进入采购专区', desc: '茶园、合作社可展示产品配图、规格和库存，帮助采购方快速选品。', image: '/file/order/tea.png' },
 ]
 const knowledgeList = ref<Knowledge[]>([])
 
 // 资讯无自带配图时，按序轮换占位图，避免所有卡片显示同一张
 const newsFallbackImages = [
-  '/file/info/20e7a0d77ecf4731b28ebc1d6ca22587.jpg',
   '/file/info/3c26336725224041b2a2f4542020b018.jpg',
-  '/file/info/47fc92e1068d4c20833e4e197aec0b0d.jpg',
-  '/file/info/b62d1d12d2bc4940956c92b79509efee.jpg',
+  '/file/order/W020230811400645740814_ORIGIN.jpg',
+  '/file/order/12be19984e374bcfbf06561571365d07.jpg',
+  '/file/order/tea.png',
 ]
+
+const productFallbackImages = [
+  '/file/order/新鲜蔬菜.png',
+  '/file/order/02d69a4b9ad5439e9840a357fb509734.webp',
+  '/file/order/c43dcae086e34c80900885c11f0a9e4d.jpg',
+  '/file/order/75e4ef70b5a64dbd9a8736446014ce27.jpg',
+]
+
+function productFallbackImage(order: TradeOrder, index = 0) {
+  const text = `${order.title} ${order.type}`.toLowerCase()
+  if (text.includes('鸡蛋') || text.includes('egg')) return '/file/order/fresh-eggs.webp'
+  if (text.includes('西瓜')) return '/file/order/c43dcae086e34c80900885c11f0a9e4d.jpg'
+  if (text.includes('水稻') || text.includes('大米') || text.includes('小麦')) return '/file/order/02d69a4b9ad5439e9840a357fb509734.webp'
+  if (text.includes('茶')) return '/file/order/tea.png'
+  return productFallbackImages[index % productFallbackImages.length]
+}
 
 const visibleBanks = computed(() => (banks.value.length ? banks.value : fallbackBanks).slice(0, 4))
 const visibleExperts = computed(() => (experts.value.length ? experts.value : fallbackExperts).slice(0, 5))
-const visibleOrders = computed(() => (orders.value.length ? orders.value : fallbackOrders).slice(0, 5))
+const visibleOrders = computed(() => (orders.value.length ? orders.value : fallbackOrders).slice(0, 9))
 const visibleNews = computed(() => {
   if (knowledgeList.value.length) {
-    return knowledgeList.value.slice(0, 4).map((k, index) => ({
-      title: k.title,
-      desc: k.content?.slice(0, 80) || k.category || '平台资讯',
-      image: k.picture?.startsWith('/') || k.picture?.startsWith('http')
-        ? k.picture
-        : k.picture ? `/file/info/${k.picture}` : newsFallbackImages[index % newsFallbackImages.length],
-    }))
+    return knowledgeList.value.slice(0, 4).map((k, index) => {
+      const picture = k.picPath || k.picture
+      const fallbackImage = newsFallbackImages[index % newsFallbackImages.length]
+      return {
+        title: k.title,
+        desc: k.content?.slice(0, 80) || k.category || '平台资讯',
+        content: k.content || '暂无更多内容。',
+        image: picture?.startsWith('/') || picture?.startsWith('http') ? picture : picture ? `/file/order/${picture}` : fallbackImage,
+        fallbackImage,
+      }
+    })
   }
-  return fallbackNews
+  return fallbackNews.map((item) => ({ ...item, content: item.desc, fallbackImage: item.image }))
 })
 
 const roleHome = computed(() => {
@@ -176,9 +203,9 @@ const capabilityHighlights: Array<{
   to: string
   roles: UserRole[]
 }> = [
-  { title: '农产品直采直销', desc: '产地货源直连买家，省去中间环节，价格与来源可追溯。', tag: '融销核心', icon: 'leaf', to: '/trade', roles: ['FARMER', 'BUYER', 'EXPERT', 'BANK', 'SYSTEM_ADMIN'] },
-  { title: '涉农金融撮合', desc: '对接银行贷款产品，按额度、利率、还款方式一站式申请。', tag: '融资加速', icon: 'bank', to: '/finance', roles: ['FARMER', 'BANK', 'SYSTEM_ADMIN'] },
-  { title: '专家远程指导', desc: '在线问答 + 预约咨询，覆盖种植、植保、品牌运营多领域。', tag: '技术护航', icon: 'expert', to: '/experts', roles: ['FARMER', 'EXPERT', 'SYSTEM_ADMIN'] },
+  { title: '农产品直采直销', desc: '产地货源直连买家，省去中间环节，价格与来源可追溯。', tag: '融销核心', icon: 'leaf', to: '/trade', roles: ['FARMER', 'BUYER'] },
+  { title: '涉农金融撮合', desc: '对接银行贷款产品，按额度、利率、还款方式一站式申请。', tag: '融资加速', icon: 'bank', to: '/finance', roles: ['FARMER', 'BANK'] },
+  { title: '专家远程指导', desc: '在线问答 + 预约咨询，覆盖种植、植保、品牌运营多领域。', tag: '技术护航', icon: 'expert', to: '/experts', roles: ['FARMER', 'EXPERT'] },
   { title: '栽培小技巧', desc: '按季节 / 作物汇总的实用栽培要点，帮助农户快速上手。', tag: '知识赋能', icon: 'check', to: '/#home-tips', roles: ['FARMER', 'BUYER', 'EXPERT', 'BANK', 'SYSTEM_ADMIN'] },
   { title: '采购车与订单', desc: '买家可批量维护待采购清单，一键下单并跟踪物流进度。', tag: '交易闭环', icon: 'cart', to: '/cart', roles: ['BUYER'] },
   { title: '平台合规监管', desc: '管理员统一监管用户、交易和融资进度，保障数据可信。', tag: '可信服务', icon: 'shield', to: '/admin', roles: ['SYSTEM_ADMIN'] },
@@ -342,9 +369,8 @@ onMounted(async () => {
 <template>
   <section class="home-page">
     <section class="portal-hero">
-      <img class="portal-hero__image" src="/file/info/3c26336725224041b2a2f4542020b018.jpg" alt="绿色农产品" />
       <div class="portal-hero__overlay">
-        <span>{{ roleHome.badge }}</span>
+        <span class="portal-hero__eyebrow">{{ roleHome.badge }}</span>
         <h1>{{ roleHome.title }}</h1>
         <p>{{ roleHome.desc }}</p>
         <div class="hero__actions">
@@ -358,7 +384,50 @@ onMounted(async () => {
             <AppIcon :name="action.icon" />{{ action.label }}
           </RouterLink>
         </div>
+        <ul class="portal-hero__assurances" aria-label="平台服务保障">
+          <li><AppIcon name="check" /> 角色权限清晰</li>
+          <li><AppIcon name="check" /> 业务进度可追踪</li>
+          <li><AppIcon name="check" /> 数据统一沉淀</li>
+        </ul>
       </div>
+
+      <div class="portal-hero__visual" aria-label="融销协同业务示意">
+        <div class="portal-preview">
+          <header class="portal-preview__header">
+            <div>
+              <span>AGRILINK / WORKSPACE</span>
+              <strong>融销协同工作台</strong>
+            </div>
+            <em><i></i> 服务正常</em>
+          </header>
+          <div class="portal-preview__media">
+            <img class="portal-hero__image" src="/file/info/3c26336725224041b2a2f4542020b018.jpg" alt="绿色农产品基地" />
+            <span><AppIcon name="shield" /> 可信产地档案</span>
+          </div>
+          <div class="portal-preview__flow">
+            <div><AppIcon name="leaf" /><span><small>STEP 01</small>货源发布</span></div>
+            <AppIcon class="portal-preview__arrow" name="arrow" />
+            <div><AppIcon name="cart" /><span><small>STEP 02</small>采购成交</span></div>
+            <AppIcon class="portal-preview__arrow" name="arrow" />
+            <div><AppIcon name="bank" /><span><small>STEP 03</small>融资服务</span></div>
+          </div>
+          <footer>
+            <span>农户 · 买家 · 专家 · 银行</span>
+            <strong>一站协同</strong>
+          </footer>
+        </div>
+      </div>
+    </section>
+
+    <section class="home-metrics" aria-label="平台数据概览">
+      <article v-for="item in dashboardStats" :key="item.label">
+        <span><AppIcon :name="item.icon" /></span>
+        <div>
+          <strong>{{ item.value }}</strong>
+          <p>{{ item.label }}</p>
+          <small>{{ item.desc }}</small>
+        </div>
+      </article>
     </section>
 
     <p v-if="notice" class="alert portal-alert">{{ notice }}</p>
@@ -388,16 +457,9 @@ onMounted(async () => {
 
     <section class="portal-section dashboard-section" id="home-dashboard">
       <div class="portal-heading">
-        <h2>业务工作台</h2>
-        <p>{{ session.isLoggedIn ? '当前角色只展示允许访问的业务入口' : '登录后按五类角色隔离业务入口' }}</p>
-      </div>
-      <div class="dashboard-grid">
-        <article v-for="item in dashboardStats" :key="item.label" class="dashboard-card">
-          <span><AppIcon :name="item.icon" /></span>
-          <strong>{{ item.value }}</strong>
-          <h3>{{ item.label }}</h3>
-          <p>{{ item.desc }}</p>
-        </article>
+        <span class="section-kicker">协同流程</span>
+        <h2>一条链路完成融销协同</h2>
+        <p>{{ session.isLoggedIn ? '当前角色只展示允许访问的业务入口' : '登录后按五类角色隔离业务入口，状态统一留痕' }}</p>
       </div>
       <div class="workflow-board" aria-label="平台协同流程">
         <RouterLink v-for="step in visibleWorkflowSteps" :key="step.title" :to="step.to" class="workflow-card">
@@ -530,11 +592,14 @@ onMounted(async () => {
       </div>
       <div class="news-list">
         <article v-for="item in visibleNews" :key="item.title" class="news-item">
-          <AppImage class="news-item__media" :src="item.image" :alt="item.title" ratio="16 / 9" icon="leaf" />
+          <AppImage class="news-item__media" :src="item.image" :fallback-src="item.fallbackImage" :alt="item.title" ratio="16 / 9" icon="leaf" />
           <div>
             <h3>{{ item.title }}</h3>
             <p>{{ item.desc }}</p>
-            <RouterLink class="text-link" to="/finance">查看详情</RouterLink>
+            <details class="news-detail">
+              <summary>查看详情</summary>
+              <p>{{ item.content }}</p>
+            </details>
           </div>
         </article>
       </div>
@@ -546,8 +611,8 @@ onMounted(async () => {
         <p>产地直供，支持加入购物车并生成采购订单</p>
       </div>
       <div class="product-row">
-        <article v-for="order in visibleOrders" :key="order.orderId" class="product-tile">
-          <AppImage class="product-tile__media" :src="imageSrc(order.picture)" :alt="order.title" ratio="1 / 0.82" icon="leaf" />
+        <article v-for="(order, index) in visibleOrders" :key="order.orderId" class="product-tile">
+          <AppImage class="product-tile__media" :src="imageSrc(order.picture)" :fallback-src="productFallbackImage(order, index)" :alt="order.title" ratio="1 / 0.82" icon="leaf" />
           <h3>{{ order.title }}</h3>
           <p>{{ order.address || '产地待补充' }} · {{ order.type || '农产品' }}</p>
           <strong>￥{{ order.price ?? '-' }}</strong>

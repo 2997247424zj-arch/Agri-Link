@@ -7,7 +7,7 @@ import PageHeader from '@/components/ui/PageHeader.vue'
 import ModuleTabs from '@/components/ui/ModuleTabs.vue'
 import SummaryStrip from '@/components/ui/SummaryStrip.vue'
 import Pager from '@/components/ui/Pager.vue'
-import { api } from '@/api/client'
+import { api, resolveAssetUrl, uploadImage } from '@/api/client'
 import { useSessionStore } from '@/stores/session'
 import { upsertLocalCart } from '@/utils/localCart'
 import type { ShoppingCart, TradeOrder } from '@/types/domain'
@@ -19,6 +19,7 @@ const orders = ref<TradeOrder[]>([])
 const keyword = ref('')
 const loading = ref(true)
 const submitting = ref(false)
+const uploadingImage = ref(false)
 const message = ref('')
 const error = ref('')
 const cartCounts = reactive<Record<number, number>>({})
@@ -72,10 +73,10 @@ const editForm = reactive({
 const fallbackOrders: TradeOrder[] = [
   {
     orderId: 1,
-    title: '富硒猕猴桃 20kg',
+    title: '黄瓤西瓜 20kg',
     type: '水果',
-    price: 8.6,
-    content: '冷链分拣后发货，适合商超和社区团购采购。',
+    price: 6.8,
+    content: '当季现摘黄瓤西瓜，皮薄脆甜，支持产地整箱发货。',
     ownName: '吉首合作社',
     address: '湘西州',
     picture: 'watermelon_20250513154759.png',
@@ -86,17 +87,17 @@ const fallbackOrders: TradeOrder[] = [
   },
   {
     orderId: 2,
-    title: '高山生态大米 50kg',
-    type: '粮油',
-    price: 5.2,
-    content: '稻谷自然晾晒，低温仓储，支持批量采购。',
-    ownName: 'farmer-demo',
-    address: '龙山县',
+    title: '明前碧螺春 500g',
+    type: '茶叶',
+    price: 68,
+    content: '春季嫩芽采制，茶香清鲜，适合礼盒和门店批量采购。',
+    ownName: '保靖茶园',
+    address: '保靖县',
     picture: 'tea.png',
-    stock: 1200,
-    spec: '50kg/袋',
-    unit: '斤',
-    minPurchase: 10,
+    stock: 300,
+    spec: '500g/盒',
+    unit: '盒',
+    minPurchase: 2,
   },
   {
     orderId: 3,
@@ -109,6 +110,90 @@ const fallbackOrders: TradeOrder[] = [
     picture: 'yangcong_20250513154843.png',
     stock: 600,
     spec: '10kg/袋',
+    unit: '斤',
+    minPurchase: 10,
+  },
+  {
+    orderId: 4,
+    title: '新鲜水蜜桃 5kg',
+    type: '水果',
+    price: 12.8,
+    content: '果园现摘，成熟度分级包装，支持社区团购与商超采购。',
+    ownName: '凤凰果园',
+    address: '凤凰县',
+    picture: 'ff485f0e71684f6fb48c23021ebf1408.jpg',
+    stock: 420,
+    spec: '5kg/箱',
+    unit: '箱',
+    minPurchase: 2,
+  },
+  {
+    orderId: 5,
+    title: '湘西折耳根 5kg',
+    type: '蔬菜',
+    price: 9.9,
+    content: '当天采挖、清洗分拣，适合餐饮门店和生鲜渠道。',
+    ownName: '永顺种植户',
+    address: '永顺县',
+    picture: 'zheergen_20250513155020.png',
+    stock: 260,
+    spec: '5kg/筐',
+    unit: '筐',
+    minPurchase: 2,
+  },
+  {
+    orderId: 6,
+    title: '高山甜玉米 10kg',
+    type: '粮食',
+    price: 4.6,
+    content: '清晨采收甜玉米，颗粒饱满，支持冷链配送。',
+    ownName: '花垣合作社',
+    address: '花垣县',
+    picture: '71ea0e08a7ce4bb697b1d6b87a113379.webp',
+    stock: 900,
+    spec: '10kg/箱',
+    unit: '箱',
+    minPurchase: 5,
+  },
+  {
+    orderId: 7,
+    title: '大棚鲜草莓 3kg',
+    type: '水果',
+    price: 38,
+    content: '红熟采摘、泡沫箱保护，适合精品水果和团购渠道。',
+    ownName: '泸溪农场',
+    address: '泸溪县',
+    picture: '75e4ef70b5a64dbd9a8736446014ce27.jpg',
+    stock: 180,
+    spec: '3kg/箱',
+    unit: '箱',
+    minPurchase: 2,
+  },
+  {
+    orderId: 8,
+    title: '高山生态大米 50kg',
+    type: '粮油',
+    price: 5.2,
+    content: '稻谷自然晾晒，低温仓储，支持批量采购。',
+    ownName: 'farmer-demo',
+    address: '龙山县',
+    picture: '02d69a4b9ad5439e9840a357fb509734.webp',
+    stock: 1200,
+    spec: '50kg/袋',
+    unit: '斤',
+    minPurchase: 10,
+  },
+  {
+    orderId: 9,
+    title: '时令鲜蔬组合 10kg',
+    type: '蔬菜',
+    price: 6.5,
+    content: '西兰花、彩椒、番茄、黄瓜等时令蔬菜组合，采后分拣配送。',
+    ownName: '吉首鲜蔬基地',
+    address: '吉首市',
+    picture: '新鲜蔬菜.png',
+    stock: 560,
+    spec: '10kg/筐',
     unit: '斤',
     minPurchase: 10,
   },
@@ -167,19 +252,36 @@ function orderStatusClass(status?: number) {
 function imageSrc(picture?: string) {
   const first = picture?.split(/\s+/)[0]
   if (!first) return ''
-  return first.startsWith('http') || first.startsWith('/') ? first : `/file/order/${first}`
+  return resolveAssetUrl(first.startsWith('http') || first.startsWith('/') ? first : `/file/order/${first}`)
 }
 
-// 图片预览先转为 data URL，便于无文件服务时演示。
-function handleImageFile(event: Event, target: typeof form | typeof editForm) {
-  const file = (event.target as HTMLInputElement).files?.[0]
+function productFallbackImage(order: TradeOrder, index = 0) {
+  const text = `${order.title} ${order.type}`.toLowerCase()
+  if (text.includes('鸡蛋') || text.includes('egg')) return '/file/order/fresh-eggs.webp'
+  if (text.includes('西瓜')) return '/file/order/c43dcae086e34c80900885c11f0a9e4d.jpg'
+  if (text.includes('水稻') || text.includes('大米') || text.includes('小麦')) return '/file/order/02d69a4b9ad5439e9840a357fb509734.webp'
+  if (text.includes('茶')) return '/file/order/tea.png'
+  return ['/file/order/新鲜蔬菜.png', '/file/order/75e4ef70b5a64dbd9a8736446014ce27.jpg'][index % 2]
+}
+
+async function handleImageFile(event: Event, target: typeof form | typeof editForm) {
+  const input = event.target as HTMLInputElement
+  const file = input.files?.[0]
   if (!file) return
 
-  const reader = new FileReader()
-  reader.onload = () => {
-    target.picture = String(reader.result || '')
+  uploadingImage.value = true
+  message.value = ''
+  error.value = ''
+  try {
+    const uploaded = await uploadImage(file, 'FARMER')
+    target.picture = uploaded.url
+    message.value = `图片「${uploaded.originalName}」已上传，可随货源一并保存。`
+  } catch (err) {
+    error.value = err instanceof Error ? err.message : '图片上传失败。'
+  } finally {
+    uploadingImage.value = false
+    input.value = ''
   }
-  reader.readAsDataURL(file)
 }
 
 async function loadOrders() {
@@ -384,13 +486,13 @@ watch(orderPageCount, () => {
       <label class="field"><span>发布账号</span><input v-model.trim="editForm.ownName" required /></label>
       <label class="field"><span>产地地址</span><input v-model.trim="editForm.address" required /></label>
       <label class="field"><span>图片文件名</span><input v-model.trim="editForm.picture" /></label>
-      <label class="field"><span>上传图片预览</span><input type="file" accept="image/*" @change="handleImageFile($event, editForm)" /></label>
+      <label class="field"><span>{{ uploadingImage ? '图片上传中' : '从电脑上传图片' }}</span><input type="file" accept="image/*" :disabled="uploadingImage" @change="handleImageFile($event, editForm)" /></label>
       <div v-if="imageSrc(editForm.picture)" class="image-preview">
         <img :src="imageSrc(editForm.picture)" alt="货源图片预览" />
       </div>
       <label class="field"><span>货源说明</span><textarea v-model.trim="editForm.content" required /></label>
       <div class="toolbar">
-        <button class="button button--green" type="submit" :disabled="submitting">
+        <button class="button button--green" type="submit" :disabled="submitting || uploadingImage">
           <AppIcon name="check" />{{ submitting ? '保存中' : '保存修改' }}
         </button>
         <button class="button button--ghost" type="button" @click="cancelEditOrder">取消</button>
@@ -399,8 +501,8 @@ watch(orderPageCount, () => {
 
     <template v-if="activeTab === 'browse'">
       <section class="section grid">
-        <article v-for="order in pagedOrders" :key="order.orderId" class="card product-card">
-          <AppImage class="product-thumb" :src="imageSrc(order.picture)" :alt="order.title" ratio="16 / 10" icon="leaf" />
+        <article v-for="(order, index) in pagedOrders" :key="order.orderId" class="card product-card">
+          <AppImage class="product-thumb" :src="imageSrc(order.picture)" :fallback-src="productFallbackImage(order, index)" :alt="order.title" ratio="16 / 10" icon="leaf" />
           <div class="tag-row">
             <span class="tag tag--green">{{ order.type || '农产品' }}</span>
             <span class="tag">{{ order.address || '产地待补充' }}</span>
@@ -466,12 +568,12 @@ watch(orderPageCount, () => {
         <label class="field"><span>发布账号</span><input v-model.trim="form.ownName" required /></label>
         <label class="field"><span>产地地址</span><input v-model.trim="form.address" required /></label>
         <label class="field"><span>图片文件名</span><input v-model.trim="form.picture" placeholder="可选，如 tea.png" /></label>
-        <label class="field"><span>上传图片预览</span><input type="file" accept="image/*" @change="handleImageFile($event, form)" /></label>
+        <label class="field"><span>{{ uploadingImage ? '图片上传中' : '从电脑上传图片' }}</span><input type="file" accept="image/*" :disabled="uploadingImage" @change="handleImageFile($event, form)" /></label>
         <div v-if="imageSrc(form.picture)" class="image-preview">
           <img :src="imageSrc(form.picture)" alt="货源图片预览" />
         </div>
         <label class="field"><span>货源说明</span><textarea v-model.trim="form.content" required /></label>
-        <button class="button button--green" type="submit" :disabled="submitting">
+        <button class="button button--green" type="submit" :disabled="submitting || uploadingImage">
           <AppIcon name="plus" />{{ submitting ? '发布中' : '发布货源' }}
         </button>
       </form>
@@ -531,6 +633,7 @@ watch(orderPageCount, () => {
             <AppImage
               class="order-detail-media"
               :src="imageSrc(detailOrder.picture)"
+              :fallback-src="productFallbackImage(detailOrder)"
               :alt="detailOrder.title"
               ratio="4 / 3"
               icon="leaf"

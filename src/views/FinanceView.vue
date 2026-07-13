@@ -29,13 +29,24 @@ const materialInputs = reactive<Record<number, string>>({})
 const applicationPage = ref(1)
 const applicationPageSize = 5
 const matchModalOpen = ref(false)
-type FinanceTab = 'intro' | 'apply' | 'result'
+const editingBankId = ref<number | null>(null)
+type FinanceTab = 'intro' | 'apply' | 'products' | 'result'
 const financeTabsAll: Array<{ value: FinanceTab; label: string; roles: Array<'FARMER' | 'BANK'> }> = [
   // 基础信息介绍是农户挑选银行产品的入口，银行端不应浏览同业产品目录。
   { value: 'intro', label: '基础信息介绍', roles: ['FARMER'] },
   { value: 'apply', label: '融资申请及意向登记', roles: ['FARMER'] },
+  { value: 'products', label: '贷款产品维护', roles: ['BANK'] },
   { value: 'result', label: '查看审批结果', roles: ['FARMER', 'BANK'] },
 ]
+
+const bankForm = reactive({
+  bankName: '',
+  introduce: '',
+  bankPhone: '',
+  money: 100000,
+  rate: 4.2,
+  repayment: '按季付息',
+})
 
 // 表单字段与后端 FinanceApplicationRequest 保持一致。
 const applicationForm = reactive({
@@ -108,10 +119,20 @@ const fallbackIntentions: FinancingIntention[] = [
 ]
 
 const sortedBanks = computed(() => [...banks.value].sort((a, b) => (a.rate ?? 99) - (b.rate ?? 99)))
-const pendingApplications = computed(() => applications.value.filter((item) => (item.status ?? 0) === 0))
+const roleApplications = computed(() =>
+  isBankRole.value
+    ? applications.value
+    : applications.value.filter((item) => item.ownName === (session.userName || 'farmer-demo')),
+)
+const roleIntentions = computed(() =>
+  isBankRole.value
+    ? intentions.value
+    : intentions.value.filter((item) => item.userName === (session.userName || 'farmer-demo')),
+)
+const pendingApplications = computed(() => roleApplications.value.filter((item) => (item.status ?? 0) === 0))
 const filteredApplications = computed(() => {
-  if (applicationStatusFilter.value === 'all') return applications.value
-  return applications.value.filter((item) => String(item.status ?? 0) === applicationStatusFilter.value)
+  if (applicationStatusFilter.value === 'all') return roleApplications.value
+  return roleApplications.value.filter((item) => String(item.status ?? 0) === applicationStatusFilter.value)
 })
 const pagedApplications = computed(() => {
   const start = (applicationPage.value - 1) * applicationPageSize
@@ -122,7 +143,7 @@ const applicationPageCount = computed(() =>
 )
 const activeTab = computed<FinanceTab>(() => {
   // 银行端没有「基础信息介绍」/「融资申请」，统一落到审批结果页。
-  if (session.role === 'BANK') return 'result'
+  if (session.role === 'BANK') return route.query.tab === 'products' ? 'products' : 'result'
   const requested = route.query.tab === 'apply' || route.query.tab === 'result' ? route.query.tab : 'intro'
   return requested
 })
@@ -226,8 +247,10 @@ async function loadFinance() {
 }
 
 async function loadMatches() {
+  if (isBankRole.value) return
   message.value = ''
   error.value = ''
+  farmerMatches.value = []
   matchModalOpen.value = true
   try {
     const data = await api.get<Bank[]>(`/api/finance/banks/matches?amount=${applicationForm.money}`, {
@@ -245,6 +268,7 @@ async function loadFarmerMatches() {
   if (!isBankRole.value) return
   message.value = ''
   error.value = ''
+  matches.value = []
   matchModalOpen.value = true
   try {
     const data = await api.get<FinancingIntention[]>(
@@ -256,6 +280,64 @@ async function loadFarmerMatches() {
   } catch (err) {
     farmerMatches.value = intentions.value.slice(0, 3)
     error.value = err instanceof Error ? `农户匹配接口暂不可用：${err.message}` : '农户匹配接口暂不可用。'
+  }
+}
+
+function resetBankForm() {
+  editingBankId.value = null
+  Object.assign(bankForm, {
+    bankName: '',
+    introduce: '',
+    bankPhone: '',
+    money: 100000,
+    rate: 4.2,
+    repayment: '按季付息',
+  })
+}
+
+function editBank(bank: Bank) {
+  editingBankId.value = bank.bankId
+  Object.assign(bankForm, {
+    bankName: bank.bankName,
+    introduce: bank.introduce || '',
+    bankPhone: bank.bankPhone || '',
+    money: bank.money || 100000,
+    rate: bank.rate ?? 4.2,
+    repayment: bank.repayment || '按季付息',
+  })
+}
+
+async function saveBank() {
+  submitting.value = true
+  message.value = ''
+  error.value = ''
+  try {
+    const saved = editingBankId.value
+      ? await api.put<Bank>(`/api/finance/banks/${editingBankId.value}`, bankForm, { role: 'BANK' })
+      : await api.post<Bank>('/api/finance/banks', bankForm, { role: 'BANK' })
+    const index = banks.value.findIndex((item) => item.bankId === saved.bankId)
+    if (index >= 0) banks.value[index] = saved
+    else banks.value = [saved, ...banks.value]
+    message.value = editingBankId.value ? '贷款产品已更新。' : '贷款产品已发布。'
+    resetBankForm()
+  } catch (err) {
+    error.value = err instanceof Error ? err.message : '贷款产品保存失败。'
+  } finally {
+    submitting.value = false
+  }
+}
+
+async function deleteBank(bank: Bank) {
+  if (typeof window !== 'undefined' && !window.confirm(`确认删除贷款产品「${bank.bankName}」？`)) return
+  message.value = ''
+  error.value = ''
+  try {
+    await api.delete<void>(`/api/finance/banks/${bank.bankId}`, { role: 'BANK' })
+    banks.value = banks.value.filter((item) => item.bankId !== bank.bankId)
+    if (editingBankId.value === bank.bankId) resetBankForm()
+    message.value = '贷款产品已删除。'
+  } catch (err) {
+    error.value = err instanceof Error ? err.message : '贷款产品删除失败。'
   }
 }
 
@@ -326,7 +408,7 @@ watch(applicationPageCount, () => {
   <section class="page">
     <PageHeader eyebrow="融资服务" icon="bank" title="融资产品、意向匹配与审批" desc="对接银行产品、融资申请、融资意向和银行端审批接口。">
       <template #actions>
-        <button class="button" type="button" @click="loadMatches"><AppIcon name="search" />按金额匹配</button>
+        <button v-if="!isBankRole" class="button" type="button" @click="loadMatches"><AppIcon name="search" />按金额匹配</button>
         <button v-if="isBankRole" class="button button--ghost" type="button" @click="loadFarmerMatches">
           <AppIcon name="expert" />匹配农户
         </button>
@@ -346,7 +428,7 @@ watch(applicationPageCount, () => {
     <SummaryStrip
       :items="[
         { value: banks.length, label: loading ? '正在加载产品' : '银行产品' },
-        { value: intentions.length, label: '融资意向' },
+        { value: roleIntentions.length, label: isBankRole ? '融资意向' : '我的融资意向' },
         { value: pendingApplications.length, label: '待审批申请' },
         { value: session.roleLabel, label: '当前角色' },
       ]"
@@ -386,7 +468,7 @@ watch(applicationPageCount, () => {
             <option v-for="bank in banks" :key="bank.bankId" :value="bank.bankId">{{ bank.bankName }}</option>
           </select>
         </label>
-        <label class="field"><span>申请人账号</span><input v-model.trim="applicationForm.ownName" required /></label>
+        <label class="field"><span>申请人账号</span><input v-model.trim="applicationForm.ownName" disabled /></label>
         <label class="field"><span>真实姓名</span><input v-model.trim="applicationForm.realName" required /></label>
         <label class="field"><span>手机号</span><input v-model.trim="applicationForm.phone" type="tel" required /></label>
         <label class="field"><span>身份证号</span><input v-model.trim="applicationForm.idNum" required /></label>
@@ -405,7 +487,7 @@ watch(applicationPageCount, () => {
             <p>让银行端基于额度、用途和经营信息主动匹配农户。</p>
           </div>
         </div>
-        <label class="field"><span>账号</span><input v-model.trim="intentionForm.userName" required /></label>
+        <label class="field"><span>账号</span><input v-model.trim="intentionForm.userName" disabled /></label>
         <label class="field"><span>姓名</span><input v-model.trim="intentionForm.realName" required /></label>
         <label class="field"><span>联系电话</span><input v-model.trim="intentionForm.phone" type="tel" /></label>
         <label class="field"><span>经营地址</span><input v-model.trim="intentionForm.address" required /></label>
@@ -416,6 +498,47 @@ watch(applicationPageCount, () => {
           <AppIcon name="plus" />登记意向
         </button>
       </form>
+    </section>
+
+    <section v-if="activeTab === 'products'" class="section grid grid--two">
+      <form class="panel form" @submit.prevent="saveBank">
+        <div class="section-title">
+          <div>
+            <h2>{{ editingBankId ? '编辑贷款产品' : '发布贷款产品' }}</h2>
+            <p>银行维护产品名称、额度、利率、联系电话和还款方式。</p>
+          </div>
+        </div>
+        <label class="field"><span>产品名称</span><input v-model.trim="bankForm.bankName" required /></label>
+        <label class="field"><span>联系电话</span><input v-model.trim="bankForm.bankPhone" type="tel" required /></label>
+        <label class="field"><span>最高额度</span><input v-model.number="bankForm.money" type="number" min="0.01" step="0.01" required /></label>
+        <label class="field"><span>年化利率（%）</span><input v-model.number="bankForm.rate" type="number" min="0" step="0.01" required /></label>
+        <label class="field"><span>还款方式</span><input v-model.trim="bankForm.repayment" required /></label>
+        <label class="field"><span>产品介绍</span><textarea v-model.trim="bankForm.introduce" /></label>
+        <div class="toolbar">
+          <button class="button button--green" type="submit" :disabled="submitting">
+            <AppIcon name="check" />{{ submitting ? '保存中' : editingBankId ? '保存修改' : '发布产品' }}
+          </button>
+          <button v-if="editingBankId" class="button button--ghost" type="button" @click="resetBankForm">取消编辑</button>
+        </div>
+      </form>
+
+      <div class="panel">
+        <div class="section-title">
+          <div><h2>现有贷款产品</h2><p>共 {{ banks.length }} 个产品。</p></div>
+        </div>
+        <div v-if="banks.length" class="mini-list">
+          <span v-for="bank in sortedBanks" :key="bank.bankId" class="stack-row">
+            <strong>{{ bank.bankName }}</strong>
+            <small>额度 {{ bank.money ?? '-' }} 元 · 年化 {{ bank.rate ?? '-' }}%</small>
+            <em>{{ bank.repayment || '还款方式待补充' }} · {{ bank.bankPhone || '电话待补充' }}</em>
+            <div class="toolbar">
+              <button class="button button--small" type="button" @click="editBank(bank)">编辑</button>
+              <button class="button button--danger button--small" type="button" @click="deleteBank(bank)">删除</button>
+            </div>
+          </span>
+        </div>
+        <div v-else class="empty">暂无贷款产品。</div>
+      </div>
     </section>
 
     <section v-if="activeTab === 'result'" class="section">
@@ -492,10 +615,14 @@ watch(applicationPageCount, () => {
                           <p>还款方式：{{ item.repayment || '待确认' }}</p>
                           <p>审批备注：{{ item.remark || '暂无' }}</p>
                         </div>
-                        <div>
+                        <div v-if="!isBankRole">
                           <h3>补充材料</h3>
                           <textarea v-model="materialInputs[item.financeId]" :placeholder="materialList(item).join('，')" />
                           <button class="button button--small" type="button" @click="saveMaterials(item)">保存材料</button>
+                        </div>
+                        <div v-else>
+                          <h3>申请材料</h3>
+                          <div class="tag-row"><span v-for="material in materialList(item)" :key="material" class="tag">{{ material }}</span></div>
                         </div>
                       </div>
                       <div class="table-wrap">

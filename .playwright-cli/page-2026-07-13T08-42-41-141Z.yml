@@ -1,0 +1,23 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e3]:
+    - banner [ref=e4]:
+      - generic [ref=e5]:
+        - button "展开主菜单" [ref=e6] [cursor=pointer]
+        - link "Agri-Link 首页" [ref=e9] [cursor=pointer]:
+          - /url: /
+          - generic [ref=e13]:
+            - strong [ref=e14]: Agri-Link
+            - generic [ref=e15]: 农产品融销一体平台
+        - link "登录" [ref=e17] [cursor=pointer]:
+          - /url: /auth
+    - generic [ref=e20]:
+      - complementary "角色功能导航" [ref=e21]:
+        - navigation [ref=e22]:
+          - button "首页" [ref=e24] [cursor=pointer]
+        - generic [ref=e30]:
+          - strong [ref=e31]: 访客
+          - generic [ref=e32]: 登录后按角色开放功能
+      - main [ref=e33]
+  - generic [ref=e34]:
+    - generic "Toggle devtools panel" [ref=e35] [cursor=pointer]
+    - generic "Toggle Component Inspector" [ref=e41] [cursor=pointer]

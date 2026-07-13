@@ -1,0 +1,408 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e3]:
+    - link "跳到主要内容" [ref=e4] [cursor=pointer]:
+      - /url: "#main-content"
+    - banner [ref=e5]:
+      - generic [ref=e6]:
+        - link "Agri-Link 首页" [ref=e7] [cursor=pointer]:
+          - /url: /
+          - generic [ref=e11]:
+            - strong [ref=e12]: Agri-Link
+            - generic [ref=e13]: 农产品融销一体平台
+        - navigation "主导航" [ref=e14]:
+          - link "首页" [ref=e15] [cursor=pointer]:
+            - /url: /
+          - link "平台能力" [ref=e16] [cursor=pointer]:
+            - /url: /#home-capability
+          - link "金融服务" [ref=e17] [cursor=pointer]:
+            - /url: /#home-finance
+          - link "专家支持" [ref=e18] [cursor=pointer]:
+            - /url: /#home-experts
+          - link "产品市场" [ref=e19] [cursor=pointer]:
+            - /url: /#home-products
+        - link "登录" [ref=e21] [cursor=pointer]:
+          - /url: /auth
+    - main [ref=e25]:
+      - generic [ref=e26]:
+        - generic [ref=e27]:
+          - generic [ref=e28]:
+            - generic [ref=e29]: 数字农业 · 融销协同 · 可信服务
+            - heading "助力农企互联，帮扶金融服务" [level=1] [ref=e30]
+            - paragraph [ref=e31]: 连接农户、买家、专家与银行，让农产品交易、融资申请和技术服务在一个平台内闭环。
+            - link "登录选择角色" [ref=e33] [cursor=pointer]:
+              - /url: /auth
+            - list "平台服务保障" [ref=e36]:
+              - listitem [ref=e37]: 角色权限清晰
+              - listitem [ref=e40]: 业务进度可追踪
+              - listitem [ref=e43]: 数据统一沉淀
+          - generic "融销协同业务示意" [ref=e46]:
+            - generic [ref=e47]:
+              - generic [ref=e48]:
+                - generic [ref=e49]:
+                  - generic [ref=e50]: AGRILINK / WORKSPACE
+                  - strong [ref=e51]: 融销协同工作台
+                - emphasis [ref=e52]: 服务正常
+              - generic [ref=e54]:
+                - img "绿色农产品基地" [ref=e55]
+                - generic [ref=e56]: 可信产地档案
+              - generic [ref=e59]:
+                - generic [ref=e63]:
+                  - generic [ref=e64]: STEP 01
+                  - text: 货源发布
+                - generic [ref=e70]:
+                  - generic [ref=e71]: STEP 02
+                  - text: 采购成交
+                - generic [ref=e77]:
+                  - generic [ref=e78]: STEP 03
+                  - text: 融资服务
+              - generic [ref=e79]:
+                - generic [ref=e80]: 农户 · 买家 · 专家 · 银行
+                - strong [ref=e81]: 一站协同
+        - region "平台数据概览" [ref=e82]:
+          - article [ref=e83]:
+            - generic [ref=e87]:
+              - strong [ref=e88]: "5"
+              - paragraph [ref=e89]: 当前角色
+              - generic [ref=e90]: 登录后隔离功能
+          - article [ref=e91]:
+            - generic [ref=e95]:
+              - strong [ref=e96]: "7"
+              - paragraph [ref=e97]: 可见服务
+              - generic [ref=e98]: 只展示可访问入口
+          - article [ref=e99]:
+            - generic [ref=e103]:
+              - strong [ref=e104]: "9"
+              - paragraph [ref=e105]: 在架农产品
+              - generic [ref=e106]: 产地直供，支持采购流转
+          - article [ref=e107]:
+            - generic [ref=e111]:
+              - strong [ref=e112]: "5"
+              - paragraph [ref=e113]: 入驻专家
+              - generic [ref=e114]: 覆盖种植、植保、品牌运营
+        - region "项目能力速览" [ref=e115]:
+          - generic [ref=e116]:
+            - heading "项目能做什么" [level=2] [ref=e117]
+            - paragraph [ref=e118]: 覆盖农产品「融、销、技、管」的一站式服务能力速览
+          - generic [ref=e119]:
+            - link [ref=e120] [cursor=pointer]:
+              - /url: /trade
+              - generic [ref=e124]:
+                - emphasis [ref=e125]: 融销核心
+                - strong [ref=e126]: 农产品直采直销
+                - paragraph [ref=e127]: 产地货源直连买家，省去中间环节，价格与来源可追溯。
+            - link [ref=e128] [cursor=pointer]:
+              - /url: /finance
+              - generic [ref=e132]:
+                - emphasis [ref=e133]: 融资加速
+                - strong [ref=e134]: 涉农金融撮合
+                - paragraph [ref=e135]: 对接银行贷款产品，按额度、利率、还款方式一站式申请。
+            - link [ref=e136] [cursor=pointer]:
+              - /url: /experts
+              - generic [ref=e140]:
+                - emphasis [ref=e141]: 技术护航
+                - strong [ref=e142]: 专家远程指导
+                - paragraph [ref=e143]: 在线问答 + 预约咨询，覆盖种植、植保、品牌运营多领域。
+            - link [ref=e144] [cursor=pointer]:
+              - /url: /#home-tips
+              - generic [ref=e148]:
+                - emphasis [ref=e149]: 知识赋能
+                - strong [ref=e150]: 栽培小技巧
+                - paragraph [ref=e151]: 按季节 / 作物汇总的实用栽培要点，帮助农户快速上手。
+            - link [ref=e152] [cursor=pointer]:
+              - /url: /cart
+              - generic [ref=e156]:
+                - emphasis [ref=e157]: 交易闭环
+                - strong [ref=e158]: 采购车与订单
+                - paragraph [ref=e159]: 买家可批量维护待采购清单，一键下单并跟踪物流进度。
+            - link [ref=e160] [cursor=pointer]:
+              - /url: /admin
+              - generic [ref=e164]:
+                - emphasis [ref=e165]: 可信服务
+                - strong [ref=e166]: 平台合规监管
+                - paragraph [ref=e167]: 管理员统一监管用户、交易和融资进度，保障数据可信。
+        - generic [ref=e168]:
+          - generic [ref=e169]:
+            - generic [ref=e170]: 协同流程
+            - heading "一条链路完成融销协同" [level=2] [ref=e171]
+            - paragraph [ref=e172]: 登录后按五类角色隔离业务入口，状态统一留痕
+          - generic "平台协同流程" [ref=e173]:
+            - link [ref=e174] [cursor=pointer]:
+              - /url: /trade
+              - generic [ref=e178]:
+                - strong [ref=e179]: 农户发布
+                - paragraph [ref=e180]: 维护货源、登记融资意向、提交专家问题和申请材料
+            - link [ref=e183] [cursor=pointer]:
+              - /url: /cart
+              - generic [ref=e187]:
+                - strong [ref=e188]: 买家采购
+                - paragraph [ref=e189]: 筛选农产品、加入购物车、确认地址并生成采购订单
+            - link [ref=e192] [cursor=pointer]:
+              - /url: /experts
+              - generic [ref=e196]:
+                - strong [ref=e197]: 专家服务
+                - paragraph [ref=e198]: 处理问题、预约、专家资料和农业知识服务
+            - link [ref=e201] [cursor=pointer]:
+              - /url: /finance
+              - generic [ref=e205]:
+                - strong [ref=e206]: 银行审批
+                - paragraph [ref=e207]: 查看融资申请、匹配潜在农户、填写审批意见并更新状态
+            - link [ref=e210] [cursor=pointer]:
+              - /url: /admin
+              - generic [ref=e214]:
+                - strong [ref=e215]: 平台监管
+                - paragraph [ref=e216]: 统一管理用户、交易、融资进度和平台内容数据
+        - generic [ref=e219]:
+          - generic [ref=e220]:
+            - heading "核心服务" [level=2] [ref=e221]
+            - paragraph [ref=e222]: 围绕融、销、技、管四类业务建立统一入口
+          - generic [ref=e223]:
+            - link [ref=e224] [cursor=pointer]:
+              - /url: /trade
+              - strong [ref=e228]: 发布与管理货源
+              - paragraph [ref=e229]: 农户维护产品、库存、价格和交易状态，形成可采购货源。
+              - emphasis [ref=e230]: 农户专属
+            - link [ref=e231] [cursor=pointer]:
+              - /url: /finance
+              - strong [ref=e235]: 融资申请
+              - paragraph [ref=e236]: 农户选择银行产品，提交资料、补充材料并跟踪审批进度。
+              - emphasis [ref=e237]: 农户专属
+            - link [ref=e238] [cursor=pointer]:
+              - /url: /experts
+              - strong [ref=e242]: 专家咨询
+              - paragraph [ref=e243]: 农户发起问答和预约，专家负责答复、指导和知识沉淀。
+              - emphasis [ref=e244]: 农户/专家
+            - link [ref=e245] [cursor=pointer]:
+              - /url: /trade
+              - strong [ref=e249]: 农产品采购
+              - paragraph [ref=e250]: 买家浏览货源、比较产地价格，并生成可追踪采购单。
+              - emphasis [ref=e251]: 买家专属
+            - link [ref=e252] [cursor=pointer]:
+              - /url: /cart
+              - strong [ref=e256]: 购物车
+              - paragraph [ref=e257]: 买家集中维护待采购产品、数量和下单前确认信息。
+              - emphasis [ref=e258]: 买家专属
+            - link [ref=e259] [cursor=pointer]:
+              - /url: /finance
+              - strong [ref=e263]: 融资审批
+              - paragraph [ref=e264]: 银行维护贷款产品，查看申请资料，匹配农户并更新审批状态。
+              - emphasis [ref=e265]: 银行专属
+            - link [ref=e266] [cursor=pointer]:
+              - /url: /admin
+              - strong [ref=e270]: 后台管理
+              - paragraph [ref=e271]: 管理员管理用户角色、监管交易和融资状态、维护平台内容。
+              - emphasis [ref=e272]: 管理员专属
+        - generic [ref=e273]:
+          - generic [ref=e274]:
+            - heading "金融产品" [level=2] [ref=e275]
+            - paragraph [ref=e276]: 按额度、利率和还款方式快速选择适合的融资产品
+          - generic [ref=e277]:
+            - article [ref=e278]:
+              - heading "Jishou Inclusive Finance Dev Branch" [level=3] [ref=e282]
+              - paragraph [ref=e283]: Short-term working capital loan for green agricultural product purchase orders.
+              - strong [ref=e284]: 150000 元
+              - generic [ref=e285]:
+                - generic [ref=e286]: 4.2%
+                - link "查看" [ref=e287] [cursor=pointer]:
+                  - /url: /finance
+            - article [ref=e288]:
+              - heading "Xiangxi AgriBank Dev Branch" [level=3] [ref=e292]
+              - paragraph [ref=e293]: Credit loan for spring farming, seed, fertilizer, cold-chain and order-based cash flow.
+              - strong [ref=e294]: 300000 元
+              - generic [ref=e295]:
+                - generic [ref=e296]: 3.85%
+                - link "查看" [ref=e297] [cursor=pointer]:
+                  - /url: /finance
+            - article [ref=e298]:
+              - heading "中国民生银行" [level=3] [ref=e302]
+              - paragraph [ref=e303]: 农贷通，为进一步丰富金融服务乡村振兴的内涵，民生银行在持续迭代“农贷通”产品的基础上，通过与中国银联强强联合，将借记卡产品与贷款产品相融合，以科技赋能，将现代金融服务延伸到广大农村区域。“农贷通”卡满载10项特色涉农权益，为农户提供多样化增值服务。
+              - strong [ref=e304]: 200000 元
+              - generic [ref=e305]:
+                - generic [ref=e306]: 1.6%
+                - link "查看" [ref=e307] [cursor=pointer]:
+                  - /url: /finance
+            - article [ref=e308]:
+              - heading "中国平安银行" [level=3] [ref=e312]
+              - paragraph [ref=e313]: 数保贷，平安银行与担保公司、担保基金、保险公司等联合开发的面向诚信纳税的中小企业法人或企业主的互联网信用贷款
+              - strong [ref=e314]: 160000 元
+              - generic [ref=e315]:
+                - generic [ref=e316]: 1.2%
+                - link "查看" [ref=e317] [cursor=pointer]:
+                  - /url: /finance
+        - region "农作物栽培小技巧" [ref=e318]:
+          - generic [ref=e319]:
+            - heading "农作物栽培小技巧" [level=2] [ref=e320]
+            - paragraph [ref=e321]: 按作物 / 季节汇总的实用要点，帮农户少走弯路
+          - generic [ref=e322]:
+            - tablist "栽培小技巧列表" [ref=e323]:
+              - tab [selected] [ref=e324] [cursor=pointer]:
+                - generic [ref=e325]:
+                  - emphasis [ref=e326]: 猕猴桃
+                  - emphasis [ref=e327]: 春季
+                - strong [ref=e328]: 春季猕猴桃萌芽期水肥管理
+              - tab [ref=e329] [cursor=pointer]:
+                - generic [ref=e330]:
+                  - emphasis [ref=e331]: 水稻
+                  - emphasis [ref=e332]: 夏季
+                - strong [ref=e333]: 水稻分蘖期病虫害绿色防控
+              - tab [ref=e334] [cursor=pointer]:
+                - generic [ref=e335]:
+                  - emphasis [ref=e336]: 水稻
+                  - emphasis [ref=e337]: 春季
+                - strong [ref=e338]: 高山生态大米育秧要点
+              - tab [ref=e339] [cursor=pointer]:
+                - generic [ref=e340]:
+                  - emphasis [ref=e341]: 黄桃
+                  - emphasis [ref=e342]: 春夏之交
+                - strong [ref=e343]: 设施黄桃疏花疏果
+              - tab [ref=e344] [cursor=pointer]:
+                - generic [ref=e345]:
+                  - emphasis [ref=e346]: 洋葱
+                  - emphasis [ref=e347]: 秋季
+                - strong [ref=e348]: 洋葱移栽后成活期管理
+              - tab [ref=e349] [cursor=pointer]:
+                - generic [ref=e350]:
+                  - emphasis [ref=e351]: 茶叶
+                  - emphasis [ref=e352]: 秋冬
+                - strong [ref=e353]: 茶园秋冬修剪与封园
+            - article [ref=e354]:
+              - generic [ref=e355]:
+                - generic [ref=e356]:
+                  - emphasis [ref=e357]: 猕猴桃
+                  - emphasis [ref=e358]: 春季
+                - heading "春季猕猴桃萌芽期水肥管理" [level=3] [ref=e359]
+                - paragraph [ref=e360]: 萌芽前 15 天完成清园，配合腐熟有机肥 + 少量氮肥促春梢整齐抽发。
+              - list [ref=e361]:
+                - listitem [ref=e362]:
+                  - generic [ref=e363]: "1"
+                  - generic [ref=e364]: 土壤解冻后立即松土，深度 5–10cm，避免伤及浅层吸收根
+                - listitem [ref=e365]:
+                  - generic [ref=e366]: "2"
+                  - generic [ref=e367]: 按每株 8–12kg 腐熟饼肥 + 复合肥 0.3kg 施底肥
+                - listitem [ref=e368]:
+                  - generic [ref=e369]: "3"
+                  - generic [ref=e370]: 萌芽水一次性浇透，避免后续春旱裂芽
+              - link "向专家提问 →" [ref=e372] [cursor=pointer]:
+                - /url: /experts
+        - generic [ref=e373]:
+          - generic [ref=e374]:
+            - heading "专家团队" [level=2] [ref=e375]
+            - paragraph [ref=e376]: 覆盖种植、植保、品牌和产销运营
+          - generic [ref=e377]:
+            - article [ref=e378]:
+              - img "Zhou Expert" [ref=e379]
+              - heading "Zhou Expert" [level=3] [ref=e380]
+              - paragraph [ref=e381]: Kiwi pest control and soil improvement
+              - generic [ref=e382]: Senior Agronomist
+            - article [ref=e383]:
+              - img "冯洁" [ref=e384]
+              - heading "冯洁" [level=3] [ref=e385]
+              - paragraph [ref=e386]: 农业设施学
+              - generic [ref=e387]: 中级工程师
+            - article [ref=e388]:
+              - img "高歌" [ref=e389]
+              - heading "高歌" [level=3] [ref=e390]
+              - paragraph [ref=e391]: 生物学
+              - generic [ref=e392]: 高级职称
+            - article [ref=e393]:
+              - img "李家俊" [ref=e394]
+              - heading "李家俊" [level=3] [ref=e395]
+              - paragraph [ref=e396]: 农学
+              - generic [ref=e397]: 中级工程师
+            - article [ref=e398]:
+              - img "刘旭" [ref=e399]
+              - heading "刘旭" [level=3] [ref=e400]
+              - paragraph [ref=e401]: 农作物基因学
+              - generic [ref=e402]: 高级工程师
+        - generic [ref=e403]:
+          - generic [ref=e404]: Q&A
+          - generic [ref=e405]:
+            - heading "专家问答与预约指导" [level=2] [ref=e406]
+            - paragraph [ref=e407]: 农户可提交作物、土壤、病虫害和销售运营问题，专家端可在线答复或处理预约。
+          - link "进入专家服务" [ref=e408] [cursor=pointer]:
+            - /url: /experts
+        - generic [ref=e411]:
+          - generic [ref=e412]:
+            - heading "平台资讯" [level=2] [ref=e413]
+            - paragraph [ref=e414]: 农业服务、金融产品和产销协同动态
+          - generic [ref=e415]:
+            - article [ref=e416]:
+              - img "Rainy-season drainage and calcium supplement for kiwi" [ref=e418]
+              - generic [ref=e419]:
+                - heading "Rainy-season drainage and calcium supplement for kiwi" [level=3] [ref=e420]
+                - paragraph [ref=e421]: Check ditches, root collar moisture and foliar nutrition to reduce root rot and
+                - group [ref=e422]:
+                  - generic "查看详情" [ref=e423] [cursor=pointer]
+            - article [ref=e424]:
+              - img "Post-harvest grading for order agriculture" [ref=e426]
+              - generic [ref=e427]:
+                - heading "Post-harvest grading for order agriculture" [level=3] [ref=e428]
+                - paragraph [ref=e429]: Grade, pre-cool and pack products according to purchase order specs to reduce af
+                - group [ref=e430]:
+                  - generic "查看详情" [ref=e431] [cursor=pointer]
+            - article [ref=e432]:
+              - img "人工种植蘑菇" [ref=e434]
+              - generic [ref=e435]:
+                - heading "人工种植蘑菇" [level=3] [ref=e436]
+                - paragraph [ref=e437]: 黄伞伞，白杆杆，吃完一起开厂厂！一天卖2吨蘑菇的奥地利现代种植工厂赚钱全过程
+                - group [ref=e438]:
+                  - generic "查看详情" [ref=e439] [cursor=pointer]
+            - article [ref=e440]:
+              - img "生姜的一生｜现代农业种植和收获生姜" [ref=e442]
+              - generic [ref=e443]:
+                - heading "生姜的一生｜现代农业种植和收获生姜" [level=3] [ref=e444]
+                - paragraph [ref=e445]: 两千多年来生姜一直活跃在餐桌上。一般做酱菜和小吃用嫩姜，做调料和药用以老姜为佳。传说，神农氏四处尝百草。有一次，误食毒蘑菇，吃了一株长着尖细叶子的青草，神农氏一
+                - group [ref=e446]:
+                  - generic "查看详情" [ref=e447] [cursor=pointer]
+        - generic [ref=e448]:
+          - generic [ref=e449]:
+            - heading "最新农产品" [level=2] [ref=e450]
+            - paragraph [ref=e451]: 产地直供，支持加入购物车并生成采购订单
+          - generic [ref=e452]:
+            - article [ref=e453]:
+              - img "Xiangxi Fresh Strawberry 3kg" [ref=e455]
+              - heading "Xiangxi Fresh Strawberry 3kg" [level=3] [ref=e456]
+              - paragraph [ref=e457]: Huayuan, Xiangxi · Fruit
+              - strong [ref=e458]: ￥38
+            - article [ref=e459]:
+              - img "Fresh Farm Eggs 30-pack" [ref=e461]
+              - heading "Fresh Farm Eggs 30-pack" [level=3] [ref=e462]
+              - paragraph [ref=e463]: Jishou, Xiangxi · Protein
+              - strong [ref=e464]: ￥29.9
+            - article [ref=e465]:
+              - img "Mountain Eco Rice 50kg" [ref=e467]
+              - heading "Mountain Eco Rice 50kg" [level=3] [ref=e468]
+              - paragraph [ref=e469]: Longshan, Xiangxi · Grain
+              - strong [ref=e470]: ￥5.2
+            - article [ref=e471]:
+              - img "Orange Sorting and Packing Service" [ref=e473]
+              - heading "Orange Sorting and Packing Service" [level=3] [ref=e474]
+              - paragraph [ref=e475]: Luxi, Xiangxi · Service
+              - strong [ref=e476]: ￥2.5
+            - article [ref=e477]:
+              - img "小麦" [ref=e479]
+              - heading "小麦" [level=3] [ref=e480]
+              - paragraph [ref=e481]: 山东省青岛市 · goods
+              - strong [ref=e482]: ￥2
+            - article [ref=e483]:
+              - img "西瓜" [ref=e485]
+              - heading "西瓜" [level=3] [ref=e486]
+              - paragraph [ref=e487]: 山东省青岛市 · goods
+              - strong [ref=e488]: ￥30
+            - article [ref=e489]:
+              - img "求购水蜜桃" [ref=e491]
+              - heading "求购水蜜桃" [level=3] [ref=e492]
+              - paragraph [ref=e493]: 山东省临沂市 · needs
+              - strong [ref=e494]: ￥20
+            - article [ref=e495]:
+              - img "西瓜" [ref=e497]
+              - heading "西瓜" [level=3] [ref=e498]
+              - paragraph [ref=e499]: 山东省临沂市 · goods
+              - strong [ref=e500]: ￥10
+            - article [ref=e501]:
+              - img "西瓜" [ref=e503]
+              - heading "西瓜" [level=3] [ref=e504]
+              - paragraph [ref=e505]: 山东省临沂市 · goods
+              - strong [ref=e506]: ￥11
+  - generic [ref=e507]:
+    - generic "Toggle devtools panel" [ref=e508] [cursor=pointer]
+    - generic "Toggle Component Inspector" [ref=e514] [cursor=pointer]
