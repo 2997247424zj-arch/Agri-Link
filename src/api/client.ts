@@ -34,6 +34,11 @@ export async function request<T>(path: string, options: RequestOptions = {}): Pr
     headers.set('X-User-Role', role)
   }
 
+  const storedUser = typeof localStorage === 'undefined' ? '' : localStorage.getItem('agri-link-user')
+  if (storedUser) {
+    headers.set('X-User-Name', storedUser)
+  }
+
   const getKey = method === 'GET' && !options.body ? `${path}|${role ?? ''}` : ''
   if (getKey && pendingGets.has(getKey)) {
     return pendingGets.get(getKey) as Promise<T>
@@ -99,4 +104,24 @@ export const api = {
     request<T>(path, { ...options, method: 'PATCH', body: JSON.stringify(body) }),
   delete: <T>(path: string, options?: RequestOptions) =>
     request<T>(path, { ...options, method: 'DELETE' }),
+}
+
+export async function downloadFile(path: string, fileName: string) {
+  const headers = new Headers()
+  const storedRole = typeof localStorage === 'undefined' ? '' : localStorage.getItem('agri-link-role')
+  if (storedRole) headers.set('X-User-Role', storedRole)
+  const storedUser = typeof localStorage === 'undefined' ? '' : localStorage.getItem('agri-link-user')
+  if (storedUser) headers.set('X-User-Name', storedUser)
+
+  const response = await fetch(`${API_BASE}${path}`, { headers })
+  if (!response.ok) throw new ApiError(`导出失败: HTTP ${response.status}`, response.status)
+  const blob = await response.blob()
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = fileName
+  document.body.appendChild(a)
+  a.click()
+  document.body.removeChild(a)
+  URL.revokeObjectURL(url)
 }

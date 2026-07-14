@@ -2,7 +2,7 @@
 import { computed, onMounted, reactive, ref } from 'vue'
 import AppIcon from '@/components/AppIcon.vue'
 import Pager from '@/components/ui/Pager.vue'
-import { api } from '@/api/client'
+import { api, downloadFile } from '@/api/client'
 import type { AdminOverview, Finance, Purchase, TradeOrder, User, UserRole } from '@/types/domain'
 
 interface KnowledgeItem {
@@ -39,6 +39,7 @@ const knowledgePage = ref(1)
 const selectedOrderIds = ref<number[]>([])
 const selectedPurchaseIds = ref<number[]>([])
 const editingKnowledgeId = ref<number | null>(null)
+const editingUserName = ref<string | null>(null)
 const activeAdminTab = ref<AdminTabKey>('overview')
 
 const knowledgeForm = reactive({
@@ -53,6 +54,14 @@ const knowledgeEditForm = reactive({
   summary: '',
 })
 
+const userEditForm = reactive({
+  nickName: '',
+  phone: '',
+  identityNum: '',
+  realName: '',
+  address: '',
+})
+
 const roles: Array<{ value: UserRole; label: string }> = [
   { value: 'FARMER', label: '农户' },
   { value: 'BUYER', label: '买家' },
@@ -63,13 +72,12 @@ const roles: Array<{ value: UserRole; label: string }> = [
 
 const moduleLinks: Array<{ key: AdminTabKey; label: string; icon: AdminIconName }> = [
   { key: 'overview', label: '核心指标', icon: 'home' },
-  { key: 'users', label: '用户角色', icon: 'user' },
+  { key: 'users', label: '用户管理', icon: 'user' },
   { key: 'trade', label: '交易监管', icon: 'leaf' },
   { key: 'finance', label: '融资监管', icon: 'bank' },
   { key: 'knowledge', label: '内容管理', icon: 'shield' },
 ]
 
-// 后端不可用时保留一组演示数据，方便页面继续展示。
 const fallbackOverview: AdminOverview = {
   userCount: 5,
   orderCount: 3,
@@ -160,7 +168,6 @@ function pageCount(total: number) {
   return Math.max(1, Math.ceil(total / pageSize))
 }
 
-// 通用选择工具，返回新的 ID 数组。
 function toggleSelection(list: number[], id: number) {
   return list.includes(id) ? list.filter((item) => item !== id) : [...list, id]
 }
@@ -203,11 +210,15 @@ function statusTagClass(status?: number) {
   return 'tag tag--amber'
 }
 
+function maskIdNum(id?: string) {
+  if (!id || id.length < 8) return id ?? '-'
+  return id.slice(0, 4) + '****' + id.slice(-4)
+}
+
 function confirmAction(text: string) {
   return typeof window === 'undefined' || window.confirm(text)
 }
 
-// 并行加载后台各业务列表，单个接口失败时使用兜底数据。
 async function loadAdmin() {
   loading.value = true
   error.value = ''
@@ -235,6 +246,93 @@ async function loadAdmin() {
     loading.value = false
   }
 }
+
+// ---- 用户管理 ----
+
+async function toggleUserEnabled(user: User) {
+  const currentlyEnabled = user.enabled !== false
+  const nextEnabled = !currentlyEnabled
+  const label = nextEnabled ? '启用' : '禁用'
+  if (!confirmAction(`确认${label}用户 ${user.userName}？`)) return
+  message.value = ''
+  error.value = ''
+  try {
+    const updated = await api.patch<User>(
+      `/api/admin/users/${encodeURIComponent(user.userName)}/enabled`,
+      { enabled: nextEnabled },
+      { role: 'SYSTEM_ADMIN' },
+    )
+    user.enabled = updated.enabled
+    message.value = `已${label} ${user.userName}。`
+  } catch (err) {
+    error.value = err instanceof Error ? err.message : '操作失败。'
+  }
+}
+
+function startEditUser(user: User) {
+  editingUserName.value = user.userName
+  userEditForm.nickName = user.nickName ?? ''
+  userEditForm.phone = user.phone ?? ''
+  userEditForm.identityNum = user.identityNum ?? ''
+  userEditForm.realName = user.realName ?? ''
+  userEditForm.address = user.address ?? ''
+}
+
+async function saveUser(user: User) {
+  message.value = ''
+  error.value = ''
+  try {
+    const updated = await api.put<User>(
+      `/api/admin/users/${encodeURIComponent(user.userName)}`,
+      { ...userEditForm },
+      { role: 'SYSTEM_ADMIN' },
+    )
+    user.nickName = updated.nickName
+    user.phone = updated.phone
+    user.identityNum = updated.identityNum
+    user.realName = updated.realName
+    user.address = updated.address
+    message.value = `已更新 ${user.userName} 的信息。`
+  } catch (err) {
+    error.value = err instanceof Error ? err.message : '保存失败。'
+  } finally {
+    editingUserName.value = null
+  }
+}
+
+async function deleteUser(user: User) {
+  if (!confirmAction(`确认删除用户 ${user.userName}？此操作不可恢复。`)) return
+  message.value = ''
+  error.value = ''
+  try {
+    await api.delete<void>(`/api/admin/users/${encodeURIComponent(user.userName)}`, { role: 'SYSTEM_ADMIN' })
+    users.value = users.value.filter((u) => u.userName !== user.userName)
+    message.value = `已删除用户 ${user.userName}。`
+  } catch (err) {
+    error.value = err instanceof Error ? err.message : '删除失败。'
+  }
+}
+
+async function updateUserRole(user: User, role: UserRole) {
+  if (!confirmAction(`确认将 ${user.userName} 的角色调整为 ${roles.find((item) => item.value === role)?.label ?? role}？`)) {
+    return
+  }
+  message.value = ''
+  error.value = ''
+  try {
+    const updated = await api.patch<User>(
+      `/api/admin/users/${encodeURIComponent(user.userName)}/role`,
+      { role },
+      { role: 'SYSTEM_ADMIN' },
+    )
+    user.role = updated.role
+    message.value = `已更新 ${user.userName} 的角色。`
+  } catch (err) {
+    error.value = err instanceof Error ? err.message : '角色更新失败。'
+  }
+}
+
+// ---- 内容管理 ----
 
 async function publishKnowledge() {
   message.value = ''
@@ -309,24 +407,7 @@ async function deleteKnowledge(item: KnowledgeItem) {
   }
 }
 
-async function updateUserRole(user: User, role: UserRole) {
-  if (!confirmAction(`确认将 ${user.userName} 的角色调整为 ${roles.find((item) => item.value === role)?.label ?? role}？`)) {
-    return
-  }
-  message.value = ''
-  error.value = ''
-  try {
-    const updated = await api.patch<User>(
-      `/api/admin/users/${encodeURIComponent(user.userName)}/role`,
-      { role },
-      { role: 'SYSTEM_ADMIN' },
-    )
-    user.role = updated.role
-    message.value = `已更新 ${user.userName} 的角色。`
-  } catch (err) {
-    error.value = err instanceof Error ? err.message : '角色更新失败。'
-  }
-}
+// ---- 交易监管 ----
 
 async function updateOrderStatus(order: TradeOrder, orderStatus: number, shouldConfirm = true) {
   if (shouldConfirm && !confirmAction(`确认${orderStatus === 1 ? '通过' : '拒绝'}货源「${order.title}」？`)) return
@@ -382,6 +463,48 @@ async function bulkUpdatePurchases(status: number) {
   selectedPurchaseIds.value = []
 }
 
+// ---- 数据导出 ----
+
+async function exportUsers() {
+  const params = userKeyword.value ? `?keyword=${encodeURIComponent(userKeyword.value)}` : ''
+  try {
+    await downloadFile(`/api/admin/users/export${params}`, '用户导出.xlsx')
+    message.value = '用户数据已导出。'
+  } catch (err) {
+    error.value = err instanceof Error ? err.message : '导出失败。'
+  }
+}
+
+async function exportOrders() {
+  const params = orderStatusFilter.value !== 'all' ? `?status=${orderStatusFilter.value}` : ''
+  try {
+    await downloadFile(`/api/admin/trade/orders/export${params}`, '货源导出.xlsx')
+    message.value = '货源数据已导出。'
+  } catch (err) {
+    error.value = err instanceof Error ? err.message : '导出失败。'
+  }
+}
+
+async function exportPurchases() {
+  const params = purchaseStatusFilter.value !== 'all' ? `?status=${purchaseStatusFilter.value}` : ''
+  try {
+    await downloadFile(`/api/admin/trade/purchases/export${params}`, '采购导出.xlsx')
+    message.value = '采购数据已导出。'
+  } catch (err) {
+    error.value = err instanceof Error ? err.message : '导出失败。'
+  }
+}
+
+async function exportFinance() {
+  const params = financeStatusFilter.value !== 'all' ? `?status=${financeStatusFilter.value}` : ''
+  try {
+    await downloadFile(`/api/admin/finance/applications/export${params}`, '融资导出.xlsx')
+    message.value = '融资数据已导出。'
+  } catch (err) {
+    error.value = err instanceof Error ? err.message : '导出失败。'
+  }
+}
+
 onMounted(loadAdmin)
 </script>
 
@@ -391,7 +514,7 @@ onMounted(loadAdmin)
       <div>
         <span class="eyebrow"><AppIcon name="shield" />系统管理后台</span>
         <h1>农产品融销一体平台管理控制台</h1>
-        <p>集中处理用户角色、交易监管、融资状态查看和平台内容维护。</p>
+        <p>集中处理用户管理、交易监管、融资状态查看和平台内容维护。</p>
       </div>
       <button class="button button--ghost" type="button" @click="loadAdmin">
         <AppIcon name="search" />刷新
@@ -418,6 +541,7 @@ onMounted(loadAdmin)
       </aside>
 
       <div class="admin-main admin-dashboard-grid">
+    <!-- ======== 核心指标 ======== -->
     <section v-if="activeAdminTab === 'overview'" id="admin-overview-panel" class="section admin-card admin-card--overview">
       <div class="section-title">
         <div>
@@ -437,16 +561,22 @@ onMounted(loadAdmin)
       </div>
     </section>
 
+    <!-- ======== 用户管理 ======== -->
     <section v-if="activeAdminTab === 'users'" id="admin-users" class="section admin-card">
       <div class="section-title">
         <div>
-          <h2>用户角色</h2>
-          <p>管理员可调整普通业务用户角色。</p>
+          <h2>用户管理</h2>
+          <p>管理用户身份信息、角色分配和账号启用/禁用。</p>
         </div>
-        <label class="field compact-field">
-          <span>搜索用户</span>
-          <input v-model.trim="userKeyword" placeholder="账号/昵称/手机号" />
-        </label>
+        <div class="toolbar">
+          <label class="field compact-field">
+            <span>搜索用户</span>
+            <input v-model.trim="userKeyword" placeholder="账号/昵称/手机号" />
+          </label>
+          <button class="button button--ghost button--small" type="button" @click="exportUsers">
+            <AppIcon name="download" />导出
+          </button>
+        </div>
       </div>
       <div class="role-stat-grid">
         <span v-for="role in roleStats" :key="role.value" class="role-stat">
@@ -460,23 +590,62 @@ onMounted(loadAdmin)
             <tr>
               <th>账号</th>
               <th>昵称</th>
+              <th>真实姓名</th>
+              <th>身份证号</th>
               <th>手机号</th>
+              <th>状态</th>
               <th>角色</th>
+              <th>操作</th>
             </tr>
           </thead>
           <tbody>
             <tr v-for="user in pagedUsers" :key="user.userName">
-              <td>{{ user.userName }}</td>
-              <td>{{ user.nickName || user.realName || '-' }}</td>
-              <td>{{ user.phone || '-' }}</td>
-              <td>
-                <select :value="user.role" @change="updateUserRole(user, ($event.target as HTMLSelectElement).value as UserRole)">
-                  <option v-for="role in roles" :key="role.value" :value="role.value">{{ role.label }}</option>
-                </select>
-              </td>
+              <template v-if="editingUserName === user.userName">
+                <td>{{ user.userName }}</td>
+                <td><input v-model.trim="userEditForm.nickName" class="inline-input" /></td>
+                <td><input v-model.trim="userEditForm.realName" class="inline-input" /></td>
+                <td><input v-model.trim="userEditForm.identityNum" class="inline-input" /></td>
+                <td><input v-model.trim="userEditForm.phone" class="inline-input" /></td>
+                <td><span :class="user.enabled === false ? 'tag tag--red' : 'tag tag--green'">{{ user.enabled === false ? '禁用' : '启用' }}</span></td>
+                <td>
+                  <select :value="user.role" @change="updateUserRole(user, ($event.target as HTMLSelectElement).value as UserRole)">
+                    <option v-for="role in roles" :key="role.value" :value="role.value">{{ role.label }}</option>
+                  </select>
+                </td>
+                <td class="toolbar">
+                  <button class="button button--small" type="button" @click="saveUser(user)">保存</button>
+                  <button class="button button--ghost button--small" type="button" @click="editingUserName = null">取消</button>
+                </td>
+              </template>
+              <template v-else>
+                <td>{{ user.userName }}</td>
+                <td>{{ user.nickName || '-' }}</td>
+                <td>{{ user.realName || '-' }}</td>
+                <td>{{ maskIdNum(user.identityNum) }}</td>
+                <td>{{ user.phone || '-' }}</td>
+                <td>
+                  <button
+                    class="button button--small"
+                    :class="user.enabled === false ? 'button--danger' : 'button--green'"
+                    type="button"
+                    @click="toggleUserEnabled(user)"
+                  >
+                    {{ user.enabled === false ? '禁用' : '启用' }}
+                  </button>
+                </td>
+                <td>
+                  <select :value="user.role" @change="updateUserRole(user, ($event.target as HTMLSelectElement).value as UserRole)">
+                    <option v-for="role in roles" :key="role.value" :value="role.value">{{ role.label }}</option>
+                  </select>
+                </td>
+                <td class="toolbar">
+                  <button class="button button--ghost button--small" type="button" @click="startEditUser(user)">编辑</button>
+                  <button class="button button--danger button--small" type="button" @click="deleteUser(user)">删除</button>
+                </td>
+              </template>
             </tr>
             <tr v-if="!filteredUsers.length">
-              <td colspan="4">暂无符合条件的用户。</td>
+              <td colspan="8">暂无符合条件的用户。</td>
             </tr>
           </tbody>
         </table>
@@ -484,6 +653,7 @@ onMounted(loadAdmin)
       <Pager :page="userPage" :page-count="pageCount(filteredUsers.length)" @change="changeUserPage" />
     </section>
 
+    <!-- ======== 交易监管 ======== -->
     <section v-if="activeAdminTab === 'trade'" id="admin-trade" class="section admin-card-grid admin-card-grid--two">
       <div class="panel admin-card">
         <div class="section-title">
@@ -491,15 +661,20 @@ onMounted(loadAdmin)
             <h2>货源状态</h2>
             <p>处理农户发布的商品货源。</p>
           </div>
-          <label class="field compact-field">
-            <span>状态筛选</span>
-            <select v-model="orderStatusFilter">
-              <option value="all">全部货源</option>
-              <option value="0">待审批</option>
-              <option value="1">已通过</option>
-              <option value="2">已拒绝</option>
-            </select>
-          </label>
+          <div class="toolbar">
+            <label class="field compact-field">
+              <span>状态筛选</span>
+              <select v-model="orderStatusFilter">
+                <option value="all">全部货源</option>
+                <option value="0">待审批</option>
+                <option value="1">已通过</option>
+                <option value="2">已拒绝</option>
+              </select>
+            </label>
+            <button class="button button--ghost button--small" type="button" @click="exportOrders">
+              <AppIcon name="download" />导出
+            </button>
+          </div>
         </div>
         <div class="toolbar">
           <button class="button button--small" type="button" :disabled="!selectedOrderIds.length" @click="bulkUpdateOrders(1)">批量通过</button>
@@ -532,15 +707,20 @@ onMounted(loadAdmin)
             <h2>采购状态</h2>
             <p>处理买家生成的采购订单。</p>
           </div>
-          <label class="field compact-field">
-            <span>状态筛选</span>
-            <select v-model="purchaseStatusFilter">
-              <option value="all">全部采购</option>
-              <option value="0">待确认</option>
-              <option value="1">已确认</option>
-              <option value="2">已取消</option>
-            </select>
-          </label>
+          <div class="toolbar">
+            <label class="field compact-field">
+              <span>状态筛选</span>
+              <select v-model="purchaseStatusFilter">
+                <option value="all">全部采购</option>
+                <option value="0">待确认</option>
+                <option value="1">已确认</option>
+                <option value="2">已取消</option>
+              </select>
+            </label>
+            <button class="button button--ghost button--small" type="button" @click="exportPurchases">
+              <AppIcon name="download" />导出
+            </button>
+          </div>
         </div>
         <div class="toolbar">
           <button class="button button--small" type="button" :disabled="!selectedPurchaseIds.length" @click="bulkUpdatePurchases(1)">批量确认</button>
@@ -569,21 +749,27 @@ onMounted(loadAdmin)
       </div>
     </section>
 
+    <!-- ======== 融资监管 ======== -->
     <section v-if="activeAdminTab === 'finance'" id="admin-finance" class="section admin-card">
       <div class="section-title">
         <div>
           <h2>融资监管</h2>
           <p>管理员查看银行审批进度和备注，具体通过或拒绝由银行角色处理。</p>
         </div>
-        <label class="field compact-field">
-          <span>状态筛选</span>
-          <select v-model="financeStatusFilter">
-            <option value="all">全部申请</option>
-            <option value="0">待审批</option>
-            <option value="1">已通过</option>
-            <option value="2">已拒绝</option>
-          </select>
-        </label>
+        <div class="toolbar">
+          <label class="field compact-field">
+            <span>状态筛选</span>
+            <select v-model="financeStatusFilter">
+              <option value="all">全部申请</option>
+              <option value="0">待审批</option>
+              <option value="1">已通过</option>
+              <option value="2">已拒绝</option>
+            </select>
+          </label>
+          <button class="button button--ghost button--small" type="button" @click="exportFinance">
+            <AppIcon name="download" />导出
+          </button>
+        </div>
       </div>
       <div class="table-wrap">
         <table>
@@ -613,6 +799,7 @@ onMounted(loadAdmin)
       <Pager :page="financePage" :page-count="pageCount(filteredFinances.length)" @change="changeFinancePage" />
     </section>
 
+    <!-- ======== 内容管理 ======== -->
     <section v-if="activeAdminTab === 'knowledge'" id="admin-knowledge" class="section admin-card-grid admin-card-grid--two">
       <form class="panel form admin-card" @submit.prevent="publishKnowledge">
         <div class="section-title">

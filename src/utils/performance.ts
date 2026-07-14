@@ -8,9 +8,23 @@ type PerfMetric = {
 }
 
 const ROUTE_MARK = 'agri-link:route-start'
+const RESOURCE_TIMING_BUFFER_SIZE = 150
+const MAINTENANCE_INTERVAL_MS = 30 * 60 * 1000
+const RETAINED_METRICS = 20
 const metrics: PerfMetric[] = []
 let currentRoute = ''
 let installed = false
+
+function maintainPerformanceBuffers() {
+  if (typeof performance === 'undefined') return
+
+  performance.clearResourceTimings()
+  performance.clearMeasures()
+
+  if (metrics.length > RETAINED_METRICS) {
+    metrics.splice(0, metrics.length - RETAINED_METRICS)
+  }
+}
 
 function emitMetric(metric: PerfMetric) {
   metrics.push(metric)
@@ -62,6 +76,10 @@ export function measureApi(path: string, value: number, detail?: string) {
 export function installPerformanceMonitoring() {
   if (installed || typeof window === 'undefined') return
   installed = true
+
+  performance.setResourceTimingBufferSize(RESOURCE_TIMING_BUFFER_SIZE)
+  window.setInterval(maintainPerformanceBuffers, MAINTENANCE_INTERVAL_MS)
+  window.addEventListener('pagehide', maintainPerformanceBuffers)
 
   window.addEventListener('load', () => {
     requestAnimationFrame(() => {

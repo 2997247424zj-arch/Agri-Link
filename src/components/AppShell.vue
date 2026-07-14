@@ -1,21 +1,48 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import AppTopbar from '@/components/layout/AppTopbar.vue'
 import AppSidebar from '@/components/layout/AppSidebar.vue'
 import { navByRole, profileNavItem, roleCodes, roleHints, type NavItem, type NavRouteName } from '@/components/layout/navigation'
 import { useUiScale } from '@/composables/useUiScale'
 import { useSessionStore } from '@/stores/session'
+import { useNotificationStore } from '@/stores/notification'
 import { routeRoles } from '@/router'
 
 const session = useSessionStore()
+const notifStore = useNotificationStore()
 const route = useRoute()
 const router = useRouter()
 const { shellRef } = useUiScale()
 const sidebarOpen = ref(false)
 const sidebarPinned = ref(false)
 const expandedNavName = ref<NavRouteName | null>(null)
-// 登录态 + 路由权限过滤：无权限项不显示。
+
+let pollTimer: ReturnType<typeof setInterval> | null = null
+
+function startPoll() {
+  notifStore.fetchUnreadCount()
+  pollTimer = setInterval(() => notifStore.fetchUnreadCount(), 30_000)
+}
+
+function stopPoll() {
+  if (pollTimer) {
+    clearInterval(pollTimer)
+    pollTimer = null
+  }
+}
+
+onMounted(() => {
+  if (session.isLoggedIn) startPoll()
+})
+
+onUnmounted(() => stopPoll())
+
+watch(() => session.isLoggedIn, (loggedIn) => {
+  if (loggedIn) startPoll()
+  else stopPoll()
+})
+
 function canAccess(item: NavItem) {
   const allowedRoles = routeRoles[item.name]
   if (!allowedRoles) return true
@@ -24,7 +51,6 @@ function canAccess(item: NavItem) {
 
 const isAuth = computed(() => route.name === 'auth')
 const visibleNavItems = computed(() => navByRole[session.role].filter(canAccess))
-// 个人中心作为侧边栏底部独立入口，同样受登录态与路由权限约束。
 const visibleProfileItem = computed(() => (canAccess(profileNavItem) ? profileNavItem : null))
 const roleTitle = computed(() => (session.isLoggedIn ? session.roleLabel : '访客'))
 const roleHint = computed(() => (session.isLoggedIn ? roleHints[session.role] : '登录后按角色开放功能'))

@@ -50,25 +50,6 @@ const roleDescriptions: Record<UserRole, { zh: string; en: string }> = {
   SYSTEM_ADMIN: { zh: '管理用户、交易、融资和内容。', en: 'Manage users, trade, finance and content.' },
 }
 
-const demoAccounts: Array<{
-  userName: string
-  role: UserRole
-  label: string
-  enLabel: string
-  focus: string
-  enFocus: string
-}> = [
-  { userName: 'dev_farmer', role: 'FARMER', label: '农户示例', enLabel: 'Farmer demo', focus: '发布货源、申请融资、发起专家咨询', enFocus: 'Publish products, apply for finance and consult experts' },
-  { userName: 'dev_farmer2', role: 'FARMER', label: '果园农户', enLabel: 'Orchard farmer', focus: '查看待发货订单、补充融资材料、预约果树专家', enFocus: 'Handle orders, finance materials and orchard consultations' },
-  { userName: 'dev_buyer', role: 'BUYER', label: '买家示例', enLabel: 'Buyer demo', focus: '选购商品、管理地址、购物车和采购单', enFocus: 'Purchase products and manage orders' },
-  { userName: 'dev_buyer2', role: 'BUYER', label: '商超采购', enLabel: 'Retail buyer', focus: '批量采购、查看物流单号、评价知识内容', enFocus: 'Bulk purchase, track deliveries and review guidance' },
-  { userName: 'dev_expert', role: 'EXPERT', label: '专家示例', enLabel: 'Expert demo', focus: '处理问答预约、查看症状图片、发布知识', enFocus: 'Handle consultations and publish guidance' },
-  { userName: 'dev_expert2', role: 'EXPERT', label: '植保专家', enLabel: 'Crop expert', focus: '处理水稻病虫害问答、远程预约和技术文章', enFocus: 'Handle crop protection questions and remote bookings' },
-  { userName: 'dev_bank', role: 'BANK', label: '银行示例', enLabel: 'Bank demo', focus: '维护贷款产品、查看材料、处理融资审批', enFocus: 'Maintain loans and review applications' },
-  { userName: 'dev_bank2', role: 'BANK', label: '普惠金融', enLabel: 'Inclusive bank', focus: '匹配农户意向、审核订单贷和设备贷申请', enFocus: 'Match farmers and review order or equipment loans' },
-  { userName: 'dev_admin', role: 'SYSTEM_ADMIN', label: '管理员示例', enLabel: 'Admin demo', focus: '监管用户、交易、融资和平台资讯', enFocus: 'Manage users, transactions and content' },
-]
-
 const authRoles = computed(() =>
   mode.value === 'register' ? roles.filter((role) => role.value !== 'SYSTEM_ADMIN') : roles,
 )
@@ -82,17 +63,6 @@ const accountPlaceholder = computed(() =>
 )
 const accountAutocomplete = computed(() => (accountMode.value === 'netease' ? 'email' : 'username'))
 const accountType = computed(() => (accountMode.value === 'netease' ? 'email' : 'text'))
-const selectedDemoAccount = computed(() => demoAccounts.find((account) => account.userName === form.userName))
-
-function applyDemoAccount(account: (typeof demoAccounts)[number]) {
-  mode.value = 'login'
-  accountMode.value = 'account'
-  form.userName = account.userName
-  form.password = 'Test@123456'
-  form.role = account.role
-  message.value = ''
-  error.value = ''
-}
 
 function switchMode(nextMode: 'login' | 'register') {
   mode.value = nextMode
@@ -151,28 +121,6 @@ async function submit() {
         <li><AppIcon name="check" /><span><strong>{{ locale.t('业务进度留痕', 'Traceable workflow') }}</strong><small>{{ locale.t('交易、融资与咨询状态统一管理', 'Manage trade, finance and consultations') }}</small></span></li>
         <li><AppIcon name="check" /><span><strong>{{ locale.t('注册信息精简', 'Simple registration') }}</strong><small>{{ locale.t('仅收集业务所需的必要信息', 'Only essential information is required') }}</small></span></li>
       </ul>
-
-      <div v-if="mode === 'login'" class="demo-account-panel demo-account-panel--showcase">
-        <div class="demo-account-heading">
-          <strong>{{ locale.t('示例账号快速体验', 'Try a demo account') }}</strong>
-          <small>{{ locale.t('统一密码：Test@123456', 'Password: Test@123456') }}</small>
-        </div>
-        <div class="demo-account-grid">
-          <button
-            v-for="account in demoAccounts"
-            :key="account.userName"
-            type="button"
-            :aria-pressed="selectedDemoAccount?.userName === account.userName"
-            @click="applyDemoAccount(account)"
-          >
-            <strong>{{ locale.isEnglish ? account.enLabel : account.label }}</strong>
-            <small>{{ account.userName }}</small>
-          </button>
-        </div>
-        <p v-if="selectedDemoAccount" class="demo-account-detail">
-          <AppIcon name="check" />{{ locale.isEnglish ? selectedDemoAccount.enFocus : selectedDemoAccount.focus }}
-        </p>
-      </div>
     </div>
 
     <div class="auth-card" :class="{ 'auth-card--register': mode === 'register' }">
@@ -181,85 +129,92 @@ async function submit() {
         <button class="tab" type="button" :aria-selected="mode === 'register'" @click="switchMode('register')">{{ locale.t('注册', 'Register') }}</button>
       </div>
 
-      <div class="auth-card__heading">
-        <h2>{{ mode === 'login' ? locale.t('欢迎回来', 'Welcome back') : locale.t('创建您的账号', 'Create your account') }}</h2>
-        <p>{{ mode === 'login' ? locale.t('输入账号和密码进入业务工作台。', 'Sign in to open your workspace.') : locale.t('选择身份并补充必要的账号信息。', 'Choose a role and enter the required details.') }}</p>
-      </div>
-
-      <form class="form auth-form" @submit.prevent="submit">
-        <div class="auth-provider" aria-label="账号类型">
-          <button type="button" :aria-selected="accountMode === 'account'" @click="accountMode = 'account'">
-            {{ locale.t('普通账号', 'Account') }}
-          </button>
-          <button type="button" :aria-selected="accountMode === 'netease'" @click="accountMode = 'netease'">
-            {{ locale.t('163 邮箱', '163 email') }}
-          </button>
-        </div>
-
-        <label class="field">
-          <span>{{ accountLabel }}</span>
-          <input
-            v-model.trim="form.userName"
-            :autocomplete="accountAutocomplete"
-            :placeholder="accountPlaceholder"
-            :type="accountType"
-            required
-          />
-        </label>
-        <label class="field">
-          <span>{{ locale.t('密码', 'Password') }}</span>
-          <input v-model="form.password" type="password" :autocomplete="mode === 'login' ? 'current-password' : 'new-password'" required :placeholder="locale.t('请输入密码', 'Enter password')" />
-        </label>
-        <label v-if="mode === 'register'" class="field">
-          <span>{{ locale.t('角色', 'Role') }}</span>
-          <select v-model="form.role">
-            <option v-for="role in authRoles" :key="role.value" :value="role.value">{{ locale.isEnglish ? role.enLabel : role.label }}</option>
-          </select>
-        </label>
-        <p v-if="mode === 'register'" class="form-note">{{ selectedRoleDescription }}</p>
-        <p v-else class="form-note">{{ locale.t('登录后将自动识别您的账号身份，无需手动选择角色。', 'Your role is detected automatically after sign-in.') }}</p>
-
-        <Transition name="auth-extra">
-          <div v-if="mode === 'register'" class="auth-extra-grid">
-            <label class="field">
-              <span>{{ locale.t('昵称', 'Display name') }}</span>
-              <input v-model.trim="form.nickName" :placeholder="locale.t('平台展示名', 'Name shown on the platform')" />
-            </label>
-            <label class="field">
-              <span>{{ locale.t('真实姓名', 'Full name') }}</span>
-              <input v-model.trim="form.realName" :placeholder="locale.t('认证可用', 'Used for verification')" />
-            </label>
-            <label class="field">
-              <span>{{ locale.t('手机号', 'Phone') }} <small>{{ locale.t('选填', 'Optional') }}</small></span>
-              <input v-model.trim="form.phone" type="tel" autocomplete="tel" :placeholder="locale.t('联系方式', 'Contact number')" />
-            </label>
-            <label class="field">
-              <span>{{ locale.t('地区', 'Location') }} <small>{{ locale.t('选填', 'Optional') }}</small></span>
-              <input v-model.trim="form.address" :placeholder="locale.t('省市区/经营地', 'Province, city or business area')" />
-            </label>
+      <Transition name="auth-mode" mode="out-in">
+        <div :key="mode" class="auth-card__content">
+          <div class="auth-card__heading">
+            <h2>{{ mode === 'login' ? locale.t('欢迎回来', 'Welcome back') : locale.t('创建您的账号', 'Create your account') }}</h2>
+            <p>{{ mode === 'login' ? locale.t('输入账号和密码进入业务工作台。', 'Sign in to open your workspace.') : locale.t('选择身份并补充必要的账号信息。', 'Choose a role and enter the required details.') }}</p>
           </div>
-        </Transition>
 
-        <p v-if="message" class="alert">{{ message }}</p>
-        <p v-if="routeNotice" class="alert">{{ routeNotice }}</p>
-        <p v-if="error" class="alert alert--error">{{ error }}</p>
+          <form class="form auth-form" @submit.prevent="submit">
+            <div class="auth-provider" aria-label="账号类型">
+              <button type="button" :aria-selected="accountMode === 'account'" @click="accountMode = 'account'">
+                {{ locale.t('普通账号', 'Account') }}
+              </button>
+              <button type="button" :aria-selected="accountMode === 'netease'" @click="accountMode = 'netease'">
+                {{ locale.t('163 邮箱', '163 email') }}
+              </button>
+            </div>
 
-        <a
-          v-if="accountMode === 'netease'"
-          class="auth-mail-link"
-          :href="neteaseMailUrl"
-          rel="noopener noreferrer"
-          target="_blank"
-        >
-          <AppIcon name="arrow" />
-          {{ locale.t('打开网易邮箱设置', 'Open NetEase email settings') }}
-        </a>
+            <label class="field">
+              <span>{{ accountLabel }}</span>
+              <input
+                v-model.trim="form.userName"
+                :autocomplete="accountAutocomplete"
+                :placeholder="accountPlaceholder"
+                :type="accountType"
+                required
+              />
+            </label>
+            <label class="field">
+              <span>{{ locale.t('密码', 'Password') }}</span>
+              <input v-model="form.password" type="password" :autocomplete="mode === 'login' ? 'current-password' : 'new-password'" required :placeholder="locale.t('请输入密码', 'Enter password')" />
+            </label>
 
-        <button class="button button--green" type="submit" :disabled="loading">
-          <AppIcon name="check" />
-          {{ loading ? locale.t('提交中', 'Submitting') : mode === 'login' ? locale.t('登录平台', 'Sign in') : locale.t('创建账号', 'Create account') }}
-        </button>
-      </form>
+            <div v-if="mode === 'register'" class="auth-role-row">
+              <label class="field">
+                <span>{{ locale.t('角色', 'Role') }}</span>
+                <select v-model="form.role">
+                  <option v-for="role in authRoles" :key="role.value" :value="role.value">{{ locale.isEnglish ? role.enLabel : role.label }}</option>
+                </select>
+              </label>
+              <p class="form-note">{{ selectedRoleDescription }}</p>
+            </div>
+            <p v-else class="form-note">{{ locale.t('登录后将自动识别您的账号身份，无需手动选择角色。', 'Your role is detected automatically after sign-in.') }}</p>
+
+            <Transition name="auth-extra">
+              <div v-if="mode === 'register'" class="auth-extra-grid">
+                <label class="field">
+                  <span>{{ locale.t('昵称', 'Display name') }}</span>
+                  <input v-model.trim="form.nickName" :placeholder="locale.t('平台展示名', 'Name shown on the platform')" />
+                </label>
+                <label class="field">
+                  <span>{{ locale.t('真实姓名', 'Full name') }}</span>
+                  <input v-model.trim="form.realName" :placeholder="locale.t('认证可用', 'Used for verification')" />
+                </label>
+                <label class="field">
+                  <span>{{ locale.t('手机号', 'Phone') }} <small>{{ locale.t('选填', 'Optional') }}</small></span>
+                  <input v-model.trim="form.phone" type="tel" autocomplete="tel" :placeholder="locale.t('联系方式', 'Contact number')" />
+                </label>
+                <label class="field">
+                  <span>{{ locale.t('地区', 'Location') }} <small>{{ locale.t('选填', 'Optional') }}</small></span>
+                  <input v-model.trim="form.address" :placeholder="locale.t('省市区/经营地', 'Province, city or business area')" />
+                </label>
+              </div>
+            </Transition>
+
+            <p v-if="message" class="alert">{{ message }}</p>
+            <p v-if="routeNotice" class="alert">{{ routeNotice }}</p>
+            <p v-if="error" class="alert alert--error">{{ error }}</p>
+
+            <a
+              v-if="accountMode === 'netease'"
+              class="auth-mail-link"
+              :href="neteaseMailUrl"
+              rel="noopener noreferrer"
+              target="_blank"
+            >
+              <AppIcon name="arrow" />
+              {{ locale.t('打开网易邮箱设置', 'Open NetEase email settings') }}
+            </a>
+
+            <button class="button button--green" type="submit" :disabled="loading">
+              <AppIcon name="check" />
+              {{ loading ? locale.t('提交中', 'Submitting') : mode === 'login' ? locale.t('登录平台', 'Sign in') : locale.t('创建账号', 'Create account') }}
+            </button>
+          </form>
+        </div>
+      </Transition>
     </div>
   </section>
 </template>

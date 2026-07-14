@@ -1,13 +1,15 @@
 <script setup lang="ts">
-import { computed, nextTick } from 'vue'
+import { computed, nextTick, ref } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 import AppIcon from '@/components/AppIcon.vue'
 import { useLocaleStore } from '@/stores/locale'
+import { useNotificationStore } from '@/stores/notification'
 import type { NavItem } from './navigation'
 
 const route = useRoute()
 const router = useRouter()
 const locale = useLocaleStore()
+const notifStore = useNotificationStore()
 
 const props = defineProps<{
   isAuth: boolean
@@ -19,6 +21,24 @@ const props = defineProps<{
   navItems: NavItem[]
   profileItem: NavItem | null
 }>()
+
+const notifOpen = ref(false)
+
+function toggleNotifications() {
+  notifOpen.value = !notifOpen.value
+  if (notifOpen.value) notifStore.fetchNotifications()
+}
+
+function closeNotifications() {
+  notifOpen.value = false
+}
+
+function formatTime(time?: string) {
+  if (!time) return ''
+  const d = new Date(time)
+  if (isNaN(d.getTime())) return time
+  return `${d.getMonth() + 1}/${d.getDate()} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
+}
 
 const publicNavItems = computed(() => [
   { to: '/', label: locale.t('首页', 'Home') },
@@ -100,6 +120,49 @@ async function navigatePublic(to: string) {
       </nav>
 
       <div class="topbar__actions">
+        <div v-if="isLoggedIn && !isAuth" class="notification-area">
+          <button
+            class="notification-bell"
+            type="button"
+            :aria-label="locale.t('通知', 'Notifications')"
+            @click="toggleNotifications"
+          >
+            <AppIcon name="bell" />
+            <span v-if="notifStore.unreadCount > 0" class="notification-badge">
+              {{ notifStore.unreadCount > 99 ? '99+' : notifStore.unreadCount }}
+            </span>
+          </button>
+          <div v-if="notifOpen" class="notification-dropdown">
+            <div class="notification-dropdown__header">
+              <strong>{{ locale.t('消息通知', 'Notifications') }}</strong>
+              <button
+                v-if="notifStore.unreadCount > 0"
+                class="button button--ghost button--small"
+                type="button"
+                @click="notifStore.markAllAsRead()"
+              >
+                {{ locale.t('全部已读', 'Mark all read') }}
+              </button>
+            </div>
+            <div class="notification-dropdown__list">
+              <div
+                v-for="n in notifStore.notifications.slice(0, 30)"
+                :key="n.notificationId"
+                class="notification-item"
+                :class="{ 'notification-item--unread': !n.isRead }"
+                @click="notifStore.markAsRead(n.notificationId)"
+              >
+                <strong>{{ n.title }}</strong>
+                <small>{{ n.content }}</small>
+                <em>{{ formatTime(n.createTime) }}</em>
+              </div>
+              <div v-if="!notifStore.notifications.length" class="notification-empty">
+                {{ locale.t('暂无通知', 'No notifications') }}
+              </div>
+            </div>
+          </div>
+          <div v-if="notifOpen" class="notification-backdrop" @click="closeNotifications"></div>
+        </div>
         <button
           class="language-toggle"
           type="button"

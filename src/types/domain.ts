@@ -29,6 +29,7 @@ export interface User {
   credit?: number
   avatar?: string
   realName?: string
+  enabled?: boolean
 }
 
 export interface AuthResponse {
@@ -210,4 +211,15 @@ export interface Knowledge {
   status?: number
   createTime?: string
   updateTime?: string
+}
+
+export interface Notification {
+  notificationId: number
+  targetUser?: string | null
+  title: string
+  content?: string
+  type?: string
+  isRead?: boolean
+  creator?: string
+  createTime?: string
 }

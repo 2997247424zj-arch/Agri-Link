@@ -13,3 +13,5 @@ export type IconName =
   | 'check'
   | 'menu'
   | 'logout'
+  | 'bell'
+  | 'download'

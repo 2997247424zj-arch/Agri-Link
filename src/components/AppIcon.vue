@@ -19,6 +19,8 @@ const paths: Record<IconName, string> = {
   check: 'M5 12l4 4L19 6',
   menu: 'M4 6h16M4 12h16M4 18h16',
   logout: 'M10 17l5-5-5-5M15 12H3m6 7h8a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2H9',
+  bell: 'M15 17H9m6.4-7.4A3.5 3.5 0 0 0 12 6a3.5 3.5 0 0 0-3.4 3.6L7 14h10l-1.6-4.4ZM13 17v.5a1 1 0 1 1-2 0V17',
+  download: 'M12 5v10m-4-3 4 4 4-4M5 18h14',
 }
 </script>
 
