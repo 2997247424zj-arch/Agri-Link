@@ -59,9 +59,13 @@ const demoAccounts: Array<{
   enFocus: string
 }> = [
   { userName: 'dev_farmer', role: 'FARMER', label: '农户示例', enLabel: 'Farmer demo', focus: '发布货源、申请融资、发起专家咨询', enFocus: 'Publish products, apply for finance and consult experts' },
+  { userName: 'dev_farmer2', role: 'FARMER', label: '果园农户', enLabel: 'Orchard farmer', focus: '查看待发货订单、补充融资材料、预约果树专家', enFocus: 'Handle orders, finance materials and orchard consultations' },
   { userName: 'dev_buyer', role: 'BUYER', label: '买家示例', enLabel: 'Buyer demo', focus: '选购商品、管理地址、购物车和采购单', enFocus: 'Purchase products and manage orders' },
+  { userName: 'dev_buyer2', role: 'BUYER', label: '商超采购', enLabel: 'Retail buyer', focus: '批量采购、查看物流单号、评价知识内容', enFocus: 'Bulk purchase, track deliveries and review guidance' },
   { userName: 'dev_expert', role: 'EXPERT', label: '专家示例', enLabel: 'Expert demo', focus: '处理问答预约、查看症状图片、发布知识', enFocus: 'Handle consultations and publish guidance' },
+  { userName: 'dev_expert2', role: 'EXPERT', label: '植保专家', enLabel: 'Crop expert', focus: '处理水稻病虫害问答、远程预约和技术文章', enFocus: 'Handle crop protection questions and remote bookings' },
   { userName: 'dev_bank', role: 'BANK', label: '银行示例', enLabel: 'Bank demo', focus: '维护贷款产品、查看材料、处理融资审批', enFocus: 'Maintain loans and review applications' },
+  { userName: 'dev_bank2', role: 'BANK', label: '普惠金融', enLabel: 'Inclusive bank', focus: '匹配农户意向、审核订单贷和设备贷申请', enFocus: 'Match farmers and review order or equipment loans' },
   { userName: 'dev_admin', role: 'SYSTEM_ADMIN', label: '管理员示例', enLabel: 'Admin demo', focus: '监管用户、交易、融资和平台资讯', enFocus: 'Manage users, transactions and content' },
 ]
 

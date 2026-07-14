@@ -16,6 +16,7 @@ const router = useRouter()
 const banks = ref<Bank[]>([])
 const experts = ref<Expert[]>([])
 const orders = ref<TradeOrder[]>([])
+const selectedProduct = ref<TradeOrder | null>(null)
 const loading = ref(true)
 const notice = ref('')
 const activeHeroSlide = ref(0)
@@ -171,9 +172,43 @@ function productFallbackImage(order: TradeOrder, index = 0) {
   return productFallbackImages[index % productFallbackImages.length]
 }
 
+const productTranslations: Record<string, string> = {
+  'Xiangxi Fresh Strawberry': '湘西鲜草莓',
+  'Mountain Eco Rice': '高山生态大米',
+  'Orange Sorting and Packing Service': '柑橘分选包装服务',
+  'Fresh Farm Eggs': '新鲜农家鸡蛋',
+  Strawberry: '草莓',
+  Kiwi: '猕猴桃',
+  Rice: '水稻',
+  Orange: '柑橘',
+  Eggs: '鸡蛋',
+  Fruit: '水果',
+  Grain: '粮油',
+  Service: '服务',
+  Protein: '禽蛋',
+}
+
+function translateProductText(value?: string) {
+  if (!value) return value
+  return Object.entries(productTranslations).reduce(
+    (text, [source, target]) => text.split(source).join(target),
+    value,
+  )
+}
+
+function localizedOrder(order: TradeOrder): TradeOrder {
+  return {
+    ...order,
+    title: translateProductText(order.title) || order.title,
+    type: translateProductText(order.type),
+  }
+}
+
 const visibleBanks = computed(() => (banks.value.length ? banks.value : fallbackBanks).slice(0, 4))
 const visibleExperts = computed(() => (experts.value.length ? experts.value : fallbackExperts).slice(0, 5))
-const visibleOrders = computed(() => (orders.value.length ? orders.value : fallbackOrders).slice(0, 9))
+const visibleOrders = computed(() =>
+  (orders.value.length ? orders.value : fallbackOrders).slice(0, 9).map(localizedOrder),
+)
 const visibleNews = computed(() => {
   if (knowledgeList.value.length) {
     return knowledgeList.value.slice(0, 4).map((k, index) => {
@@ -695,9 +730,14 @@ onBeforeUnmount(() => {
     </section>
 
     <section v-if="!showAdminOnly" class="portal-section" id="home-news">
-      <div class="portal-heading">
-        <h2>平台资讯</h2>
-        <p>农业服务、金融产品和产销协同动态</p>
+      <div class="portal-heading portal-heading--with-action">
+        <div class="portal-heading__copy">
+          <h2>平台资讯</h2>
+          <p>农业服务、金融产品和产销协同动态</p>
+        </div>
+        <RouterLink class="button button--ghost" to="/experts">
+          <AppIcon name="expert" />立即咨询
+        </RouterLink>
       </div>
       <div class="news-list">
         <article v-for="item in visibleNews" :key="item.title" class="news-item">
@@ -720,13 +760,128 @@ onBeforeUnmount(() => {
         <p>{{ locale.t('产地直供，支持加入购物车并生成采购订单', 'Source-direct products ready for cart and purchase orders.') }}</p>
       </div>
       <div class="product-row">
-        <article v-for="(order, index) in visibleOrders" :key="order.orderId" class="product-tile">
+        <button
+          v-for="(order, index) in visibleOrders"
+          :key="order.orderId"
+          class="product-tile product-tile--button"
+          type="button"
+          :aria-label="`查看${order.title}详情`"
+          @click="selectedProduct = order"
+        >
           <AppImage class="product-tile__media" :src="imageSrc(order.picture)" :fallback-src="productFallbackImage(order, index)" :alt="order.title" ratio="1 / 0.82" icon="leaf" />
           <h3>{{ order.title }}</h3>
           <p>{{ order.address || '产地待补充' }} · {{ order.type || '农产品' }}</p>
-          <strong>￥{{ order.price ?? '-' }}</strong>
-        </article>
+          <div class="product-tile__footer">
+            <strong>￥{{ order.price ?? '-' }}</strong>
+            <span>查看详情 <AppIcon name="arrow" /></span>
+          </div>
+        </button>
       </div>
     </section>
+
+    <Transition name="modal-spring">
+      <div v-if="selectedProduct" class="modal-overlay" role="presentation" @click.self="selectedProduct = null">
+        <div class="modal modal--wide" role="dialog" aria-modal="true" aria-label="农产品详情">
+          <div class="section-title">
+            <div>
+              <span class="eyebrow"><AppIcon name="leaf" />农产品详情</span>
+              <h2>{{ selectedProduct.title }}</h2>
+            </div>
+            <button class="button button--ghost button--small" type="button" @click="selectedProduct = null">关闭</button>
+          </div>
+          <div class="grid grid--two order-detail-body">
+            <AppImage
+              class="order-detail-media"
+              :src="imageSrc(selectedProduct.picture)"
+              :fallback-src="productFallbackImage(selectedProduct)"
+              :alt="selectedProduct.title"
+              ratio="4 / 3"
+              icon="leaf"
+            />
+            <div class="order-detail-info">
+              <div class="tag-row">
+                <span class="tag tag--green">{{ selectedProduct.type || '农产品' }}</span>
+                <span class="tag">{{ selectedProduct.address || '产地待补充' }}</span>
+              </div>
+              <strong class="price">￥{{ selectedProduct.price ?? '-' }}/{{ selectedProduct.unit || '斤' }}</strong>
+              <dl class="order-detail-specs">
+                <div><dt>规格</dt><dd>{{ selectedProduct.spec || '待补充' }}</dd></div>
+                <div><dt>库存</dt><dd>{{ selectedProduct.stock ?? '-' }} {{ selectedProduct.unit || '斤' }}</dd></div>
+                <div><dt>起订量</dt><dd>{{ selectedProduct.minPurchase ?? 1 }} {{ selectedProduct.unit || '斤' }}</dd></div>
+                <div><dt>供货方</dt><dd>{{ selectedProduct.ownName || '产地供货方' }}</dd></div>
+              </dl>
+              <p class="order-detail-content">{{ selectedProduct.content || '暂无更多货源说明。' }}</p>
+              <RouterLink
+                v-if="session.role === 'BUYER'"
+                class="button button--green"
+                to="/trade"
+                @click="selectedProduct = null"
+              >
+                <AppIcon name="cart" />前往采购
+              </RouterLink>
+            </div>
+          </div>
+        </div>
+      </div>
+    </Transition>
   </section>
 </template>
+
+<style scoped>
+.portal-heading--with-action {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  max-width: none;
+}
+
+.portal-heading__copy {
+  max-width: 760px;
+}
+
+.product-tile--button {
+  width: 100%;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.product-tile--button:focus-visible {
+  outline: 3px solid rgba(16, 185, 129, 0.28);
+  outline-offset: 3px;
+}
+
+.product-tile__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.product-tile__footer span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--color-primary);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.product-tile__footer .app-icon {
+  width: 15px;
+  height: 15px;
+}
+
+@media (max-width: 640px) {
+  .portal-heading--with-action {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .portal-heading--with-action .button {
+    width: 100%;
+  }
+}
+</style>

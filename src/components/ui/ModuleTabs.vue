@@ -10,7 +10,12 @@ const emit = defineEmits<{ 'update:modelValue': [value: T] }>()
 </script>
 
 <template>
-  <div class="tabs module-switcher" role="tablist" :aria-label="ariaLabel">
+  <div
+    class="tabs module-switcher"
+    role="tablist"
+    :aria-label="ariaLabel"
+    :style="{ '--module-tab-count': options.length }"
+  >
     <button
       v-for="tab in options"
       :key="String(tab.value)"
@@ -24,3 +29,21 @@ const emit = defineEmits<{ 'update:modelValue': [value: T] }>()
     </button>
   </div>
 </template>
+
+<style scoped>
+.module-switcher {
+  grid-template-columns: repeat(var(--module-tab-count), minmax(0, 1fr));
+}
+
+@media (max-width: 720px) {
+  .module-switcher {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 440px) {
+  .module-switcher {
+    grid-template-columns: 1fr;
+  }
+}
+</style>

@@ -8,7 +8,7 @@ import SummaryStrip from '@/components/ui/SummaryStrip.vue'
 import Pager from '@/components/ui/Pager.vue'
 import { api } from '@/api/client'
 import { useSessionStore } from '@/stores/session'
-import type { Bank, Finance, FinancingIntention } from '@/types/domain'
+import type { Bank, Finance, FinancingIntention, User } from '@/types/domain'
 
 const session = useSessionStore()
 const route = useRoute()
@@ -119,6 +119,7 @@ const fallbackIntentions: FinancingIntention[] = [
 ]
 
 const sortedBanks = computed(() => [...banks.value].sort((a, b) => (a.rate ?? 99) - (b.rate ?? 99)))
+const selectedBank = computed(() => banks.value.find((bank) => bank.bankId === applicationForm.bankId))
 const roleApplications = computed(() =>
   isBankRole.value
     ? applications.value
@@ -239,15 +240,31 @@ async function loadFinance() {
   loading.value = true
   error.value = ''
   try {
-    const [bankData, applicationData, intentionData] = await Promise.all([
+    const [bankData, applicationData, intentionData, profileData] = await Promise.all([
       api.get<Bank[]>('/api/finance/banks'),
       api.get<Finance[]>('/api/finance/applications').catch(() => []),
       api.get<FinancingIntention[]>('/api/finance/intentions').catch(() => fallbackIntentions),
+      session.role === 'FARMER' && session.userName
+        ? api.get<User>(`/api/users/${encodeURIComponent(session.userName)}`).catch(() => null)
+        : Promise.resolve(null),
     ])
     banks.value = bankData?.length ? bankData : fallbackBanks
-    applicationForm.bankId = banks.value[0]?.bankId ?? 1001
+    const defaultBank = banks.value[0]
+    applicationForm.bankId = defaultBank?.bankId ?? 1001
+    applicationForm.rate = defaultBank?.rate ?? applicationForm.rate
+    applicationForm.repayment = defaultBank?.repayment || applicationForm.repayment
     applications.value = applicationData ?? []
     intentions.value = intentionData?.length ? intentionData : fallbackIntentions
+    if (profileData) {
+      applicationForm.ownName = profileData.userName
+      applicationForm.realName ||= profileData.realName || profileData.nickName || ''
+      applicationForm.phone ||= profileData.phone || ''
+      applicationForm.idNum ||= profileData.identityNum || ''
+      intentionForm.userName = profileData.userName
+      intentionForm.realName ||= profileData.realName || profileData.nickName || ''
+      intentionForm.phone ||= profileData.phone || ''
+      intentionForm.address = profileData.address || intentionForm.address
+    }
   } catch (err) {
     banks.value = fallbackBanks
     intentions.value = fallbackIntentions
@@ -413,6 +430,16 @@ watch(applicationStatusFilter, () => {
 watch(applicationPageCount, () => {
   applicationPage.value = Math.min(applicationPage.value, applicationPageCount.value)
 })
+
+watch(
+  () => applicationForm.bankId,
+  (bankId) => {
+    const bank = banks.value.find((item) => item.bankId === bankId)
+    if (!bank) return
+    applicationForm.rate = bank.rate ?? applicationForm.rate
+    applicationForm.repayment = bank.repayment || applicationForm.repayment
+  },
+)
 </script>
 
 <template>
@@ -465,35 +492,47 @@ watch(applicationPageCount, () => {
       </div>
     </section>
 
-    <section v-if="activeTab === 'apply'" class="section grid grid--two">
-      <form id="finance-application-form" class="panel form" @submit.prevent="submitApplication">
+    <section v-if="activeTab === 'apply'" class="section finance-apply-layout">
+      <form id="finance-application-form" class="panel form finance-application-form" @submit.prevent="submitApplication">
         <div class="section-title">
           <div>
+            <span class="eyebrow"><AppIcon name="bank" />正式申请</span>
             <h2>提交融资申请</h2>
             <p>农户侧提交申请资料，后续由银行端受理并给出审批意见。</p>
           </div>
         </div>
-        <label class="field">
-          <span>银行产品</span>
-          <select v-model.number="applicationForm.bankId">
-            <option v-for="bank in banks" :key="bank.bankId" :value="bank.bankId">{{ bank.bankName }}</option>
-          </select>
-        </label>
-        <label class="field"><span>申请人账号</span><input v-model.trim="applicationForm.ownName" disabled /></label>
-        <label class="field"><span>真实姓名</span><input v-model.trim="applicationForm.realName" required /></label>
-        <label class="field"><span>手机号</span><input v-model.trim="applicationForm.phone" type="tel" required /></label>
-        <label class="field"><span>身份证号</span><input v-model.trim="applicationForm.idNum" required /></label>
-        <label class="field"><span>申请金额</span><input v-model.number="applicationForm.money" type="number" min="1000" required /></label>
-        <label class="field"><span>还款方式</span><input v-model.trim="applicationForm.repayment" required /></label>
-        <label class="field"><span>经营说明</span><textarea v-model.trim="applicationForm.remark" placeholder="种植规模、订单情况、资金用途" /></label>
-        <button class="button button--green" type="submit" :disabled="submitting">
-          <AppIcon name="plus" />{{ submitting ? '提交中' : '提交申请' }}
-        </button>
+        <div v-if="selectedBank" class="finance-selected-product">
+          <span><AppIcon name="check" />已选产品</span>
+          <strong>{{ selectedBank.bankName }}</strong>
+          <small>最高额度 {{ selectedBank.money ?? '面议' }} 元 · 年化 {{ selectedBank.rate ?? '-' }}% · {{ selectedBank.repayment || '还款方式面议' }}</small>
+        </div>
+        <div class="finance-form-grid">
+          <label class="field field--wide">
+            <span>银行产品</span>
+            <select v-model.number="applicationForm.bankId">
+              <option v-for="bank in banks" :key="bank.bankId" :value="bank.bankId">{{ bank.bankName }}</option>
+            </select>
+          </label>
+          <label class="field"><span>申请人账号</span><input v-model.trim="applicationForm.ownName" disabled /></label>
+          <label class="field"><span>真实姓名</span><input v-model.trim="applicationForm.realName" autocomplete="name" required /></label>
+          <label class="field"><span>手机号</span><input v-model.trim="applicationForm.phone" type="tel" autocomplete="tel" required /></label>
+          <label class="field"><span>身份证号</span><input v-model.trim="applicationForm.idNum" autocomplete="off" required /></label>
+          <label class="field"><span>申请金额</span><input v-model.number="applicationForm.money" type="number" min="1000" step="1000" required /></label>
+          <label class="field"><span>还款方式</span><input v-model.trim="applicationForm.repayment" required /></label>
+          <label class="field field--wide"><span>经营说明</span><textarea v-model.trim="applicationForm.remark" placeholder="请说明种植规模、订单情况和资金用途" /></label>
+        </div>
+        <div class="finance-submit-row">
+          <p><AppIcon name="shield" />提交后可在“查看审批结果”中补充材料并跟踪进度。</p>
+          <button class="button button--green" type="submit" :disabled="submitting">
+            <AppIcon name="plus" />{{ submitting ? '提交中' : '提交申请' }}
+          </button>
+        </div>
       </form>
 
-      <form class="panel form" @submit.prevent="submitIntention">
+      <form class="panel form finance-intention-form" @submit.prevent="submitIntention">
         <div class="section-title">
           <div>
+            <span class="eyebrow"><AppIcon name="expert" />需求登记</span>
             <h2>融资意向登记</h2>
             <p>让银行端基于额度、用途和经营信息主动匹配农户。</p>
           </div>
@@ -691,3 +730,108 @@ watch(applicationPageCount, () => {
     </Transition>
   </section>
 </template>
+
+<style scoped>
+.finance-apply-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.55fr) minmax(300px, 0.85fr);
+  gap: 20px;
+  align-items: start;
+}
+
+.finance-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.finance-form-grid .field--wide {
+  grid-column: 1 / -1;
+}
+
+.finance-selected-product {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 4px 12px;
+  margin-bottom: 18px;
+  padding: 16px;
+  border: 1px solid #bfe8d7;
+  border-radius: 14px;
+  background: #effaf5;
+}
+
+.finance-selected-product span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  grid-row: 1 / 3;
+  color: var(--color-primary);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.finance-selected-product strong {
+  color: #153029;
+}
+
+.finance-selected-product small {
+  color: var(--color-soft);
+  line-height: 1.5;
+}
+
+.finance-submit-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding-top: 4px;
+}
+
+.finance-submit-row p {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin: 0;
+  color: var(--color-soft);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.finance-submit-row .app-icon {
+  flex: 0 0 auto;
+}
+
+.finance-intention-form {
+  position: sticky;
+  top: 88px;
+}
+
+@media (max-width: 980px) {
+  .finance-apply-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .finance-intention-form {
+    position: static;
+  }
+}
+
+@media (max-width: 620px) {
+  .finance-form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .finance-form-grid .field--wide {
+    grid-column: auto;
+  }
+
+  .finance-submit-row {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .finance-submit-row .button {
+    width: 100%;
+  }
+}
+</style>
