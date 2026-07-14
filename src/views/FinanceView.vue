@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref, watch } from 'vue'
+import { computed, nextTick, onMounted, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import AppIcon from '@/components/AppIcon.vue'
 import PageHeader from '@/components/ui/PageHeader.vue'
@@ -156,7 +156,18 @@ const financeTabs = computed(() =>
 )
 
 function setFinanceTab(tab: FinanceTab) {
-  router.replace({ query: { ...route.query, tab } })
+  return router.replace({ query: { ...route.query, tab } })
+}
+
+async function selectBank(bank: Bank) {
+  applicationForm.bankId = bank.bankId
+  applicationForm.rate = bank.rate ?? applicationForm.rate
+  applicationForm.repayment = bank.repayment || applicationForm.repayment
+  message.value = `已选择「${bank.bankName}」，请继续填写融资申请。`
+  error.value = ''
+  await setFinanceTab('apply')
+  await nextTick()
+  document.getElementById('finance-application-form')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
 }
 
 function financeStatusLabel(status?: number) {
@@ -446,8 +457,8 @@ watch(applicationPageCount, () => {
           </div>
           <div class="card__footer">
             <span>{{ bank.bankPhone || '联系电话待补充' }}</span>
-            <button class="button button--ghost" type="button" @click="applicationForm.bankId = bank.bankId">
-              <AppIcon name="check" />选择
+            <button class="button button--ghost" type="button" @click="selectBank(bank)">
+              <AppIcon name="check" />选择并申请
             </button>
           </div>
         </article>
@@ -455,7 +466,7 @@ watch(applicationPageCount, () => {
     </section>
 
     <section v-if="activeTab === 'apply'" class="section grid grid--two">
-      <form class="panel form" @submit.prevent="submitApplication">
+      <form id="finance-application-form" class="panel form" @submit.prevent="submitApplication">
         <div class="section-title">
           <div>
             <h2>提交融资申请</h2>

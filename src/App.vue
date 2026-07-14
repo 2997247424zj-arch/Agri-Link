@@ -3,12 +3,14 @@ import { nextTick, ref, watch } from 'vue'
 import { RouterView, useRoute } from 'vue-router'
 import AppShell from '@/components/AppShell.vue'
 import { useScrollReveal } from '@/composables/useScrollReveal'
+import { useGlobalLocale } from '@/i18n/globalLocale'
 import { measureRouteReady } from '@/utils/performance'
 
 const route = useRoute()
 const routeTransition = ref('page-forward')
 const lastRouteOrder = ref(Number(route.meta.order ?? 0))
 const { refreshScrollReveal } = useScrollReveal()
+useGlobalLocale()
 
 watch(
   () => route.fullPath,

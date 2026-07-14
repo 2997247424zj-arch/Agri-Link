@@ -1,21 +1,80 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onActivated, onBeforeUnmount, onDeactivated, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import AppIcon from '@/components/AppIcon.vue'
 import AppImage from '@/components/AppImage.vue'
 import { api } from '@/api/client'
+import { useLocaleStore } from '@/stores/locale'
 import { useSessionStore } from '@/stores/session'
 import type { Bank, Expert, Knowledge, TradeOrder, UserRole } from '@/types/domain'
 
 type HomeIconName = 'leaf' | 'bank' | 'expert' | 'cart' | 'user' | 'shield' | 'check'
 
 const session = useSessionStore()
+const locale = useLocaleStore()
 const router = useRouter()
 const banks = ref<Bank[]>([])
 const experts = ref<Expert[]>([])
 const orders = ref<TradeOrder[]>([])
 const loading = ref(true)
 const notice = ref('')
+const activeHeroSlide = ref(0)
+const heroPaused = ref(false)
+let heroTimer = 0
+
+const heroSlides = computed(() => [
+  {
+    image: '/file/order/12be19984e374bcfbf06561571365d07.jpg',
+    alt: locale.t('绿色农产品种植基地', 'Green agricultural production base'),
+    label: locale.t('产地直连 · 品质可追溯', 'Source-direct · Traceable quality'),
+  },
+  {
+    image: '/file/info/3c26336725224041b2a2f4542020b018.jpg',
+    alt: locale.t('田间新鲜农产品', 'Fresh produce from the field'),
+    label: locale.t('时令鲜品 · 稳定供给', 'Seasonal produce · Reliable supply'),
+  },
+  {
+    image: '/file/order/tea.png',
+    alt: locale.t('湘西特色茶叶', 'Xiangxi speciality tea'),
+    label: locale.t('特色产业 · 品牌增值', 'Local speciality · Brand value'),
+  },
+])
+
+const currentHeroSlide = computed(() => heroSlides.value[activeHeroSlide.value] ?? heroSlides.value[0]!)
+
+function stopHeroCarousel() {
+  if (!heroTimer) return
+  window.clearInterval(heroTimer)
+  heroTimer = 0
+}
+
+function startHeroCarousel() {
+  stopHeroCarousel()
+  if (heroPaused.value || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+  heroTimer = window.setInterval(() => {
+    activeHeroSlide.value = (activeHeroSlide.value + 1) % heroSlides.value.length
+  }, 6000)
+}
+
+function selectHeroSlide(index: number) {
+  activeHeroSlide.value = (index + heroSlides.value.length) % heroSlides.value.length
+  startHeroCarousel()
+}
+
+function pauseHeroCarousel() {
+  heroPaused.value = true
+  stopHeroCarousel()
+}
+
+function resumeHeroCarousel() {
+  heroPaused.value = false
+  startHeroCarousel()
+}
+
+function handleHeroVisibility() {
+  if (document.visibilityState === 'hidden') stopHeroCarousel()
+  else startHeroCarousel()
+}
 
 const fallbackBanks: Bank[] = [
   {
@@ -135,27 +194,27 @@ const visibleNews = computed(() => {
 const roleHome = computed(() => {
   if (!session.isLoggedIn) {
     return {
-      title: '助力农企互联，帮扶金融服务',
-      desc: '连接农户、买家、专家与银行，让农产品交易、融资申请和技术服务在一个平台内闭环。',
-      badge: '数字农业 · 融销协同 · 可信服务',
+      title: locale.t('助力农企互联，帮扶金融服务', 'Connecting agriculture, trade and finance'),
+      desc: locale.t('连接农户、买家、专家与银行，让农产品交易、融资申请和技术服务在一个平台内闭环。', 'Connect farmers, buyers, experts and banks through one trusted agricultural service platform.'),
+      badge: locale.t('数字农业 · 融销协同 · 可信服务', 'Digital agriculture · Trusted collaboration'),
     }
   }
   return {
-    FARMER: { title: '农户经营工作台', desc: '聚合货源发布、融资申请、材料补充和专家咨询，帮助经营信息进入交易与金融流程。', badge: '农户角色' },
-    BUYER: { title: '买家采购工作台', desc: '聚焦农产品浏览、购物车、收货信息和采购订单，让采购过程清晰可追踪。', badge: '买家角色' },
-    EXPERT: { title: '专家服务工作台', desc: '集中处理农技问答、预约咨询、个人资料和知识发布，支撑农户生产决策。', badge: '专家角色' },
-    BANK: { title: '银行融资工作台', desc: '面向贷款产品维护、农户意向匹配和融资申请审批，银行承担最终审批责任。', badge: '银行角色' },
-    SYSTEM_ADMIN: { title: '系统管理员控制台', desc: '独立后台负责用户角色、交易状态、融资进度监管和内容维护，不直接代替银行审批。', badge: '系统管理员' },
+    FARMER: { title: locale.t('农户经营工作台', 'Farmer workspace'), desc: locale.t('聚合货源发布、融资申请、材料补充和专家咨询，帮助经营信息进入交易与金融流程。', 'Publish products, apply for finance and consult agricultural experts.'), badge: locale.t('农户角色', 'Farmer') },
+    BUYER: { title: locale.t('买家采购工作台', 'Buyer workspace'), desc: locale.t('聚焦农产品浏览、购物车、收货信息和采购订单，让采购过程清晰可追踪。', 'Browse products and manage carts, addresses and purchase orders.'), badge: locale.t('买家角色', 'Buyer') },
+    EXPERT: { title: locale.t('专家服务工作台', 'Expert workspace'), desc: locale.t('集中处理农技问答、预约咨询、个人资料和知识发布，支撑农户生产决策。', 'Handle consultations, bookings and agricultural guidance.'), badge: locale.t('专家角色', 'Expert') },
+    BANK: { title: locale.t('银行融资工作台', 'Finance workspace'), desc: locale.t('面向贷款产品维护、农户意向匹配和融资申请审批，银行承担最终审批责任。', 'Maintain loan products and review farmer finance applications.'), badge: locale.t('银行角色', 'Bank') },
+    SYSTEM_ADMIN: { title: locale.t('系统管理员控制台', 'Administration workspace'), desc: locale.t('独立后台负责用户角色、交易状态、融资进度监管和内容维护，不直接代替银行审批。', 'Manage users, trade status, finance progress and platform content.'), badge: locale.t('系统管理员', 'Administrator') },
   }[session.role]
 })
 
 const heroActions = computed<Array<{ to: string; label: string; icon: HomeIconName; theme: 'green' | 'light' }>>(() => {
-  if (!session.isLoggedIn) return [{ to: '/auth', label: '登录选择角色', icon: 'user', theme: 'green' }]
-  if (session.role === 'SYSTEM_ADMIN') return [{ to: '/admin', label: '进入后台管理', icon: 'shield', theme: 'green' }]
-  if (session.role === 'FARMER') return [{ to: '/trade', label: '发布货源', icon: 'leaf', theme: 'green' }, { to: '/finance', label: '申请融资', icon: 'bank', theme: 'light' }]
-  if (session.role === 'BUYER') return [{ to: '/trade', label: '浏览农产品', icon: 'leaf', theme: 'green' }, { to: '/cart', label: '查看购物车', icon: 'cart', theme: 'light' }]
-  if (session.role === 'EXPERT') return [{ to: '/experts', label: '处理专家服务', icon: 'expert', theme: 'green' }]
-  return [{ to: '/finance', label: '处理融资业务', icon: 'bank', theme: 'green' }]
+  if (!session.isLoggedIn) return [{ to: '/auth', label: locale.t('登录选择角色', 'Sign in'), icon: 'user', theme: 'green' }]
+  if (session.role === 'SYSTEM_ADMIN') return [{ to: '/admin', label: locale.t('进入后台管理', 'Open administration'), icon: 'shield', theme: 'green' }]
+  if (session.role === 'FARMER') return [{ to: '/trade', label: locale.t('发布货源', 'Publish products'), icon: 'leaf', theme: 'green' }, { to: '/finance', label: locale.t('申请融资', 'Apply for finance'), icon: 'bank', theme: 'light' }]
+  if (session.role === 'BUYER') return [{ to: '/trade', label: locale.t('浏览农产品', 'Browse products'), icon: 'leaf', theme: 'green' }, { to: '/cart', label: locale.t('查看购物车', 'View cart'), icon: 'cart', theme: 'light' }]
+  if (session.role === 'EXPERT') return [{ to: '/experts', label: locale.t('处理专家服务', 'Open expert services'), icon: 'expert', theme: 'green' }]
+  return [{ to: '/finance', label: locale.t('处理融资业务', 'Open finance services'), icon: 'bank', theme: 'green' }]
 })
 
 const visibleServiceCards = computed(() =>
@@ -338,6 +397,7 @@ function imageSrc(picture?: string) {
 }
 
 onMounted(async () => {
+  document.addEventListener('visibilitychange', handleHeroVisibility)
   try {
     const [bankData, expertData, orderData] = await Promise.all([
       api.get<Bank[]>('/api/finance/banks'),
@@ -364,6 +424,14 @@ onMounted(async () => {
     // 静默降级到 fallbackNews
   }
 })
+
+onActivated(startHeroCarousel)
+onDeactivated(stopHeroCarousel)
+
+onBeforeUnmount(() => {
+  stopHeroCarousel()
+  document.removeEventListener('visibilitychange', handleHeroVisibility)
+})
 </script>
 
 <template>
@@ -385,9 +453,9 @@ onMounted(async () => {
           </RouterLink>
         </div>
         <ul class="portal-hero__assurances" aria-label="平台服务保障">
-          <li><AppIcon name="check" /> 角色权限清晰</li>
-          <li><AppIcon name="check" /> 业务进度可追踪</li>
-          <li><AppIcon name="check" /> 数据统一沉淀</li>
+          <li><AppIcon name="check" /> {{ locale.t('角色权限清晰', 'Clear role permissions') }}</li>
+          <li><AppIcon name="check" /> {{ locale.t('业务进度可追踪', 'Traceable workflows') }}</li>
+          <li><AppIcon name="check" /> {{ locale.t('数据统一沉淀', 'Unified business data') }}</li>
         </ul>
       </div>
 
@@ -395,25 +463,66 @@ onMounted(async () => {
         <div class="portal-preview">
           <header class="portal-preview__header">
             <div>
-              <span>AGRILINK / WORKSPACE</span>
-              <strong>融销协同工作台</strong>
+              <span>{{ locale.t('融销协同 / 业务工作台', 'AGRILINK / WORKSPACE') }}</span>
+              <strong>{{ locale.t('融销协同工作台', 'Finance & trade workspace') }}</strong>
             </div>
-            <em><i></i> 服务正常</em>
+            <em><i></i> {{ locale.t('服务正常', 'Online') }}</em>
           </header>
-          <div class="portal-preview__media">
-            <img class="portal-hero__image" src="/file/info/3c26336725224041b2a2f4542020b018.jpg" alt="绿色农产品基地" />
-            <span><AppIcon name="shield" /> 可信产地档案</span>
+          <div
+            class="portal-preview__media portal-carousel"
+            aria-roledescription="carousel"
+            :aria-label="locale.t('首页农业服务轮播图', 'Agricultural service carousel')"
+            @mouseenter="pauseHeroCarousel"
+            @mouseleave="resumeHeroCarousel"
+            @focusin="pauseHeroCarousel"
+            @focusout="resumeHeroCarousel"
+          >
+            <Transition name="hero-slide" mode="out-in">
+              <img
+                :key="currentHeroSlide.image"
+                class="portal-hero__image"
+                :src="currentHeroSlide.image"
+                :alt="currentHeroSlide.alt"
+                width="720"
+                height="420"
+              />
+            </Transition>
+            <span class="portal-carousel__caption"><AppIcon name="shield" /> {{ currentHeroSlide.label }}</span>
+            <button
+              class="portal-carousel__arrow portal-carousel__arrow--prev"
+              type="button"
+              :aria-label="locale.t('上一张轮播图', 'Previous slide')"
+              @click="selectHeroSlide(activeHeroSlide - 1)"
+            ><AppIcon name="arrow" /></button>
+            <button
+              class="portal-carousel__arrow portal-carousel__arrow--next"
+              type="button"
+              :aria-label="locale.t('下一张轮播图', 'Next slide')"
+              @click="selectHeroSlide(activeHeroSlide + 1)"
+            ><AppIcon name="arrow" /></button>
+            <div class="portal-carousel__dots" role="tablist" :aria-label="locale.t('选择轮播图', 'Choose slide')">
+              <button
+                v-for="(slide, index) in heroSlides"
+                :key="slide.image"
+                type="button"
+                :class="{ 'is-active': index === activeHeroSlide }"
+                :aria-label="`${locale.t('显示第', 'Show slide')} ${index + 1}`"
+                :aria-selected="index === activeHeroSlide"
+                role="tab"
+                @click="selectHeroSlide(index)"
+              ></button>
+            </div>
           </div>
           <div class="portal-preview__flow">
-            <div><AppIcon name="leaf" /><span><small>STEP 01</small>货源发布</span></div>
+            <div><AppIcon name="leaf" /><span><small>{{ locale.t('步骤一', 'STEP 01') }}</small>{{ locale.t('货源发布', 'Publish') }}</span></div>
             <AppIcon class="portal-preview__arrow" name="arrow" />
-            <div><AppIcon name="cart" /><span><small>STEP 02</small>采购成交</span></div>
+            <div><AppIcon name="cart" /><span><small>{{ locale.t('步骤二', 'STEP 02') }}</small>{{ locale.t('采购成交', 'Purchase') }}</span></div>
             <AppIcon class="portal-preview__arrow" name="arrow" />
-            <div><AppIcon name="bank" /><span><small>STEP 03</small>融资服务</span></div>
+            <div><AppIcon name="bank" /><span><small>{{ locale.t('步骤三', 'STEP 03') }}</small>{{ locale.t('融资服务', 'Finance') }}</span></div>
           </div>
           <footer>
-            <span>农户 · 买家 · 专家 · 银行</span>
-            <strong>一站协同</strong>
+            <span>{{ locale.t('农户 · 买家 · 专家 · 银行', 'Farmer · Buyer · Expert · Bank') }}</span>
+            <strong>{{ locale.t('一站协同', 'One platform') }}</strong>
           </footer>
         </div>
       </div>
@@ -434,8 +543,8 @@ onMounted(async () => {
 
     <section class="portal-section capability-section" id="home-capability" aria-label="项目能力速览">
       <div class="portal-heading">
-        <h2>项目能做什么</h2>
-        <p>覆盖农产品「融、销、技、管」的一站式服务能力速览</p>
+        <h2>{{ locale.t('项目能做什么', 'What the platform provides') }}</h2>
+        <p>{{ locale.t('覆盖农产品「融、销、技、管」的一站式服务能力速览', 'One place for agricultural trade, finance, expertise and management.') }}</p>
       </div>
       <div class="capability-grid">
         <a
@@ -457,8 +566,8 @@ onMounted(async () => {
 
     <section class="portal-section dashboard-section" id="home-dashboard">
       <div class="portal-heading">
-        <span class="section-kicker">协同流程</span>
-        <h2>一条链路完成融销协同</h2>
+        <span class="section-kicker">{{ locale.t('协同流程', 'Workflow') }}</span>
+        <h2>{{ locale.t('一条链路完成融销协同', 'A connected finance and trade workflow') }}</h2>
         <p>{{ session.isLoggedIn ? '当前角色只展示允许访问的业务入口' : '登录后按五类角色隔离业务入口，状态统一留痕' }}</p>
       </div>
       <div class="workflow-board" aria-label="平台协同流程">
@@ -483,8 +592,8 @@ onMounted(async () => {
 
     <section class="portal-section" id="home-services">
       <div class="portal-heading">
-        <h2>核心服务</h2>
-        <p>围绕融、销、技、管四类业务建立统一入口</p>
+        <h2>{{ locale.t('核心服务', 'Core services') }}</h2>
+        <p>{{ locale.t('围绕融、销、技、管四类业务建立统一入口', 'Unified access to trade, finance, expertise and management.') }}</p>
       </div>
       <div class="service-grid">
         <RouterLink v-for="item in visibleServiceCards" :key="item.title" class="service-card" :to="item.to">
@@ -498,7 +607,7 @@ onMounted(async () => {
 
     <section v-if="showFinanceSection" class="portal-section" id="home-finance">
       <div class="portal-heading">
-        <h2>金融产品</h2>
+        <h2>{{ locale.t('金融产品', 'Finance products') }}</h2>
         <p>{{ loading ? '正在读取后端数据' : '按额度、利率和还款方式快速选择适合的融资产品' }}</p>
       </div>
       <div class="finance-card-grid">
@@ -563,8 +672,8 @@ onMounted(async () => {
 
     <section v-if="showExpertSection" class="portal-section" id="home-experts">
       <div class="portal-heading">
-        <h2>专家团队</h2>
-        <p>覆盖种植、植保、品牌和产销运营</p>
+        <h2>{{ locale.t('专家团队', 'Agricultural experts') }}</h2>
+        <p>{{ locale.t('覆盖种植、植保、品牌和产销运营', 'Expertise in cultivation, crop protection, branding and trade.') }}</p>
       </div>
       <div class="expert-strip">
         <article v-for="(expert, index) in visibleExperts" :key="expert.userName" class="expert-card">
@@ -577,7 +686,7 @@ onMounted(async () => {
     </section>
 
     <section v-if="showExpertSection" class="portal-section qa-section" id="home-qa">
-      <div class="qa-badge">Q&A</div>
+      <div class="qa-badge">{{ locale.t('问答', 'Q&A') }}</div>
       <div>
         <h2>专家问答与预约指导</h2>
         <p>农户可提交作物、土壤、病虫害和销售运营问题，专家端可在线答复或处理预约。</p>
@@ -607,8 +716,8 @@ onMounted(async () => {
 
     <section v-if="showProductSection" class="portal-section" id="home-products">
       <div class="portal-heading">
-        <h2>最新农产品</h2>
-        <p>产地直供，支持加入购物车并生成采购订单</p>
+        <h2>{{ locale.t('最新农产品', 'Latest products') }}</h2>
+        <p>{{ locale.t('产地直供，支持加入购物车并生成采购订单', 'Source-direct products ready for cart and purchase orders.') }}</p>
       </div>
       <div class="product-row">
         <article v-for="(order, index) in visibleOrders" :key="order.orderId" class="product-tile">

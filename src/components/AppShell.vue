@@ -4,8 +4,6 @@ import { useRoute, useRouter } from 'vue-router'
 import AppTopbar from '@/components/layout/AppTopbar.vue'
 import AppSidebar from '@/components/layout/AppSidebar.vue'
 import { navByRole, profileNavItem, roleCodes, roleHints, type NavItem, type NavRouteName } from '@/components/layout/navigation'
-import { useParticles } from '@/composables/useParticles'
-import { useSpotlight } from '@/composables/useSpotlight'
 import { useUiScale } from '@/composables/useUiScale'
 import { useSessionStore } from '@/stores/session'
 import { routeRoles } from '@/router'
@@ -13,13 +11,10 @@ import { routeRoles } from '@/router'
 const session = useSessionStore()
 const route = useRoute()
 const router = useRouter()
-const { canvasRef } = useParticles()
 const { shellRef } = useUiScale()
 const sidebarOpen = ref(false)
 const sidebarPinned = ref(false)
 const expandedNavName = ref<NavRouteName | null>(null)
-useSpotlight()
-
 // 登录态 + 路由权限过滤：无权限项不显示。
 function canAccess(item: NavItem) {
   const allowedRoles = routeRoles[item.name]
@@ -71,8 +66,6 @@ function closeSidebarPreview() {
 <template>
   <div ref="shellRef" class="app-shell" :class="{ 'app-shell--auth': isAuth, 'app-shell--sidebar-open': sidebarOpen }">
     <a class="skip-link" href="#main-content">跳到主要内容</a>
-    <canvas ref="canvasRef" class="ambient-particles" aria-hidden="true"></canvas>
-    <div class="ambient-spotlight" aria-hidden="true"></div>
 
     <AppTopbar
       :is-auth="isAuth"
