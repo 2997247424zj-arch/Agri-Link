@@ -137,7 +137,7 @@ const serviceCards: Array<{
   { title: '农产品采购', desc: '买家浏览货源、比较产地价格，并生成可追踪采购单。', to: '/trade', icon: 'cart', metric: '买家专属', roles: ['BUYER'] },
   { title: '购物车', desc: '买家集中维护待采购产品、数量和下单前确认信息。', to: '/cart', icon: 'cart', metric: '买家专属', roles: ['BUYER'] },
   { title: '融资审批', desc: '银行维护贷款产品，查看申请资料，匹配农户并更新审批状态。', to: '/finance', icon: 'bank', metric: '银行专属', roles: ['BANK'] },
-  { title: '后台管理', desc: '管理员管理用户角色、监管交易和融资状态、维护平台内容。', to: '/admin', icon: 'shield', metric: '管理员专属', roles: ['SYSTEM_ADMIN'] },
+  { title: '平台运营管理', desc: '集中处理账号与权限、交易履约、融资流程、内容审核和运营数据。', to: '/admin', icon: 'shield', metric: '管理员工作台', roles: ['SYSTEM_ADMIN'] },
 ] as const
 
 const fallbackNews = [
@@ -239,13 +239,13 @@ const roleHome = computed(() => {
     BUYER: { title: locale.t('买家采购工作台', 'Buyer workspace'), desc: locale.t('聚焦农产品浏览、购物车、收货信息和采购订单，让采购过程清晰可追踪。', 'Browse products and manage carts, addresses and purchase orders.'), badge: locale.t('买家角色', 'Buyer') },
     EXPERT: { title: locale.t('专家服务工作台', 'Expert workspace'), desc: locale.t('集中处理农技问答、预约咨询、个人资料和知识发布，支撑农户生产决策。', 'Handle consultations, bookings and agricultural guidance.'), badge: locale.t('专家角色', 'Expert') },
     BANK: { title: locale.t('银行融资工作台', 'Finance workspace'), desc: locale.t('面向贷款产品维护、农户意向匹配和融资申请审批，银行承担最终审批责任。', 'Maintain loan products and review farmer finance applications.'), badge: locale.t('银行角色', 'Bank') },
-    SYSTEM_ADMIN: { title: locale.t('系统管理员控制台', 'Administration workspace'), desc: locale.t('独立后台负责用户角色、交易状态、融资进度监管和内容维护，不直接代替银行审批。', 'Manage users, trade status, finance progress and platform content.'), badge: locale.t('系统管理员', 'Administrator') },
+    SYSTEM_ADMIN: { title: locale.t('平台运营控制台', 'Platform operations workspace'), desc: locale.t('集中处理账号权限、交易履约监督、融资流程监管、内容审核和运营数据。', 'Manage access, trade fulfilment, finance workflows, content review and operational data.'), badge: locale.t('系统管理员', 'Administrator') },
   }[session.role]
 })
 
 const heroActions = computed<Array<{ to: string; label: string; icon: HomeIconName; theme: 'green' | 'light' }>>(() => {
   if (!session.isLoggedIn) return [{ to: '/auth', label: locale.t('登录选择角色', 'Sign in'), icon: 'user', theme: 'green' }]
-  if (session.role === 'SYSTEM_ADMIN') return [{ to: '/admin', label: locale.t('进入后台管理', 'Open administration'), icon: 'shield', theme: 'green' }]
+  if (session.role === 'SYSTEM_ADMIN') return [{ to: '/admin', label: locale.t('进入管理控制台', 'Open management console'), icon: 'shield', theme: 'green' }]
   if (session.role === 'FARMER') return [{ to: '/trade', label: locale.t('发布货源', 'Publish products'), icon: 'leaf', theme: 'green' }, { to: '/finance', label: locale.t('申请融资', 'Apply for finance'), icon: 'bank', theme: 'light' }]
   if (session.role === 'BUYER') return [{ to: '/trade', label: locale.t('浏览农产品', 'Browse products'), icon: 'leaf', theme: 'green' }, { to: '/cart', label: locale.t('查看购物车', 'View cart'), icon: 'cart', theme: 'light' }]
   if (session.role === 'EXPERT') return [{ to: '/experts', label: locale.t('处理专家服务', 'Open expert services'), icon: 'expert', theme: 'green' }]
@@ -259,10 +259,10 @@ const visibleServiceCards = computed(() =>
 const dashboardStats = computed(() => {
   if (session.role === 'SYSTEM_ADMIN' && session.isLoggedIn) {
     return [
-      { label: '监管角色', value: 5, desc: '五类角色统一隔离', icon: 'shield' },
-      { label: '货源监管', value: visibleOrders.value.length, desc: '审核农户发布内容', icon: 'leaf' },
-      { label: '融资监管', value: visibleBanks.value.length, desc: '查看银行产品与申请进度', icon: 'bank' },
-      { label: '内容监管', value: visibleExperts.value.length, desc: '专家与知识服务概览', icon: 'expert' },
+      { label: '角色体系', value: 5, desc: '覆盖五类平台身份', icon: 'shield' },
+      { label: '货源与交易', value: visibleOrders.value.length, desc: '跟踪货源发布与订单履约', icon: 'leaf' },
+      { label: '融资业务', value: visibleBanks.value.length, desc: '监督产品、申请与审批进度', icon: 'bank' },
+      { label: '内容与专家', value: visibleExperts.value.length, desc: '管理专家服务与平台内容', icon: 'expert' },
     ] as const
   }
   return [
@@ -619,16 +619,16 @@ onBeforeUnmount(() => {
 
     <section v-if="showAdminOnly" class="portal-section admin-entry-section">
       <div class="portal-heading">
-        <h2>管理员专属模块</h2>
-        <p>用户角色、货源状态、采购订单、融资进度、资讯知识统一在后台监管</p>
+        <h2>{{ locale.t('平台运营与风险管理', 'Platform operations and risk management') }}</h2>
+        <p>{{ locale.t('统一处理账号权限、交易履约、融资流程、内容审核与运营数据。', 'Manage access, trade fulfilment, finance workflows, content review and operational data.') }}</p>
       </div>
-      <RouterLink class="button button--green" to="/admin"><AppIcon name="shield" />进入系统后台</RouterLink>
+      <RouterLink class="button button--green" to="/admin"><AppIcon name="shield" />{{ locale.t('进入管理控制台', 'Open management console') }}</RouterLink>
     </section>
 
     <section class="portal-section" id="home-services">
       <div class="portal-heading">
         <h2>{{ locale.t('核心服务', 'Core services') }}</h2>
-        <p>{{ locale.t('围绕融、销、技、管四类业务建立统一入口', 'Unified access to trade, finance, expertise and management.') }}</p>
+        <p>{{ locale.t('覆盖农产品交易、涉农融资、农技服务与平台运营', 'Unified access to agricultural trade, finance, expert services and platform operations.') }}</p>
       </div>
       <div class="service-grid">
         <RouterLink v-for="item in visibleServiceCards" :key="item.title" class="service-card" :to="item.to">

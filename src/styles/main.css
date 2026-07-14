@@ -1800,6 +1800,28 @@ td select,
   gap: 12px;
 }
 
+.auth-code-row {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: stretch !important;
+  gap: 8px;
+}
+
+.auth-code-button {
+  min-width: 112px;
+  min-height: 44px;
+  padding: 0 14px;
+  border: 1px solid rgba(16, 185, 129, 0.45);
+  background: rgba(240, 253, 244, 0.82);
+  color: var(--color-primary-dark);
+  white-space: nowrap;
+}
+
+.auth-code-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
 .auth-extra-enter-active,
 .auth-extra-leave-active {
   overflow: hidden;
@@ -6596,7 +6618,7 @@ td {
 }
 
 .app-shell--auth .auth-page {
-  grid-template-columns: minmax(0, 1fr) minmax(420px, 456px);
+  grid-template-columns: minmax(0, 1fr) minmax(420px, 520px);
   gap: clamp(40px, 5vw, 72px);
   align-items: center;
   width: min(1180px, calc(100% - 40px));
@@ -6659,13 +6681,17 @@ td {
 .app-shell--auth .auth-card--register {
   width: 100%;
   max-width: 456px;
-  padding: 18px;
+  padding: 16px;
   border: 1px solid rgba(255, 255, 255, 0.72);
   border-radius: 22px;
   background: rgba(255, 255, 255, 0.97);
   box-shadow: 0 24px 64px rgba(0, 30, 23, 0.28);
   backdrop-filter: blur(18px);
   transform: none;
+}
+
+.app-shell--auth .auth-card--register {
+  max-width: 520px;
 }
 
 .app-shell--auth .auth-card::before {
@@ -6706,7 +6732,7 @@ td {
 }
 
 .app-shell--auth .auth-form {
-  gap: 9px;
+  gap: 8px;
   margin-top: 11px;
 }
 
@@ -6753,6 +6779,12 @@ td {
 
 .app-shell--auth .auth-extra-grid {
   gap: 8px 9px;
+}
+
+@media (min-width: 901px) {
+  .app-shell--auth .auth-card--register .auth-extra-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
 }
 
 .auth-mode-enter-active,

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, reactive, ref } from 'vue'
+import { computed, onUnmounted, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import AppIcon from '@/components/AppIcon.vue'
 import { useLocaleStore } from '@/stores/locale'
@@ -13,10 +13,11 @@ const router = useRouter()
 const mode = ref<'login' | 'register'>('login')
 const accountMode = ref<'account' | 'netease'>('account')
 const loading = ref(false)
+const codeSending = ref(false)
+const codeCountdown = ref(0)
 const message = ref('')
 const error = ref('')
-const neteaseMailUrl =
-  'https://mail.163.com/js6/main.jsp?sid=PLCySYVsjxoKLpZwYzwJRwupsYmdGZMV&df=mail163_letter#module=options.LinkModule%7C%7B%22link%22%3A%22option_pop3%22%7D'
+let countdownTimer: ReturnType<typeof setInterval> | undefined
 // 登录成功后回到路由守卫记录的目标页面。
 const routeNotice = computed(() => {
   if (route.query.reason === 'login') return locale.t('请先登录后再访问该业务页面。', 'Please sign in before opening this page.')
@@ -27,6 +28,7 @@ const routeNotice = computed(() => {
 const form = reactive({
   userName: '',
   password: '',
+  verificationCode: '',
   nickName: '',
   realName: '',
   phone: '',
@@ -57,12 +59,17 @@ const selectedRoleDescription = computed(() => {
   const description = roleDescriptions[form.role]
   return locale.t(description.zh, description.en)
 })
-const accountLabel = computed(() => accountMode.value === 'netease' ? locale.t('网易邮箱', 'NetEase email') : locale.t('账号', 'Account'))
+const accountLabel = computed(() => {
+  if (mode.value === 'login') return locale.t('账号或 163 邮箱', 'Account or 163 email')
+  return accountMode.value === 'netease' ? locale.t('163 邮箱', '163 email') : locale.t('普通账号', 'Account')
+})
 const accountPlaceholder = computed(() =>
-  accountMode.value === 'netease' ? 'name@163.com' : locale.t('请输入用户名', 'Enter username'),
+  mode.value === 'login'
+    ? locale.t('请输入账号或 163 邮箱', 'Enter account or 163 email')
+    : accountMode.value === 'netease' ? 'name@163.com' : locale.t('3-32 位用户名', '3-32 character username'),
 )
-const accountAutocomplete = computed(() => (accountMode.value === 'netease' ? 'email' : 'username'))
-const accountType = computed(() => (accountMode.value === 'netease' ? 'email' : 'text'))
+const accountAutocomplete = computed(() => (mode.value === 'register' && accountMode.value === 'netease' ? 'email' : 'username'))
+const accountType = computed(() => (mode.value === 'register' && accountMode.value === 'netease' ? 'email' : 'text'))
 
 function switchMode(nextMode: 'login' | 'register') {
   mode.value = nextMode
@@ -71,10 +78,53 @@ function switchMode(nextMode: 'login' | 'register') {
   }
 }
 
+function switchAccountMode(nextMode: 'account' | 'netease') {
+  accountMode.value = nextMode
+  form.verificationCode = ''
+  message.value = ''
+  error.value = ''
+}
+
 function normalizedUserName() {
   const value = form.userName.trim()
-  return accountMode.value === 'netease' ? value.toLowerCase() : value
+  return value.toLowerCase().endsWith('@163.com') ? value.toLowerCase() : value
 }
+
+function startCodeCountdown() {
+  codeCountdown.value = 60
+  countdownTimer = setInterval(() => {
+    codeCountdown.value -= 1
+    if (codeCountdown.value <= 0 && countdownTimer) {
+      clearInterval(countdownTimer)
+      countdownTimer = undefined
+    }
+  }, 1000)
+}
+
+async function sendCode() {
+  message.value = ''
+  error.value = ''
+  const email = normalizedUserName()
+  if (!/^[^\s@]+@163\.com$/i.test(email)) {
+    error.value = locale.t('请先输入有效的 163 邮箱。', 'Enter a valid 163.com email address first.')
+    return
+  }
+
+  codeSending.value = true
+  try {
+    await session.sendEmailCode(email)
+    message.value = locale.t('验证码已发送，5 分钟内有效。', 'Verification code sent. It is valid for 5 minutes.')
+    startCodeCountdown()
+  } catch (err) {
+    error.value = err instanceof Error ? err.message : locale.t('验证码发送失败。', 'Could not send verification code.')
+  } finally {
+    codeSending.value = false
+  }
+}
+
+onUnmounted(() => {
+  if (countdownTimer) clearInterval(countdownTimer)
+})
 
 // 登录/注册共用表单，提交时根据模式切换接口。
 async function submit() {
@@ -84,8 +134,11 @@ async function submit() {
 
   try {
     const userName = normalizedUserName()
-    if (accountMode.value === 'netease' && !/^[^\s@]+@163\.com$/i.test(userName)) {
+    if (mode.value === 'register' && accountMode.value === 'netease' && !/^[^\s@]+@163\.com$/i.test(userName)) {
       throw new Error(locale.t('请输入有效的 163 网易邮箱。', 'Enter a valid 163.com email address.'))
+    }
+    if (mode.value === 'register' && accountMode.value === 'account' && !/^[^\s@]{3,32}$/.test(userName)) {
+      throw new Error(locale.t('普通账号需为 3-32 位，且不能包含空格或 @。', 'Account must be 3-32 characters without spaces or @.'))
     }
 
     if (mode.value === 'login') {
@@ -93,7 +146,11 @@ async function submit() {
       await session.login({ userName, password: form.password })
       message.value = locale.t(`已登录：${session.displayName}（${session.roleLabel}）`, `Signed in as ${session.displayName}.`)
     } else {
-      await session.register({ ...form, userName })
+      await session.register({
+        ...form,
+        userName,
+        verificationCode: accountMode.value === 'netease' ? form.verificationCode : undefined,
+      })
       message.value = locale.t(`已注册并登录：${session.displayName}（${session.roleLabel}）`, `Account created for ${session.displayName}.`)
     }
     await router.push(typeof route.query.redirect === 'string' ? route.query.redirect : '/')
@@ -133,15 +190,15 @@ async function submit() {
         <div :key="mode" class="auth-card__content">
           <div class="auth-card__heading">
             <h2>{{ mode === 'login' ? locale.t('欢迎回来', 'Welcome back') : locale.t('创建您的账号', 'Create your account') }}</h2>
-            <p>{{ mode === 'login' ? locale.t('输入账号和密码进入业务工作台。', 'Sign in to open your workspace.') : locale.t('选择身份并补充必要的账号信息。', 'Choose a role and enter the required details.') }}</p>
+            <p>{{ mode === 'login' ? locale.t('输入账号和密码进入业务工作台。', 'Sign in to open your workspace.') : locale.t('选择普通账号或 163 邮箱，并补充必要信息。', 'Choose an account or 163 email and enter the required details.') }}</p>
           </div>
 
           <form class="form auth-form" @submit.prevent="submit">
-            <div class="auth-provider" aria-label="账号类型">
-              <button type="button" :aria-selected="accountMode === 'account'" @click="accountMode = 'account'">
+            <div v-if="mode === 'register'" class="auth-provider" aria-label="注册方式">
+              <button type="button" :aria-selected="accountMode === 'account'" @click="switchAccountMode('account')">
                 {{ locale.t('普通账号', 'Account') }}
               </button>
-              <button type="button" :aria-selected="accountMode === 'netease'" @click="accountMode = 'netease'">
+              <button type="button" :aria-selected="accountMode === 'netease'" @click="switchAccountMode('netease')">
                 {{ locale.t('163 邮箱', '163 email') }}
               </button>
             </div>
@@ -160,6 +217,30 @@ async function submit() {
               <span>{{ locale.t('密码', 'Password') }}</span>
               <input v-model="form.password" type="password" :autocomplete="mode === 'login' ? 'current-password' : 'new-password'" required :placeholder="locale.t('请输入密码', 'Enter password')" />
             </label>
+
+            <div v-if="mode === 'register' && accountMode === 'netease'" class="field">
+              <label for="registration-code"><span>{{ locale.t('邮箱验证码', 'Email verification code') }}</span></label>
+              <span class="auth-code-row">
+                <input
+                  id="registration-code"
+                  v-model.trim="form.verificationCode"
+                  autocomplete="one-time-code"
+                  inputmode="numeric"
+                  maxlength="6"
+                  pattern="\d{6}"
+                  :placeholder="locale.t('请输入 6 位验证码', 'Enter the 6-digit code')"
+                  required
+                />
+                <button
+                  class="button auth-code-button"
+                  type="button"
+                  :disabled="codeSending || codeCountdown > 0"
+                  @click="sendCode"
+                >
+                  {{ codeSending ? locale.t('发送中…', 'Sending…') : codeCountdown > 0 ? `${codeCountdown}s` : locale.t('发送验证码', 'Send code') }}
+                </button>
+              </span>
+            </div>
 
             <div v-if="mode === 'register'" class="auth-role-row">
               <label class="field">
@@ -193,20 +274,9 @@ async function submit() {
               </div>
             </Transition>
 
-            <p v-if="message" class="alert">{{ message }}</p>
+            <p v-if="message" class="alert" role="status">{{ message }}</p>
             <p v-if="routeNotice" class="alert">{{ routeNotice }}</p>
-            <p v-if="error" class="alert alert--error">{{ error }}</p>
-
-            <a
-              v-if="accountMode === 'netease'"
-              class="auth-mail-link"
-              :href="neteaseMailUrl"
-              rel="noopener noreferrer"
-              target="_blank"
-            >
-              <AppIcon name="arrow" />
-              {{ locale.t('打开网易邮箱设置', 'Open NetEase email settings') }}
-            </a>
+            <p v-if="error" class="alert alert--error" role="alert">{{ error }}</p>
 
             <button class="button button--green" type="submit" :disabled="loading">
               <AppIcon name="check" />

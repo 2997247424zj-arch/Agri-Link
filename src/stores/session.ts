@@ -58,9 +58,18 @@ export const useSessionStore = defineStore('session', () => {
     )
   }
 
-  async function register(payload: Partial<User> & { userName: string; password: string; role: string }) {
-    await api.post<AuthResponse>('/api/auth/register', payload)
-    await login({ userName: payload.userName, password: payload.password, role: payload.role })
+  async function sendEmailCode(email: string) {
+    await api.post<void>('/api/auth/email-code', { email })
+  }
+
+  async function register(payload: Partial<User> & { userName: string; password: string; role: string; verificationCode?: string }) {
+    const data = await api.post<AuthResponse>('/api/auth/register', payload)
+    const returnedUser = data.user
+    persist(
+      returnedUser?.userName ?? data.userName ?? payload.userName,
+      returnedUser?.role ?? data.role ?? payload.role,
+      returnedUser?.nickName ?? returnedUser?.realName ?? data.nickName,
+    )
   }
 
   function setRole(nextRole: UserRole) {
@@ -79,5 +88,5 @@ export const useSessionStore = defineStore('session', () => {
     removeStorage('agri-link-display')
   }
 
-  return { userName, role, displayName, roleLabel, isLoggedIn, login, register, setRole, logout }
+  return { userName, role, displayName, roleLabel, isLoggedIn, login, sendEmailCode, register, setRole, logout }
 })
