@@ -7,7 +7,7 @@ import PageHeader from '@/components/ui/PageHeader.vue'
 import ModuleTabs from '@/components/ui/ModuleTabs.vue'
 import SummaryStrip from '@/components/ui/SummaryStrip.vue'
 import Pager from '@/components/ui/Pager.vue'
-import { api, resolveAssetUrl, uploadImage } from '@/api/client'
+import { ApiError, api, resolveAssetUrl, uploadImage } from '@/api/client'
 import { useSessionStore } from '@/stores/session'
 import { upsertLocalCart } from '@/utils/localCart'
 import type { ShoppingCart, TradeOrder } from '@/types/domain'
@@ -16,6 +16,9 @@ const session = useSessionStore()
 const route = useRoute()
 const router = useRouter()
 const orders = ref<TradeOrder[]>([])
+// 农户的自有货源单独从 /owners/{ownName} 拉取，不再从公开浏览列表里筛选，
+// 避免因分页或状态过滤导致自己的商品在管理视图中缺失。
+const farmerOrders = ref<TradeOrder[]>([])
 const keyword = ref('')
 const loading = ref(true)
 const submitting = ref(false)
@@ -48,7 +51,8 @@ const form = reactive({
   content: '当季新米，合作社统一烘干入库，可按需分批发货。',
   type: '粮油',
   picture: '',
-  ownName: session.userName || 'farmer-demo',
+  // 发布账号固定为当前登录农户，避免替他人发布或让商品脱离本人管理范围。
+  ownName: session.userName || '',
   address: '湘西州吉首市',
   stock: 1200,
   spec: '50kg/袋',
@@ -199,11 +203,17 @@ const fallbackOrders: TradeOrder[] = [
   },
 ]
 
+// 浏览列表对买家/游客只展示已上架货源；农户可看到自己的全部状态，方便管理。
+const visibleOrders = computed(() => {
+  if (session.role === 'FARMER') return orders.value
+  return orders.value.filter((order) => (order.orderStatus ?? 0) === 1)
+})
+
 // 首页货源不可用时使用演示数据兜底。
 const filteredOrders = computed(() => {
   const text = keyword.value.trim().toLowerCase()
-  if (!text) return orders.value
-  return orders.value.filter((order) =>
+  if (!text) return visibleOrders.value
+  return visibleOrders.value.filter((order) =>
     [order.title, order.type, order.ownName, order.address].some((value) =>
       String(value ?? '').toLowerCase().includes(text),
     ),
@@ -221,17 +231,20 @@ const selectedCartCount = computed(() =>
   Object.entries(cartCounts).reduce((sum, [, count]) => sum + Math.max(1, Number(count) || 1), 0),
 )
 
+// 发布与管理页展示的自有货源，优先取 /owners 专用列表；未加载到时退回浏览列表筛选。
 const ownOrders = computed(() => {
   const ownName = session.userName || 'farmer-demo'
-  return orders.value.filter((order) => order.ownName === ownName || order.ownName === form.ownName)
+  if (farmerOrders.value.length) return farmerOrders.value
+  return orders.value.filter((order) => order.ownName === ownName)
 })
 const managedOrders = computed(() => (session.role === 'FARMER' ? ownOrders.value : []))
 const activeTab = computed<TradeTab>(() =>
   // 非农户即使带 ?tab=publish 也强制回到浏览页。
   route.query.tab === 'publish' && session.role === 'FARMER' ? 'publish' : 'browse',
 )
-const ownOrderIds = computed(() => new Set(ownOrders.value.map((order) => order.orderId)))
-const canManageOrder = (order: TradeOrder) => session.role === 'FARMER' && ownOrderIds.value.has(order.orderId)
+// 浏览列表中的管理权限按发布账号判断，覆盖专用列表未包含的历史货源。
+const canManageOrder = (order: TradeOrder) =>
+  session.role === 'FARMER' && Boolean(session.userName) && order.ownName === session.userName
 
 function setTradeTab(tab: TradeTab) {
   router.replace({ query: { ...route.query, tab } })
@@ -284,6 +297,36 @@ async function handleImageFile(event: Event, target: typeof form | typeof editFo
   }
 }
 
+// 仅在后端确实连不上（网络层错误，status 0）时才做本地兜底；
+// 真正的 4xx/5xx 需要如实报错，避免把服务器拒绝伪装成成功。
+function isNetworkDown(err: unknown) {
+  return err instanceof ApiError && err.status === 0
+}
+
+// 同步更新农户自有货源列表中的某条记录，保持发布/管理页与浏览页一致。
+function syncFarmerOrder(orderId: number | undefined, patch: Partial<TradeOrder>) {
+  if (!orderId) return
+  const mine = farmerOrders.value.find((order) => order.orderId === orderId)
+  if (mine) Object.assign(mine, patch)
+}
+
+// 农户登录后单独拉取本人全部货源（含待审核、已下架），供发布与管理页使用。
+async function loadFarmerOrders() {
+  if (session.role !== 'FARMER' || !session.userName) {
+    farmerOrders.value = []
+    return
+  }
+  try {
+    const mine = await api.get<TradeOrder[]>(
+      `/api/trade/orders/owners/${encodeURIComponent(session.userName)}`,
+    )
+    farmerOrders.value = mine ?? []
+  } catch {
+    // 专用列表拉取失败时保持为空，ownOrders 会退回从浏览列表筛选。
+    farmerOrders.value = []
+  }
+}
+
 async function loadOrders() {
   loading.value = true
   error.value = ''
@@ -301,6 +344,7 @@ async function loadOrders() {
     }
     loading.value = false
   }
+  void loadFarmerOrders()
 }
 
 function updateCartCount(orderId: number, value: number) {
@@ -335,10 +379,13 @@ async function publishOrder() {
   submitting.value = true
   message.value = ''
   error.value = ''
+  // 发布账号始终锁定为当前登录农户，避免替他人发布或脱离本人管理范围。
+  if (session.userName) form.ownName = session.userName
   try {
     const created = await api.post<TradeOrder>('/api/trade/orders', form, { role: 'FARMER' })
     orders.value = [created, ...orders.value]
-    message.value = '货源已发布，买家端可在农产品交易中浏览。'
+    farmerOrders.value = [created, ...farmerOrders.value]
+    message.value = '货源已发布，待审核通过或点击上架后买家端即可浏览。'
   } catch (err) {
     error.value = err instanceof Error ? err.message : '货源发布失败。'
   } finally {
@@ -372,19 +419,28 @@ async function saveOrder() {
   message.value = ''
   error.value = ''
   const payload = { ...editForm }
-  const target = orders.value.find((order) => order.orderId === editingOrderId.value)
+  const editingId = editingOrderId.value
+  const target = orders.value.find((order) => order.orderId === editingId)
+  const mine = farmerOrders.value.find((order) => order.orderId === editingId)
 
   try {
-    const updated = await api.put<TradeOrder>(`/api/trade/orders/${editingOrderId.value}`, payload, {
+    const updated = await api.put<TradeOrder>(`/api/trade/orders/${editingId}`, payload, {
       role: 'FARMER',
     })
     if (target) Object.assign(target, updated)
+    if (mine) Object.assign(mine, updated)
     message.value = `货源「${updated.title || payload.title}」已保存。`
     editingOrderId.value = null
-  } catch {
-    if (target) Object.assign(target, payload)
-    message.value = `后端货源保存接口暂不可用，已在当前页面更新「${payload.title}」。`
-    editingOrderId.value = null
+  } catch (err) {
+    // 仅在后端连不上时（status 0）本地兜底；真实的 4xx/5xx 必须暴露给农户。
+    if (isNetworkDown(err)) {
+      if (target) Object.assign(target, payload)
+      if (mine) Object.assign(mine, payload)
+      message.value = `后端货源保存接口暂不可用，已在当前页面更新「${payload.title}」。`
+      editingOrderId.value = null
+    } else {
+      error.value = err instanceof Error ? err.message : '货源保存失败。'
+    }
   } finally {
     submitting.value = false
   }
@@ -400,10 +456,17 @@ async function changeOrderStatus(order: TradeOrder, orderStatus: number) {
       { role: 'FARMER' },
     )
     order.orderStatus = updated.orderStatus
+    syncFarmerOrder(order.orderId, { orderStatus: updated.orderStatus })
     message.value = `货源「${order.title}」已${orderStatus === 1 ? '上架' : '下架'}。`
-  } catch {
-    order.orderStatus = orderStatus
-    message.value = `后端状态接口暂不可用，已在当前页面将「${order.title}」标记为${orderStatus === 1 ? '已上架' : '已下架'}。`
+  } catch (err) {
+    // 仅在后端不可达时本地兜底；真实的权限或业务错误要向用户暴露。
+    if (isNetworkDown(err)) {
+      order.orderStatus = orderStatus
+      syncFarmerOrder(order.orderId, { orderStatus })
+      message.value = `后端状态接口暂不可用，已在当前页面将「${order.title}」标记为${orderStatus === 1 ? '已上架' : '已下架'}。`
+    } else {
+      error.value = err instanceof Error ? err.message : '货源状态更新失败。'
+    }
   }
 }
 
@@ -415,10 +478,17 @@ async function deleteOrder(order: TradeOrder) {
   try {
     await api.delete<void>(`/api/trade/orders/${order.orderId}`, { role: 'FARMER' })
     orders.value = orders.value.filter((item) => item.orderId !== order.orderId)
+    farmerOrders.value = farmerOrders.value.filter((item) => item.orderId !== order.orderId)
     message.value = `货源「${order.title}」已删除。`
-  } catch {
-    orders.value = orders.value.filter((item) => item.orderId !== order.orderId)
-    message.value = `后端删除接口暂不可用，已在当前页面移除「${order.title}」。`
+  } catch (err) {
+    // 仅在后端不可达时本地兜底；真实的权限或业务错误要向用户暴露。
+    if (isNetworkDown(err)) {
+      orders.value = orders.value.filter((item) => item.orderId !== order.orderId)
+      farmerOrders.value = farmerOrders.value.filter((item) => item.orderId !== order.orderId)
+      message.value = `后端删除接口暂不可用，已在当前页面移除「${order.title}」。`
+    } else {
+      error.value = err instanceof Error ? err.message : '货源删除失败。'
+    }
   }
 }
 
@@ -483,7 +553,7 @@ watch(orderPageCount, () => {
       <label class="field"><span>规格</span><input v-model.trim="editForm.spec" /></label>
       <label class="field"><span>库存</span><input v-model.number="editForm.stock" type="number" min="0" required /></label>
       <label class="field"><span>最小起订量</span><input v-model.number="editForm.minPurchase" type="number" min="1" required /></label>
-      <label class="field"><span>发布账号</span><input v-model.trim="editForm.ownName" required /></label>
+      <label class="field"><span>发布账号</span><input v-model.trim="editForm.ownName" readonly title="发布账号锁定为当前登录农户" /></label>
       <label class="field"><span>产地地址</span><input v-model.trim="editForm.address" required /></label>
       <label class="field"><span>图片文件名</span><input v-model.trim="editForm.picture" /></label>
       <label class="field"><span>{{ uploadingImage ? '图片上传中' : '从电脑上传图片' }}</span><input type="file" accept="image/*" :disabled="uploadingImage" @change="handleImageFile($event, editForm)" /></label>
@@ -536,6 +606,9 @@ watch(orderPageCount, () => {
               </button>
             </div>
             <div v-else-if="canManageOrder(order)" class="toolbar">
+              <button class="button button--ghost button--small" type="button" @click="openOrderDetail(order)">
+                <AppIcon name="search" />详情
+              </button>
               <button class="button button--small" type="button" @click="startEditOrder(order)">编辑</button>
               <button class="button button--small" type="button" @click="changeOrderStatus(order, 1)">上架</button>
               <button class="button button--ghost button--small" type="button" @click="changeOrderStatus(order, 2)">下架</button>
@@ -565,7 +638,7 @@ watch(orderPageCount, () => {
         <label class="field"><span>规格</span><input v-model.trim="form.spec" placeholder="如 50kg/袋" /></label>
         <label class="field"><span>库存</span><input v-model.number="form.stock" type="number" min="0" required /></label>
         <label class="field"><span>最小起订量</span><input v-model.number="form.minPurchase" type="number" min="1" required /></label>
-        <label class="field"><span>发布账号</span><input v-model.trim="form.ownName" required /></label>
+        <label class="field"><span>发布账号</span><input v-model.trim="form.ownName" readonly title="发布账号锁定为当前登录农户" /></label>
         <label class="field"><span>产地地址</span><input v-model.trim="form.address" required /></label>
         <label class="field"><span>图片文件名</span><input v-model.trim="form.picture" placeholder="可选，如 tea.png" /></label>
         <label class="field"><span>{{ uploadingImage ? '图片上传中' : '从电脑上传图片' }}</span><input type="file" accept="image/*" :disabled="uploadingImage" @change="handleImageFile($event, form)" /></label>
@@ -660,6 +733,13 @@ watch(orderPageCount, () => {
               >
                 <AppIcon name="cart" />加入购物车
               </button>
+              <div v-else-if="detailOrder && canManageOrder(detailOrder)" class="toolbar">
+                <button class="button button--green" type="button" @click="startEditOrder(detailOrder); detailOrder = null">
+                  <AppIcon name="check" />编辑货源
+                </button>
+                <button class="button button--small" type="button" @click="changeOrderStatus(detailOrder, 1)">上架</button>
+                <button class="button button--ghost button--small" type="button" @click="changeOrderStatus(detailOrder, 2)">下架</button>
+              </div>
             </div>
           </div>
         </div>

@@ -401,6 +401,34 @@ async function submitIntention() {
   }
 }
 
+// 农户撤回本人融资申请：调用后端 DELETE /api/finance/applications/{id}。
+async function withdrawApplication(item: Finance) {
+  if (typeof window !== 'undefined' && !window.confirm(`确认撤回融资申请 #${item.financeId}？撤回后不可恢复。`)) return
+  message.value = ''
+  error.value = ''
+  try {
+    await api.delete<void>(`/api/finance/applications/${item.financeId}`, { role: 'FARMER' })
+    applications.value = applications.value.filter((finance) => finance.financeId !== item.financeId)
+    message.value = `融资申请 #${item.financeId} 已撤回。`
+  } catch (err) {
+    error.value = err instanceof Error ? err.message : '融资申请撤回失败。'
+  }
+}
+
+// 农户撤回本人融资意向：调用后端 DELETE /api/finance/intentions/{id}。
+async function withdrawIntention(item: FinancingIntention) {
+  if (typeof window !== 'undefined' && !window.confirm(`确认撤回融资意向「${item.item || item.application || item.id}」？`)) return
+  message.value = ''
+  error.value = ''
+  try {
+    await api.delete<void>(`/api/finance/intentions/${item.id}`, { role: 'FARMER' })
+    intentions.value = intentions.value.filter((intention) => intention.id !== item.id)
+    message.value = '融资意向已撤回。'
+  } catch (err) {
+    error.value = err instanceof Error ? err.message : '融资意向撤回失败。'
+  }
+}
+
 async function updateApplicationStatus(item: Finance, status: number) {
   message.value = ''
   error.value = ''
@@ -548,6 +576,26 @@ watch(
           <AppIcon name="plus" />登记意向
         </button>
       </form>
+
+      <div class="panel finance-intention-list">
+        <div class="section-title">
+          <div>
+            <span class="eyebrow"><AppIcon name="expert" />意向管理</span>
+            <h2>我的融资意向</h2>
+            <p>共 {{ roleIntentions.length }} 条意向，可撤回不再需要的登记。</p>
+          </div>
+        </div>
+        <div class="mini-list">
+          <span v-for="item in roleIntentions" :key="item.id" class="stack-row">
+            <strong>{{ item.item || item.application || '融资意向' }} · {{ item.amount ?? '-' }} 元</strong>
+            <small>{{ item.address || '经营地址待补充' }} · {{ item.area || '面积待补充' }}</small>
+            <div class="toolbar">
+              <button class="button button--danger button--small" type="button" @click="withdrawIntention(item)">撤回</button>
+            </div>
+          </span>
+          <span v-if="!roleIntentions.length">暂无融资意向登记。</span>
+        </div>
+      </div>
     </section>
 
     <section v-if="activeTab === 'products'" class="section grid grid--two">
@@ -652,6 +700,14 @@ watch(
                     <button class="button button--small" type="button" @click="expandedFinanceId = expandedFinanceId === item.financeId ? null : item.financeId">详情</button>
                     <button v-if="isBankRole" class="button button--small" type="button" @click="updateApplicationStatus(item, 1)">通过</button>
                     <button v-if="isBankRole" class="button button--danger button--small" type="button" @click="updateApplicationStatus(item, 2)">拒绝</button>
+                    <button
+                      v-if="!isBankRole && (item.status ?? 0) === 0"
+                      class="button button--danger button--small"
+                      type="button"
+                      @click="withdrawApplication(item)"
+                    >
+                      撤回
+                    </button>
                   </td>
                 </tr>
                 <tr v-if="expandedFinanceId === item.financeId">

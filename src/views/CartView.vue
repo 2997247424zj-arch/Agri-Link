@@ -3,7 +3,7 @@ import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { RouterLink } from 'vue-router'
 import AppIcon from '@/components/AppIcon.vue'
 import Pager from '@/components/ui/Pager.vue'
-import { api } from '@/api/client'
+import { api, ApiError } from '@/api/client'
 import { useSessionStore } from '@/stores/session'
 import {
   clearLocalCart,
@@ -281,21 +281,26 @@ async function createPurchase() {
     purchases.value = [purchase, ...purchases.value]
     purchase.details = details
     message.value = '采购订单已生成，购物车已清空。'
-  } catch {
-    const purchase: Purchase = {
-      purchaseId: Date.now(),
-      ownName,
-      purchaseType: 1,
-      totalPrice: Number(totalPrice.value.toFixed(2)),
-      address: address.value,
-      purchaseStatus: 0,
-      details,
+  } catch (err) {
+    // 仅在后端连不上时本地兜底；真实的 4xx/5xx（如库存不足、地址缺失）要向买家暴露。
+    if (err instanceof ApiError && err.status === 0) {
+      const purchase: Purchase = {
+        purchaseId: Date.now(),
+        ownName,
+        purchaseType: 1,
+        totalPrice: Number(totalPrice.value.toFixed(2)),
+        address: address.value,
+        purchaseStatus: 0,
+        details,
+      }
+      clearLocalCart(ownName)
+      carts.value = []
+      localShoppingIds.value = new Set()
+      purchases.value = [purchase, ...purchases.value]
+      message.value = '后端采购接口暂不可用，已生成本地采购记录并清空本地购物车。'
+    } else {
+      error.value = err instanceof Error ? err.message : '采购订单生成失败。'
     }
-    clearLocalCart(ownName)
-    carts.value = []
-    localShoppingIds.value = new Set()
-    purchases.value = [purchase, ...purchases.value]
-    message.value = '后端采购接口暂不可用，已生成本地采购记录并清空本地购物车。'
   } finally {
     submitting.value = false
   }
@@ -317,10 +322,15 @@ async function updatePurchaseStatus(purchase: Purchase, purchaseStatus: number) 
     purchase.purchaseStatus = updated.purchaseStatus
     purchase.cancelReason = updated.cancelReason ?? payload.cancelReason
     message.value = `采购订单 #${purchase.purchaseId} 状态已更新。`
-  } catch {
-    purchase.purchaseStatus = purchaseStatus
-    purchase.cancelReason = payload.cancelReason
-    message.value = `后端采购状态接口暂不可用，已在当前页面更新订单 #${purchase.purchaseId}。`
+  } catch (err) {
+    // 仅在后端连不上时本地兜底；真实的权限或业务错误如实暴露给买家。
+    if (err instanceof ApiError && err.status === 0) {
+      purchase.purchaseStatus = purchaseStatus
+      purchase.cancelReason = payload.cancelReason
+      message.value = `后端采购状态接口暂不可用，已在当前页面更新订单 #${purchase.purchaseId}。`
+    } else {
+      error.value = err instanceof Error ? err.message : '采购状态更新失败。'
+    }
   } finally {
     cancelReason.value = ''
   }
