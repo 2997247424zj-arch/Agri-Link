@@ -1,0 +1,131 @@
+- generic [ref=f4e3]:
+  - link "跳到主要内容" [ref=f4e4] [cursor=pointer]:
+    - /url: "#main-content"
+  - banner [ref=f4e5]:
+    - generic [ref=f4e6]:
+      - link "Agri-Link 首页" [ref=f4e7] [cursor=pointer]:
+        - /url: /
+        - generic [ref=f4e11]:
+          - strong [ref=f4e12]: Agri-Link
+          - generic [ref=f4e13]: 农产品融销一体平台
+      - navigation "主导航" [ref=f4e14]:
+        - link "首页" [ref=f4e15] [cursor=pointer]:
+          - /url: /
+        - link "农产品交易" [ref=f4e16] [cursor=pointer]:
+          - /url: /trade
+        - link "融资申请" [ref=f4e17] [cursor=pointer]:
+          - /url: /finance
+        - link "专家助力" [ref=f4e18] [cursor=pointer]:
+          - /url: /experts
+      - generic [ref=f4e19]:
+        - button "通知" [ref=f4e21] [cursor=pointer]
+        - button "切换为英文" [ref=f4e24] [cursor=pointer]: EN
+        - link "进入个人中心" [ref=f4e25] [cursor=pointer]:
+          - /url: /profile
+          - generic [ref=f4e26]: 农
+          - generic [ref=f4e27]:
+            - strong [ref=f4e28]: 农户
+            - generic [ref=f4e29]: 农户端
+          - generic [ref=f4e30]: 示范农户
+        - button "退出" [ref=f4e31] [cursor=pointer]
+  - main [ref=f4e35]:
+    - generic [ref=f4e36]:
+      - generic [ref=f4e37]:
+        - generic [ref=f4e38]:
+          - generic [ref=f4e39]: 融资服务
+          - heading "融资产品、意向匹配与审批" [level=2] [ref=f4e42]
+          - paragraph [ref=f4e43]: 对接银行产品、融资申请、融资意向和银行端审批接口。
+        - button "按金额匹配" [ref=f4e45] [cursor=pointer]
+      - tablist "融资申请操作" [ref=f4e48]:
+        - tab "基础信息介绍" [ref=f4e49] [cursor=pointer]
+        - tab "融资申请及意向登记" [selected] [ref=f4e50] [cursor=pointer]
+        - tab "查看审批结果" [ref=f4e51] [cursor=pointer]
+      - generic [ref=f4e52]:
+        - generic [ref=f4e53]:
+          - strong [ref=f4e54]: "1"
+          - text: 银行产品
+        - generic [ref=f4e55]:
+          - strong [ref=f4e56]: "1"
+          - text: 我的融资意向
+        - generic [ref=f4e57]:
+          - strong [ref=f4e58]: "1"
+          - text: 待审批申请
+        - generic [ref=f4e59]:
+          - strong [ref=f4e60]: 农户
+          - text: 当前角色
+      - generic [ref=f4e61]:
+        - generic [ref=f4e62]:
+          - generic [ref=f4e64]:
+            - generic [ref=f4e65]: 正式申请
+            - heading "提交融资申请" [level=2] [ref=f4e68]
+            - paragraph [ref=f4e69]: 农户侧提交申请资料，后续由银行端受理并给出审批意见。
+          - generic [ref=f4e70]:
+            - generic [ref=f4e71]: 已选产品
+            - strong [ref=f4e74]: Agri Bank
+            - generic [ref=f4e75]: 最高额度 100000 元 · 年化 3.5% · 12 months
+          - generic [ref=f4e76]:
+            - generic [ref=f4e77]:
+              - generic [ref=f4e78]: 银行产品
+              - combobox "银行产品" [ref=f4e79] [cursor=pointer]:
+                - option "Agri Bank" [selected]
+            - generic [ref=f4e80]:
+              - generic [ref=f4e81]: 申请人账号
+              - textbox "申请人账号" [disabled] [ref=f4e82]: farmer001
+            - generic [ref=f4e83]:
+              - generic [ref=f4e84]: 真实姓名
+              - textbox "真实姓名" [ref=f4e85]: Zhang San
+            - generic [ref=f4e86]:
+              - generic [ref=f4e87]: 手机号
+              - textbox "手机号" [ref=f4e88]: "13800000001"
+            - generic [ref=f4e89]:
+              - generic [ref=f4e90]: 身份证号
+              - textbox "身份证号" [ref=f4e91]: "430000199001010001"
+            - generic [ref=f4e92]:
+              - generic [ref=f4e93]: 申请金额
+              - spinbutton "申请金额" [ref=f4e94]: "50000"
+            - generic [ref=f4e95]:
+              - generic [ref=f4e96]: 还款方式
+              - textbox "还款方式" [ref=f4e97]: 12 months
+            - generic [ref=f4e98]:
+              - generic [ref=f4e99]: 经营说明
+              - textbox "经营说明" [ref=f4e100]:
+                - /placeholder: 请说明种植规模、订单情况和资金用途
+          - generic [ref=f4e101]:
+            - paragraph [ref=f4e102]: 提交后可在“查看审批结果”中补充材料并跟踪进度。
+            - button "提交申请" [ref=f4e105] [cursor=pointer]
+        - generic [ref=f4e108]:
+          - generic [ref=f4e110]:
+            - generic [ref=f4e111]: 需求登记
+            - heading "融资意向登记" [level=2] [ref=f4e114]
+            - paragraph [ref=f4e115]: 让银行端基于额度、用途和经营信息主动匹配农户。
+          - generic [ref=f4e116]:
+            - generic [ref=f4e117]: 账号
+            - textbox "账号" [disabled] [ref=f4e118]: farmer001
+          - generic [ref=f4e119]:
+            - generic [ref=f4e120]: 姓名
+            - textbox "姓名" [ref=f4e121]: Zhang San
+          - generic [ref=f4e122]:
+            - generic [ref=f4e123]: 联系电话
+            - textbox "联系电话" [ref=f4e124]: "13800000001"
+          - generic [ref=f4e125]:
+            - generic [ref=f4e126]: 经营地址
+            - textbox "经营地址" [ref=f4e127]: Jishou
+          - generic [ref=f4e128]:
+            - generic [ref=f4e129]: 意向金额
+            - spinbutton "意向金额" [ref=f4e130]: "80000"
+          - generic [ref=f4e131]:
+            - generic [ref=f4e132]: 经营面积
+            - textbox "经营面积" [ref=f4e133]: 80亩
+          - generic [ref=f4e134]:
+            - generic [ref=f4e135]: 资金用途
+            - textbox "资金用途" [ref=f4e136]: 春耕备货与周转资金
+          - button "登记意向" [ref=f4e137] [cursor=pointer]
+        - generic [ref=f4e140]:
+          - generic [ref=f4e142]:
+            - generic [ref=f4e143]: 意向管理
+            - heading "我的融资意向" [level=2] [ref=f4e146]
+            - paragraph [ref=f4e147]: 共 1 条意向，可撤回不再需要的登记。
+          - generic [ref=f4e149]:
+            - strong [ref=f4e150]: orange orchard · 30000 元
+            - generic [ref=f4e151]: Jishou · 20 mu
+            - button "撤回" [ref=f4e153] [cursor=pointer]

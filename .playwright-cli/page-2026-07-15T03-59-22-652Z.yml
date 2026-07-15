@@ -1,0 +1,76 @@
+- generic [ref=f5e3]:
+  - link "跳到主要内容" [ref=f5e4] [cursor=pointer]:
+    - /url: "#main-content"
+  - banner [ref=f5e5]:
+    - generic [ref=f5e6]:
+      - link "Agri-Link 首页" [ref=f5e7] [cursor=pointer]:
+        - /url: /
+        - generic [ref=f5e11]:
+          - strong [ref=f5e12]: Agri-Link
+          - generic [ref=f5e13]: 农产品融销一体平台
+      - navigation "主导航" [ref=f5e14]:
+        - link "首页" [ref=f5e15] [cursor=pointer]:
+          - /url: /
+        - link "农产品交易" [ref=f5e16] [cursor=pointer]:
+          - /url: /trade
+        - link "融资申请" [ref=f5e17] [cursor=pointer]:
+          - /url: /finance
+        - link "专家助力" [ref=f5e18] [cursor=pointer]:
+          - /url: /experts
+      - generic [ref=f5e19]:
+        - button "通知" [ref=f5e21] [cursor=pointer]
+        - button "切换为英文" [ref=f5e24] [cursor=pointer]: EN
+        - link "进入个人中心" [ref=f5e25] [cursor=pointer]:
+          - /url: /profile
+          - generic [ref=f5e26]: 农
+          - generic [ref=f5e27]:
+            - strong [ref=f5e28]: 农户
+            - generic [ref=f5e29]: 农户端
+          - generic [ref=f5e30]: 示范农户
+        - button "退出" [ref=f5e31] [cursor=pointer]
+  - main [ref=f5e35]:
+    - generic [ref=f5e36]:
+      - generic [ref=f5e37]:
+        - generic [ref=f5e38]:
+          - generic [ref=f5e39]: 专家助力
+          - heading "专家展示、在线问答与咨询预约" [level=2] [ref=f5e42]
+          - paragraph [ref=f5e43]: 对接专家资料、问答发布、专家答复和预约处理接口。
+        - button "刷新" [ref=f5e45] [cursor=pointer]
+      - tablist "专家助力操作" [ref=f5e48]:
+        - tab "专家列表" [selected] [ref=f5e49] [cursor=pointer]
+        - tab "我的咨询" [ref=f5e50] [cursor=pointer]
+      - generic [ref=f5e51]:
+        - generic [ref=f5e52]:
+          - strong [ref=f5e53]: "1"
+          - text: 认证专家
+        - generic [ref=f5e54]:
+          - strong [ref=f5e55]: "0"
+          - text: 待答复问答
+        - generic [ref=f5e56]:
+          - strong [ref=f5e57]: "0"
+          - text: 待处理预约
+        - generic [ref=f5e58]:
+          - strong [ref=f5e59]: 农户
+          - text: 当前角色
+      - generic [ref=f5e61]:
+        - generic [ref=f5e62]:
+          - heading "专家筛选" [level=2] [ref=f5e63]
+          - paragraph [ref=f5e64]: 按作物、专业方向、机构或姓名快速定位服务对象。
+        - generic [ref=f5e65]:
+          - generic [ref=f5e66]:
+            - generic [ref=f5e67]: 专家关键词
+            - textbox "专家关键词" [ref=f5e68]:
+              - /placeholder: 水稻/果树/品牌
+          - generic [ref=f5e69]:
+            - generic [ref=f5e70]: 记录作物
+            - textbox "记录作物" [ref=f5e71]:
+              - /placeholder: 水稻/猕猴桃
+      - article [ref=f5e73] [cursor=pointer]:
+        - heading "Li Expert" [level=3] [ref=f5e74]
+        - paragraph [ref=f5e75]: plant protection
+        - generic [ref=f5e76]:
+          - generic [ref=f5e77]: senior agronomist
+          - generic [ref=f5e78]: Jishou University
+        - generic [ref=f5e79]:
+          - generic [ref=f5e80]: "13800000002"
+          - button "咨询" [ref=f5e81]

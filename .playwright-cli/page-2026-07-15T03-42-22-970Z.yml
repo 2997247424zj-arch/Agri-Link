@@ -1,0 +1,31 @@
+- generic [active] [ref=f2e1]:
+  - generic [ref=f2e3]:
+    - link "跳到主要内容" [ref=f2e4] [cursor=pointer]:
+      - /url: "#main-content"
+    - banner [ref=f2e5]:
+      - generic [ref=f2e6]:
+        - link "Agri-Link 首页" [ref=f2e7] [cursor=pointer]:
+          - /url: /
+          - generic [ref=f2e11]:
+            - strong [ref=f2e12]: Agri-Link
+            - generic [ref=f2e13]: 农产品融销一体平台
+        - navigation "主导航" [ref=f2e14]:
+          - link "首页" [ref=f2e15] [cursor=pointer]:
+            - /url: /
+          - link "农产品采购" [ref=f2e16] [cursor=pointer]:
+            - /url: /trade
+          - link "采购车" [ref=f2e17] [cursor=pointer]:
+            - /url: /cart
+        - generic [ref=f2e18]:
+          - button "通知" [ref=f2e20] [cursor=pointer]
+          - button "切换为英文" [ref=f2e23] [cursor=pointer]: EN
+          - link "进入个人中心" [ref=f2e24] [cursor=pointer]:
+            - /url: /profile
+            - generic [ref=f2e25]: 买
+            - generic [ref=f2e26]:
+              - strong [ref=f2e27]: 买家
+              - generic [ref=f2e28]: 买家端
+            - generic [ref=f2e29]: 采购商
+          - button "退出" [ref=f2e30] [cursor=pointer]
+    - main [ref=f2e34]
+  - generic "Toggle devtools panel" [ref=f2e36] [cursor=pointer]

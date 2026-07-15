@@ -1,0 +1,7 @@
+- generic [ref=f8e3]:
+  - generic [ref=f8e6]:
+    - generic [ref=f8e43]:
+      - textbox [disabled] [ref=f8e44]: /v3/api-docs
+      - button "Explore" [ref=f8e45] [cursor=pointer]
+    - button [ref=f8e47] [cursor=pointer]
+  - generic [ref=f8e50]: loading

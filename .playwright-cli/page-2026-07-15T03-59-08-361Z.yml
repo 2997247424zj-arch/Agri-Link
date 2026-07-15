@@ -1,0 +1,79 @@
+- generic [ref=f3e3]:
+  - link "跳到主要内容" [ref=f3e4] [cursor=pointer]:
+    - /url: "#main-content"
+  - banner [ref=f3e5]:
+    - generic [ref=f3e6]:
+      - link "Agri-Link 首页" [ref=f3e7] [cursor=pointer]:
+        - /url: /
+        - generic [ref=f3e11]:
+          - strong [ref=f3e12]: Agri-Link
+          - generic [ref=f3e13]: 农产品融销一体平台
+      - navigation "主导航" [ref=f3e14]:
+        - link "首页" [ref=f3e15] [cursor=pointer]:
+          - /url: /
+        - link "农产品交易" [ref=f3e16] [cursor=pointer]:
+          - /url: /trade
+        - link "融资申请" [ref=f3e17] [cursor=pointer]:
+          - /url: /finance
+        - link "专家助力" [ref=f3e18] [cursor=pointer]:
+          - /url: /experts
+      - generic [ref=f3e19]:
+        - button "通知" [ref=f3e21] [cursor=pointer]
+        - button "切换为英文" [ref=f3e24] [cursor=pointer]: EN
+        - link "进入个人中心" [ref=f3e25] [cursor=pointer]:
+          - /url: /profile
+          - generic [ref=f3e26]: 农
+          - generic [ref=f3e27]:
+            - strong [ref=f3e28]: 农户
+            - generic [ref=f3e29]: 农户端
+          - generic [ref=f3e30]: 示范农户
+        - button "退出" [ref=f3e31] [cursor=pointer]
+  - main [ref=f3e35]:
+    - generic [ref=f3e36]:
+      - generic [ref=f3e37]:
+        - generic [ref=f3e38]:
+          - generic [ref=f3e39]: 农产品交易
+          - heading "货源浏览与农户发布" [level=2] [ref=f3e42]
+          - paragraph [ref=f3e43]: 流程：农户发布货源，买家浏览下单，平台跟踪采购状态。
+        - generic [ref=f3e44]:
+          - generic [ref=f3e45]:
+            - generic [ref=f3e46]: 搜索货源
+            - textbox "搜索货源" [ref=f3e47]:
+              - /placeholder: 商品、类型、产地
+          - button "刷新" [ref=f3e48] [cursor=pointer]
+      - tablist "农产品交易操作" [ref=f3e51]:
+        - tab "货源浏览" [selected] [ref=f3e52] [cursor=pointer]
+        - tab "发布与管理" [ref=f3e53] [cursor=pointer]
+      - generic [ref=f3e54]:
+        - generic [ref=f3e55]:
+          - strong [ref=f3e56]: "1"
+          - text: 当前可浏览货源
+        - generic [ref=f3e57]:
+          - strong [ref=f3e58]: "1"
+          - text: 覆盖品类
+        - generic [ref=f3e59]:
+          - strong [ref=f3e60]: 农户
+          - text: 当前业务角色
+        - generic [ref=f3e61]:
+          - strong [ref=f3e62]: "1"
+          - text: 我的货源
+      - article [ref=f3e64]:
+        - img "Fresh oranges" [ref=f3e66]
+        - generic [ref=f3e67]:
+          - generic [ref=f3e68]: "1"
+          - generic [ref=f3e69]: Jishou
+          - generic [ref=f3e70]: 已上架
+        - heading "Fresh oranges" [level=3] [ref=f3e71]
+        - paragraph [ref=f3e72]: Sell fresh oranges
+        - generic [ref=f3e73]:
+          - generic [ref=f3e74]: 规格待补充
+          - generic [ref=f3e75]: 库存 - 斤
+          - generic [ref=f3e76]: 起订 1 斤
+        - generic [ref=f3e77]:
+          - strong [ref=f3e78]: ￥6.5/斤
+          - generic [ref=f3e79]:
+            - button "详情" [ref=f3e80] [cursor=pointer]
+            - button "编辑" [ref=f3e83] [cursor=pointer]
+            - button "上架" [ref=f3e84] [cursor=pointer]
+            - button "下架" [ref=f3e85] [cursor=pointer]
+            - button "删除" [ref=f3e86] [cursor=pointer]

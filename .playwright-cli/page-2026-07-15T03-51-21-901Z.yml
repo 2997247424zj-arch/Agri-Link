@@ -1,0 +1,34 @@
+- generic [active] [ref=f8e1]:
+  - generic [ref=f8e3]:
+    - link "跳到主要内容" [ref=f8e4] [cursor=pointer]:
+      - /url: "#main-content"
+    - banner [ref=f8e5]:
+      - generic [ref=f8e6]:
+        - link "Agri-Link 首页" [ref=f8e7] [cursor=pointer]:
+          - /url: /
+          - generic [ref=f8e11]:
+            - strong [ref=f8e12]: Agri-Link
+            - generic [ref=f8e13]: 农产品融销一体平台
+        - navigation "主导航" [ref=f8e14]:
+          - link "首页" [ref=f8e15] [cursor=pointer]:
+            - /url: /
+          - link "农产品采购" [ref=f8e16] [cursor=pointer]:
+            - /url: /trade
+          - link "采购车" [ref=f8e17] [cursor=pointer]:
+            - /url: /cart
+        - generic [ref=f8e18]:
+          - button "通知" [ref=f8e20] [cursor=pointer]:
+            - generic: "1"
+          - button "切换为英文" [ref=f8e23] [cursor=pointer]: EN
+          - link "进入个人中心" [ref=f8e24] [cursor=pointer]:
+            - /url: /profile
+            - generic [ref=f8e25]: 买
+            - generic [ref=f8e26]:
+              - strong [ref=f8e27]: 买家
+              - generic [ref=f8e28]: 买家端
+            - generic [ref=f8e29]: 采购商
+          - button "退出" [ref=f8e30] [cursor=pointer]
+    - main [ref=f8e34]
+  - generic [ref=f8e35]:
+    - generic "Toggle devtools panel" [ref=f8e36] [cursor=pointer]
+    - generic "Toggle Component Inspector" [ref=f8e42] [cursor=pointer]

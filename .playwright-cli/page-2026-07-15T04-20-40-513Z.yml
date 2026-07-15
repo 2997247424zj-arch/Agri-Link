@@ -1,0 +1,79 @@
+- generic [ref=f11e3]:
+  - link "跳到主要内容" [ref=f11e4] [cursor=pointer]:
+    - /url: "#main-content"
+  - banner [ref=f11e5]:
+    - generic [ref=f11e6]:
+      - link "Agri-Link 首页" [ref=f11e7] [cursor=pointer]:
+        - /url: /
+        - generic [ref=f11e11]:
+          - strong [ref=f11e12]: Agri-Link
+          - generic [ref=f11e13]: 农产品融销一体平台
+      - navigation "主导航" [ref=f11e14]:
+        - link "首页" [ref=f11e15] [cursor=pointer]:
+          - /url: /
+        - link "农产品交易" [ref=f11e16] [cursor=pointer]:
+          - /url: /trade
+        - link "融资申请" [ref=f11e17] [cursor=pointer]:
+          - /url: /finance
+        - link "专家助力" [ref=f11e18] [cursor=pointer]:
+          - /url: /experts
+      - generic [ref=f11e19]:
+        - button "通知" [ref=f11e21] [cursor=pointer]
+        - button "切换为英文" [ref=f11e24] [cursor=pointer]: EN
+        - link "进入个人中心" [ref=f11e25] [cursor=pointer]:
+          - /url: /profile
+          - generic [ref=f11e26]: 农
+          - generic [ref=f11e27]:
+            - strong [ref=f11e28]: 农户
+            - generic [ref=f11e29]: 农户端
+          - generic [ref=f11e30]: 示范农户
+        - button "退出" [ref=f11e31] [cursor=pointer]
+  - main [ref=f11e35]:
+    - generic [ref=f11e36]:
+      - generic [ref=f11e37]:
+        - generic [ref=f11e38]:
+          - generic [ref=f11e39]: 农产品交易
+          - heading "货源浏览与农户发布" [level=2] [ref=f11e42]
+          - paragraph [ref=f11e43]: 流程：农户发布货源，买家浏览下单，平台跟踪采购状态。
+        - generic [ref=f11e44]:
+          - generic [ref=f11e45]:
+            - generic [ref=f11e46]: 搜索货源
+            - textbox "搜索货源" [ref=f11e47]:
+              - /placeholder: 商品、类型、产地
+          - button "刷新" [ref=f11e48] [cursor=pointer]
+      - tablist "农产品交易操作" [ref=f11e51]:
+        - tab "货源浏览" [selected] [ref=f11e52] [cursor=pointer]
+        - tab "发布与管理" [ref=f11e53] [cursor=pointer]
+      - generic [ref=f11e54]:
+        - generic [ref=f11e55]:
+          - strong [ref=f11e56]: "1"
+          - text: 当前可浏览货源
+        - generic [ref=f11e57]:
+          - strong [ref=f11e58]: "1"
+          - text: 覆盖品类
+        - generic [ref=f11e59]:
+          - strong [ref=f11e60]: 农户
+          - text: 当前业务角色
+        - generic [ref=f11e61]:
+          - strong [ref=f11e62]: "1"
+          - text: 我的货源
+      - article [ref=f11e64]:
+        - img "高山生态大米 50kg" [ref=f11e66]
+        - generic [ref=f11e67]:
+          - generic [ref=f11e68]: 粮油
+          - generic [ref=f11e69]: 湘西州龙山县
+          - generic [ref=f11e70]: 已上架
+        - heading "高山生态大米 50kg" [level=3] [ref=f11e71]
+        - paragraph [ref=f11e72]: 合作社当季新米，统一烘干入库，支持产地直供。
+        - generic [ref=f11e73]:
+          - generic [ref=f11e74]: 50kg/袋
+          - generic [ref=f11e75]: 库存 1200 斤
+          - generic [ref=f11e76]: 起订 10 斤
+        - generic [ref=f11e77]:
+          - strong [ref=f11e78]: ￥5.2/斤
+          - generic [ref=f11e79]:
+            - button "详情" [ref=f11e80] [cursor=pointer]
+            - button "编辑" [ref=f11e83] [cursor=pointer]
+            - button "上架" [ref=f11e84] [cursor=pointer]
+            - button "下架" [ref=f11e85] [cursor=pointer]
+            - button "删除" [ref=f11e86] [cursor=pointer]

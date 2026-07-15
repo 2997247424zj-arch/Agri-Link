@@ -1,0 +1,138 @@
+- generic [ref=f7e3]:
+  - link "跳到主要内容" [ref=f7e4] [cursor=pointer]:
+    - /url: "#main-content"
+  - banner [ref=f7e5]:
+    - generic [ref=f7e6]:
+      - link "Agri-Link 首页" [ref=f7e7] [cursor=pointer]:
+        - /url: /
+        - generic [ref=f7e11]:
+          - strong [ref=f7e12]: Agri-Link
+          - generic [ref=f7e13]: 农产品融销一体平台
+      - navigation "主导航" [ref=f7e14]:
+        - link "首页" [ref=f7e15] [cursor=pointer]:
+          - /url: /
+        - link "农产品交易" [ref=f7e16] [cursor=pointer]:
+          - /url: /trade
+        - link "融资申请" [ref=f7e17] [cursor=pointer]:
+          - /url: /finance
+        - link "专家助力" [ref=f7e18] [cursor=pointer]:
+          - /url: /experts
+      - generic [ref=f7e19]:
+        - button "通知" [ref=f7e21] [cursor=pointer]
+        - button "切换为英文" [ref=f7e24] [cursor=pointer]: EN
+        - link "进入个人中心" [ref=f7e25] [cursor=pointer]:
+          - /url: /profile
+          - generic [ref=f7e26]: 农
+          - generic [ref=f7e27]:
+            - strong [ref=f7e28]: 农户
+            - generic [ref=f7e29]: 农户端
+          - generic [ref=f7e30]: 示范农户
+        - button "退出" [ref=f7e31] [cursor=pointer]
+  - main [ref=f7e35]:
+    - generic [ref=f7e36]:
+      - generic [ref=f7e37]:
+        - generic [ref=f7e38]:
+          - generic [ref=f7e39]: 个人中心
+          - heading "资料维护与业务操作" [level=2] [ref=f7e42]
+          - paragraph [ref=f7e43]: 维护账号资料，并按角色管理货源、地址、专家档案、贷款产品与业务记录。
+        - button "刷新" [ref=f7e45] [cursor=pointer]
+      - generic [ref=f7e48]:
+        - generic [ref=f7e49]:
+          - strong [ref=f7e50]: Farmer One
+          - text: 农户
+        - generic [ref=f7e51]:
+          - strong [ref=f7e52]: "0"
+          - text: 正在加载业务记录
+        - generic [ref=f7e53]:
+          - strong [ref=f7e54]: "0"
+          - text: 我的货源
+        - generic [ref=f7e55]:
+          - strong [ref=f7e56]: "0"
+          - text: 融资申请
+      - generic [ref=f7e57]:
+        - generic [ref=f7e58]:
+          - generic [ref=f7e60]:
+            - heading "基础资料" [level=2] [ref=f7e61]
+            - paragraph [ref=f7e62]: 用于登录、融资申请、交易发布和专家服务识别。
+          - generic [ref=f7e63]:
+            - generic [ref=f7e64]: 账号
+            - textbox "账号" [disabled] [ref=f7e65]: farmer001
+          - generic [ref=f7e66]:
+            - generic [ref=f7e67]: 角色
+            - textbox "角色" [disabled] [ref=f7e68]: 农户
+          - generic [ref=f7e69]:
+            - generic [ref=f7e70]: 从电脑上传头像
+            - button "从电脑上传头像" [ref=f7e71]
+          - img "头像预览" [ref=f7e74]
+          - generic [ref=f7e75]:
+            - generic [ref=f7e76]: 昵称
+            - textbox "昵称" [ref=f7e77]: Farmer One
+          - generic [ref=f7e78]:
+            - generic [ref=f7e79]: 真实姓名
+            - textbox "真实姓名" [ref=f7e80]: Zhang San
+          - generic [ref=f7e81]:
+            - generic [ref=f7e82]: 手机号
+            - textbox "手机号" [ref=f7e83]: "13800000001"
+          - generic [ref=f7e84]:
+            - generic [ref=f7e85]: 身份号码
+            - textbox "身份号码" [ref=f7e86]: "430000199001010001"
+          - generic [ref=f7e87]:
+            - generic [ref=f7e88]: 地址
+            - textbox "地址" [ref=f7e89]: Jishou
+          - generic [ref=f7e90]:
+            - heading "登录密码" [level=3] [ref=f7e91]
+            - generic [ref=f7e92]:
+              - generic [ref=f7e93]: 新密码
+              - textbox "新密码" [ref=f7e94]:
+                - /placeholder: 不修改可留空
+            - paragraph [ref=f7e95]: 仅在填写新密码时更新登录密码，其余资料保存不影响密码。
+          - button "保存资料" [ref=f7e96] [cursor=pointer]
+        - generic [ref=f7e99]:
+          - generic [ref=f7e100]:
+            - generic [ref=f7e102]:
+              - heading "新增收货地址" [level=2] [ref=f7e103]
+              - paragraph [ref=f7e104]: 地址簿用于采购结算，可设置默认地址。
+            - generic [ref=f7e105]:
+              - generic [ref=f7e106]: 收货人
+              - textbox "收货人" [ref=f7e107]
+            - generic [ref=f7e108]:
+              - generic [ref=f7e109]: 联系电话
+              - textbox "联系电话" [ref=f7e110]
+            - generic [ref=f7e111]:
+              - generic [ref=f7e112]: 详细地址
+              - textbox "详细地址" [ref=f7e113]
+            - generic [ref=f7e114]:
+              - checkbox "设为默认地址" [ref=f7e115]
+              - text: 设为默认地址
+            - button "新增地址" [ref=f7e116] [cursor=pointer]
+          - generic [ref=f7e119]:
+            - generic [ref=f7e121]:
+              - heading "业务入口" [level=2] [ref=f7e122]
+              - paragraph [ref=f7e123]: 按当前角色快速进入对应业务。
+            - generic [ref=f7e124]:
+              - link "商品发布与管理" [ref=f7e125] [cursor=pointer]:
+                - /url: /trade?tab=publish
+              - link "货源浏览" [ref=f7e128] [cursor=pointer]:
+                - /url: /trade?tab=browse
+              - link "融资申请" [ref=f7e131] [cursor=pointer]:
+                - /url: /finance?tab=apply
+              - link "专家咨询" [ref=f7e134] [cursor=pointer]:
+                - /url: /experts?tab=experts
+      - generic [ref=f7e137]:
+        - generic [ref=f7e138]:
+          - generic [ref=f7e139]:
+            - heading "我的农产品" [level=3] [ref=f7e140]
+            - paragraph [ref=f7e141]: 共 0 条货源，可编辑、上下架或删除。
+          - link "发布新货源" [ref=f7e142] [cursor=pointer]:
+            - /url: /trade?tab=publish
+        - generic [ref=f7e145]: 暂无货源记录。
+      - generic [ref=f7e147]:
+        - generic [ref=f7e149]:
+          - heading "采购记录" [level=3] [ref=f7e150]
+          - paragraph [ref=f7e151]: 共 0 笔采购，可确认或发货。
+        - generic [ref=f7e152]: 暂无采购记录。
+      - generic [ref=f7e154]:
+        - generic [ref=f7e156]:
+          - heading "融资申请" [level=3] [ref=f7e157]
+          - paragraph [ref=f7e158]: 共 0 条，查看审批状态或删除。
+        - generic [ref=f7e159]: 暂无融资申请。

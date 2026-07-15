@@ -1,0 +1,61 @@
+- generic [active] [ref=f7e1]:
+  - generic [ref=f7e3]:
+    - link "跳到主要内容" [ref=f7e4] [cursor=pointer]:
+      - /url: "#main-content"
+    - banner [ref=f7e5]:
+      - generic [ref=f7e6]:
+        - link "Agri-Link 首页" [ref=f7e7] [cursor=pointer]:
+          - /url: /
+          - generic [ref=f7e11]:
+            - strong [ref=f7e12]: Agri-Link
+            - generic [ref=f7e13]: 农产品融销一体平台
+        - navigation "主导航" [ref=f7e14]:
+          - link "首页" [ref=f7e15] [cursor=pointer]:
+            - /url: /
+          - link "农产品采购" [ref=f7e16] [cursor=pointer]:
+            - /url: /trade
+          - link "采购车" [ref=f7e17] [cursor=pointer]:
+            - /url: /cart
+        - generic [ref=f7e18]:
+          - button "通知" [ref=f7e20] [cursor=pointer]:
+            - generic: "1"
+          - button "切换为英文" [ref=f7e23] [cursor=pointer]: EN
+          - link "进入个人中心" [ref=f7e24] [cursor=pointer]:
+            - /url: /profile
+            - generic [ref=f7e25]: 买
+            - generic [ref=f7e26]:
+              - strong [ref=f7e27]: 买家
+              - generic [ref=f7e28]: 买家端
+            - generic [ref=f7e29]: 采购商
+          - button "退出" [ref=f7e30] [cursor=pointer]
+    - main [ref=f7e34]:
+      - generic [ref=f7e35]:
+        - generic [ref=f7e36]:
+          - generic [ref=f7e37]:
+            - generic [ref=f7e38]: 农产品交易
+            - heading "货源浏览与农户发布" [level=2] [ref=f7e41]
+            - paragraph [ref=f7e42]: 流程：农户发布货源，买家浏览下单，平台跟踪采购状态。
+          - generic [ref=f7e43]:
+            - generic [ref=f7e44]:
+              - generic [ref=f7e45]: 搜索货源
+              - textbox "搜索货源" [ref=f7e46]:
+                - /placeholder: 商品、类型、产地
+            - button "刷新" [ref=f7e47] [cursor=pointer]
+        - tablist "农产品交易操作" [ref=f7e50]:
+          - tab "货源浏览" [selected] [ref=f7e51] [cursor=pointer]
+        - generic [ref=f7e52]:
+          - generic [ref=f7e53]:
+            - strong [ref=f7e54]: "0"
+            - text: 正在读取货源
+          - generic [ref=f7e55]:
+            - strong [ref=f7e56]: "0"
+            - text: 覆盖品类
+          - generic [ref=f7e57]:
+            - strong [ref=f7e58]: 买家
+            - text: 当前业务角色
+          - generic [ref=f7e59]:
+            - strong [ref=f7e60]: "0"
+            - text: 列表加购数量
+  - generic [ref=f7e62]:
+    - generic "Toggle devtools panel" [ref=f7e63] [cursor=pointer]
+    - generic "Toggle Component Inspector" [ref=f7e69] [cursor=pointer]

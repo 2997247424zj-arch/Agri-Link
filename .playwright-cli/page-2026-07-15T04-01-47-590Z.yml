@@ -1,0 +1,67 @@
+- generic [ref=f10e3]:
+  - link "跳到主要内容" [ref=f10e4] [cursor=pointer]:
+    - /url: "#main-content"
+  - banner [ref=f10e5]:
+    - generic [ref=f10e6]:
+      - link "Agri-Link 首页" [ref=f10e7] [cursor=pointer]:
+        - /url: /
+        - generic [ref=f10e11]:
+          - strong [ref=f10e12]: Agri-Link
+          - generic [ref=f10e13]: 农产品融销一体平台
+      - navigation "主导航" [ref=f10e14]:
+        - link "首页" [ref=f10e15] [cursor=pointer]:
+          - /url: /
+        - link "后台管理" [ref=f10e16] [cursor=pointer]:
+          - /url: /admin
+      - generic [ref=f10e17]:
+        - button "通知" [ref=f10e19] [cursor=pointer]
+        - button "切换为英文" [ref=f10e22] [cursor=pointer]: EN
+        - link "进入个人中心" [ref=f10e23] [cursor=pointer]:
+          - /url: /profile
+          - generic [ref=f10e24]: 系
+          - generic [ref=f10e25]:
+            - strong [ref=f10e26]: 系统管理员
+            - generic [ref=f10e27]: 系统管理员端
+          - generic [ref=f10e28]: 系统管理员
+        - button "退出" [ref=f10e29] [cursor=pointer]
+  - main [ref=f10e33]:
+    - generic [ref=f10e34]:
+      - generic [ref=f10e35]:
+        - generic [ref=f10e36]:
+          - generic [ref=f10e37]: 系统管理后台
+          - heading "农产品融销一体平台管理控制台" [level=1] [ref=f10e40]
+          - paragraph [ref=f10e41]: 集中处理用户管理、交易监管、融资状态查看和平台内容维护。
+        - button "刷新" [ref=f10e42] [cursor=pointer]
+      - generic [ref=f10e45]:
+        - complementary "管理员模块导航" [ref=f10e46]:
+          - strong [ref=f10e47]: 系统管理
+          - button "核心指标" [ref=f10e48] [cursor=pointer]
+          - button "用户管理" [ref=f10e51] [cursor=pointer]
+          - button "交易监管" [ref=f10e54] [cursor=pointer]
+          - button "融资监管" [ref=f10e57] [cursor=pointer]
+          - button "内容管理" [ref=f10e60] [cursor=pointer]
+        - generic [ref=f10e64]:
+          - generic [ref=f10e66]:
+            - heading "核心指标" [level=2] [ref=f10e67]
+            - paragraph [ref=f10e68]: 快速查看用户、交易、融资和内容的当前规模。
+          - generic [ref=f10e69]:
+            - generic [ref=f10e70]:
+              - generic [ref=f10e71]: 正在加载
+              - strong [ref=f10e76]: "0"
+              - emphasis [ref=f10e77]: 角色统一管理
+            - generic [ref=f10e78]:
+              - generic [ref=f10e79]: 正在加载
+              - strong [ref=f10e84]: "0"
+              - emphasis [ref=f10e85]: 农户发布监管
+            - generic [ref=f10e86]:
+              - generic [ref=f10e87]: 正在加载
+              - strong [ref=f10e92]: "0"
+              - emphasis [ref=f10e93]: 买家采购流转
+            - generic [ref=f10e94]:
+              - generic [ref=f10e95]: 正在加载
+              - strong [ref=f10e100]: "0"
+              - emphasis [ref=f10e101]: 银行审批监管
+            - generic [ref=f10e102]:
+              - generic [ref=f10e103]: 正在加载
+              - strong [ref=f10e108]: "0"
+              - emphasis [ref=f10e109]: 平台内容维护
