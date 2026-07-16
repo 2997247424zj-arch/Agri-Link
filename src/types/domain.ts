@@ -54,7 +54,10 @@ export interface Address {
   ownName: string
   consignee: string
   phone: string
+  /** 主字段：详细地址 */
   addressDetail: string
+  /** 兼容字段：与 addressDetail 同值，后端双写 */
+  address?: string
   isDefault: number
 }
 

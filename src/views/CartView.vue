@@ -158,7 +158,8 @@ async function loadCart() {
 
 function selectAddress(item: Address) {
   selectedAddressId.value = item.id
-  address.value = `${item.consignee} ${item.phone} ${item.addressDetail}`
+  const detail = item.addressDetail || item.address || ''
+  address.value = `${item.consignee} ${item.phone} ${detail}`.trim()
 }
 
 async function createAddress() {
