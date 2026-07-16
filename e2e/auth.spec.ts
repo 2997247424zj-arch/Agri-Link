@@ -41,7 +41,16 @@ test('ordinary account registration does not request an email code', async ({ pa
   await page.route('**/api/auth/register', async (route) => {
     registerPayload = route.request().postDataJSON() as Record<string, unknown>
     await route.fulfill({
-      json: { success: true, data: { userName: 'new_buyer', role: 'BUYER', nickName: '新买家' } },
+      json: {
+        success: true,
+        data: {
+          userName: 'new_buyer',
+          role: 'BUYER',
+          nickName: '新买家',
+          token: 'e2e.jwt.buyer',
+          headerName: 'Authorization',
+        },
+      },
     })
   })
 
@@ -74,7 +83,13 @@ test('email registration verifies the address and signs in from the register res
     await route.fulfill({
       json: {
         success: true,
-        data: { userName: 'new_farmer@163.com', role: 'FARMER', nickName: '新农户' },
+        data: {
+          userName: 'new_farmer@163.com',
+          role: 'FARMER',
+          nickName: '新农户',
+          token: 'e2e.jwt.farmer',
+          headerName: 'Authorization',
+        },
       },
     })
   })
@@ -84,7 +99,11 @@ test('email registration verifies the address and signs in from the register res
       json: {
         success: true,
         data: {
-          user: { userName: 'new_farmer', role: 'FARMER', nickName: '新农户' },
+          userName: 'new_farmer',
+          role: 'FARMER',
+          nickName: '新农户',
+          token: 'e2e.jwt.farmer-login',
+          headerName: 'Authorization',
         },
       },
     })

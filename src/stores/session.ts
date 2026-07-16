@@ -32,18 +32,30 @@ export const useSessionStore = defineStore('session', () => {
   const userName = ref(readStorage('agri-link-user'))
   const role = ref<UserRole>((readStorage('agri-link-role') as UserRole) || 'FARMER')
   const displayName = ref(readStorage('agri-link-display') || userName.value || '访客')
+  const token = ref(readStorage('agri-link-token'))
 
   const roleLabel = computed(() => roleLabels[role.value] ?? role.value)
-  const isLoggedIn = computed(() => Boolean(userName.value))
+  const isLoggedIn = computed(() => Boolean(userName.value && token.value))
 
   // 登录状态持久化到 localStorage，刷新后继续可用。
-  function persist(nextUserName: string, nextRole: UserRole | string, nextDisplayName?: string) {
+  function persist(
+    nextUserName: string,
+    nextRole: UserRole | string,
+    nextDisplayName?: string,
+    nextToken?: string,
+  ) {
     userName.value = nextUserName
     role.value = nextRole as UserRole
     displayName.value = nextDisplayName || nextUserName
+    token.value = nextToken || ''
     writeStorage('agri-link-user', userName.value)
     writeStorage('agri-link-role', role.value)
     writeStorage('agri-link-display', displayName.value)
+    if (token.value) {
+      writeStorage('agri-link-token', token.value)
+    } else {
+      removeStorage('agri-link-token')
+    }
   }
 
   async function login(payload: { userName: string; password: string; role?: UserRole | string }) {
@@ -55,6 +67,7 @@ export const useSessionStore = defineStore('session', () => {
       returnedUser?.userName ?? data.userName ?? payload.userName,
       returnedUser?.role ?? data.role ?? payload.role ?? 'FARMER',
       returnedUser?.nickName ?? returnedUser?.realName ?? data.nickName,
+      data.token,
     )
   }
 
@@ -69,6 +82,7 @@ export const useSessionStore = defineStore('session', () => {
       returnedUser?.userName ?? data.userName ?? payload.userName,
       returnedUser?.role ?? data.role ?? payload.role,
       returnedUser?.nickName ?? returnedUser?.realName ?? data.nickName,
+      data.token,
     )
   }
 
@@ -83,10 +97,12 @@ export const useSessionStore = defineStore('session', () => {
     userName.value = ''
     role.value = 'FARMER'
     displayName.value = '访客'
+    token.value = ''
     removeStorage('agri-link-user')
     removeStorage('agri-link-role')
     removeStorage('agri-link-display')
+    removeStorage('agri-link-token')
   }
 
-  return { userName, role, displayName, roleLabel, isLoggedIn, login, sendEmailCode, register, setRole, logout }
+  return { userName, role, displayName, token, roleLabel, isLoggedIn, login, sendEmailCode, register, setRole, logout }
 })

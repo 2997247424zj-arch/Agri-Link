@@ -36,7 +36,11 @@ export interface AuthResponse {
   user?: User
   userName?: string
   nickName?: string
+  realName?: string
   role?: UserRole | string
+  roleLabel?: string
+  token?: string
+  headerName?: string
 }
 
 export interface Bank {

@@ -18,6 +18,13 @@ export class ApiError extends Error {
   }
 }
 
+function applyAuthHeaders(headers: Headers) {
+  const token = typeof localStorage === 'undefined' ? '' : localStorage.getItem('agri-link-token')
+  if (token) {
+    headers.set('Authorization', `Bearer ${token}`)
+  }
+}
+
 export async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
   const startedAt = typeof performance === 'undefined' ? Date.now() : performance.now()
   const headers = new Headers(options.headers)
@@ -27,19 +34,11 @@ export async function request<T>(path: string, options: RequestOptions = {}): Pr
     headers.set('Content-Type', 'application/json')
   }
 
-  // 后端以 X-User-Role 做演示鉴权，默认读取当前会话角色。
-  const storedRole = typeof localStorage === 'undefined' ? '' : localStorage.getItem('agri-link-role')
-  const role = options.role ?? storedRole
-  if (role) {
-    headers.set('X-User-Role', role)
-  }
+  // 使用登录返回的 JWT；不再发送可伪造的 X-User-Role / X-User-Name。
+  applyAuthHeaders(headers)
 
-  const storedUser = typeof localStorage === 'undefined' ? '' : localStorage.getItem('agri-link-user')
-  if (storedUser) {
-    headers.set('X-User-Name', storedUser)
-  }
-
-  const getKey = method === 'GET' && !options.body ? `${path}|${role ?? ''}` : ''
+  const token = typeof localStorage === 'undefined' ? '' : localStorage.getItem('agri-link-token') || ''
+  const getKey = method === 'GET' && !options.body ? `${path}|${token}` : ''
   if (getKey && pendingGets.has(getKey)) {
     return pendingGets.get(getKey) as Promise<T>
   }
@@ -108,10 +107,7 @@ export const api = {
 
 export async function downloadFile(path: string, fileName: string) {
   const headers = new Headers()
-  const storedRole = typeof localStorage === 'undefined' ? '' : localStorage.getItem('agri-link-role')
-  if (storedRole) headers.set('X-User-Role', storedRole)
-  const storedUser = typeof localStorage === 'undefined' ? '' : localStorage.getItem('agri-link-user')
-  if (storedUser) headers.set('X-User-Name', storedUser)
+  applyAuthHeaders(headers)
 
   const response = await fetch(`${API_BASE}${path}`, { headers })
   if (!response.ok) throw new ApiError(`导出失败: HTTP ${response.status}`, response.status)

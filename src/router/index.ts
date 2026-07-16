@@ -61,13 +61,15 @@ router.beforeEach((to) => {
   if (typeof localStorage === 'undefined' || typeof to.name !== 'string') return true
 
   const userName = localStorage.getItem('agri-link-user')
+  const token = localStorage.getItem('agri-link-token')
   const role = localStorage.getItem('agri-link-role') as UserRole | null
-  if (to.name === 'auth' && userName) return roleHomeRoutes[role as UserRole] ?? '/'
+  const loggedIn = Boolean(userName && token)
+  if (to.name === 'auth' && loggedIn) return roleHomeRoutes[role as UserRole] ?? '/'
 
   const allowedRoles = routeRoles[to.name]
   if (!allowedRoles) return true
 
-  if (!userName) return { name: 'auth', query: { redirect: to.fullPath, reason: 'login' } }
+  if (!loggedIn) return { name: 'auth', query: { redirect: to.fullPath, reason: 'login' } }
   if (allowedRoles.includes(role as UserRole)) return true
 
   return roleHomeRoutes[role as UserRole] ?? '/'
