@@ -11,27 +11,31 @@ All accounts use the same plain password: `Test@123456`
 | Account | Role | Select in frontend | Useful verification pages |
 | --- | --- | --- | --- |
 | `dev_admin` | System admin | System admin | Admin users, trade orders, purchases, finance, knowledge |
-| `dev_farmer` | Farmer | Farmer | Trade publishing, profile records, finance application, expert consultation |
-| `dev_buyer` | Buyer | Buyer | Trade browsing, cart, purchase orders, knowledge comments |
-| `dev_expert` | Expert | Expert | Expert profile, Q&A replies, reservation handling, knowledge content |
-| `dev_bank` | Bank | Bank | Bank products, finance approval, farmer financing intentions |
+| `dev_farmer` | Farmer | Farmer | Trade publishing, approved/pending finance applications, expert consultation |
+| `dev_farmer2` | Farmer | Farmer | Orchard products, rejected/pending finance cases, fruit-tree reservations |
+| `dev_buyer` | Buyer | Buyer | Trade browsing, cart, pending purchase orders, knowledge comments |
+| `dev_buyer2` | Buyer | Buyer | Supermarket bulk purchases, delivered orders, logistics and comments |
+| `dev_expert` | Expert | Expert | Fruit-tree Q&A replies, onsite reservations, knowledge content |
+| `dev_expert2` | Expert | Expert | Crop-protection Q&A, remote reservations, rice guidance content |
+| `dev_bank` | Bank | Bank | Spring-farming products, finance approval and farmer matching |
+| `dev_bank2` | Bank | Bank | Orchard/equipment products, rejected cases and intention matching |
 
 ## Seed data scope
 
-The script uses fixed IDs from `19001` to `19020` and cleans the same range before inserting, so it can be executed repeatedly.
+The script uses fixed IDs from `19001` to `19040` and cleans the same range before inserting, so it can be executed repeatedly.
 
 Tables covered:
 
-- `tb_user`: five role accounts;
-- `tb_expert`: expert profile;
-- `tb_bank` / `tb_bank_user`: bank products and bank user;
+- `tb_user`: nine accounts across five roles;
+- `tb_expert`: two expert profiles;
+- `tb_bank` / `tb_bank_user`: four products and two bank users;
 - `tb_address`: buyer/farmer addresses;
-- `tb_order`: farmer trade orders;
-- `tb_shoppingcart`: buyer cart;
+- `tb_order`: eight Chinese-named products and services from two farmers;
+- `tb_shoppingcart`: carts for both buyers;
 - `tb_purchase` / `tb_purchase_detail` / `tb_sell_purchase`: purchase flow records;
-- `tb_finance` / `tb_financing_intention`: finance applications and intentions;
-- `tb_question` / `tb_reserve`: expert Q&A and reservations;
-- `tb_knowledge` / `tb_discuss`: knowledge articles and comments.
+- `tb_finance` / `tb_financing_intention`: pending, approved and rejected cases;
+- `tb_question` / `tb_reserve`: answered/pending Q&A and onsite/video reservations;
+- `tb_knowledge` / `tb_discuss`: Chinese guidance articles, platform news and comments.
 
 ## How to execute
 

@@ -142,9 +142,13 @@ public class SecurityConfig {
                                 "/error"
                         ).permitAll()
                         // 登录与注册：未认证用户唯一合法的 POST 入口。
-                        .requestMatchers(HttpMethod.POST, "/api/auth/login", "/api/auth/register").permitAll()
+                        .requestMatchers(HttpMethod.POST,
+                                "/api/auth/login", "/api/auth/register", "/api/auth/email-code").permitAll()
                         // 后台管理接口仅超级管理员可访问。
                         .requestMatchers("/api/admin/**").hasRole("SYSTEM_ADMIN")
+                        // 通知接口：所有已登录用户可读取和标记自己的通知。
+                        .requestMatchers("/api/notifications/**")
+                                .hasAnyRole("BUYER", "FARMER", "EXPERT", "BANK", "SYSTEM_ADMIN")
                         // 图片上传需要已登录角色，避免匿名上传文件。
                         .requestMatchers(HttpMethod.POST, "/api/files/images")
                                 .hasAnyRole("BUYER", "FARMER", "EXPERT", "BANK", "SYSTEM_ADMIN")
@@ -170,7 +174,11 @@ public class SecurityConfig {
                         .requestMatchers("/api/users/**").hasAnyRole("BUYER", "FARMER", "EXPERT", "BANK", "SYSTEM_ADMIN")
                         // 收货地址：仅买家与农户需要。
                         .requestMatchers("/api/addresses/**").hasAnyRole("BUYER", "FARMER")
-                        // 订单操作：买家下单、农户发货。
+                        // 订单操作：货源的增改删仅农户（发布方）可执行，买家只能浏览（GET 已在上方公开）。
+                        .requestMatchers(HttpMethod.POST, "/api/trade/orders").hasRole("FARMER")
+                        .requestMatchers(HttpMethod.PUT, "/api/trade/orders/*").hasRole("FARMER")
+                        .requestMatchers(HttpMethod.PATCH, "/api/trade/orders/*/status").hasRole("FARMER")
+                        .requestMatchers(HttpMethod.DELETE, "/api/trade/orders/*").hasRole("FARMER")
                         .requestMatchers("/api/trade/orders/**").hasAnyRole("BUYER", "FARMER")
                         // 购物车：买家的专属功能。
                         .requestMatchers("/api/trade/shopping-cart/**").hasRole("BUYER")

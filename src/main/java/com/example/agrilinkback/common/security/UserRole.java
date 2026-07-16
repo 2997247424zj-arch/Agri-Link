@@ -127,8 +127,8 @@ public enum UserRole {
      *   <li>输入经过去空白和 {@code toUpperCase()} 标准化处理</li>
      *   <li>字符 {@code "ADMIN"} 会映射为 {@code SYSTEM_ADMIN} 的编码，
      *       以兼容外部系统或历史数据使用简短编码的场景</li>
-     *   <li>字符 {@code "USER"} 会映射为 {@code BUYER} 的编码，
-     *       以兼容将普通用户简称为 {@code "USER"} 的传参习惯</li>
+     *   <li>字符 {@code "USER"} 会映射为 {@code FARMER} 的编码，
+     *       以兼容历史数据中将农户存储为 {@code "user"} 的情况</li>
      *   <li>其他值按标准化后的字符串与各角色 {@code code} 字段精确匹配</li>
      * </ul>
      *
@@ -149,7 +149,7 @@ public enum UserRole {
         // 兼容映射：将“ADMIN”和“USER”简短编码映射到平台标准角色编码
         String roleCode = switch (normalized) {
             case "ADMIN" -> SYSTEM_ADMIN.code;
-            case "USER" -> BUYER.code;
+            case "USER" -> FARMER.code;
             default -> normalized;
         };
         // 遍历所有枚举值，匹配code字段后返回第一个结果

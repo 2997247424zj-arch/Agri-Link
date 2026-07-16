@@ -8,14 +8,20 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.mail.SimpleMailMessage;
+import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.RequestPostProcessor;
 
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
@@ -24,6 +30,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 
 @ActiveProfiles("test")
 @AutoConfigureMockMvc
@@ -35,6 +42,9 @@ class AgriLinkBackApplicationTests {
 
     @Autowired
     private ObjectMapper objectMapper;
+
+    @MockitoBean
+    private JavaMailSender mailSender;
 
     @Test
     void healthEndpointReturnsUnifiedResponse() throws Exception {
@@ -128,8 +138,49 @@ class AgriLinkBackApplicationTests {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
-                                  "userName": "bank002",
+                                  "userName": "buyer002",
                                   "password": "secret",
+                                  "nickName": "Buyer Two",
+                                  "role": "BUYER"
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.userName").value("buyer002"))
+                .andExpect(jsonPath("$.data.role").value("BUYER"));
+
+        mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "userName": "buyer002",
+                                  "password": "secret"
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.role").value("BUYER"));
+
+        mockMvc.perform(post("/api/auth/email-code")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "email": "bank002@163.com"
+                                }
+                                """))
+                .andExpect(status().isOk());
+
+        var messageCaptor = org.mockito.ArgumentCaptor.forClass(SimpleMailMessage.class);
+        verify(mailSender).send(messageCaptor.capture());
+        Matcher codeMatcher = Pattern.compile("\\b(\\d{6})\\b")
+                .matcher(messageCaptor.getValue().getText());
+        assertThat(codeMatcher.find()).isTrue();
+
+        mockMvc.perform(post("/api/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "userName": "bank002@163.com",
+                                  "password": "secret",
+                                  "verificationCode": "%s",
                                   "nickName": "Bank Two",
                                   "phone": "13800000902",
                                   "identityNum": "430000199701010002",
@@ -137,26 +188,48 @@ class AgriLinkBackApplicationTests {
                                   "role": "BANK",
                                   "realName": "Bank User"
                                 }
-                                """))
+                                """.formatted(codeMatcher.group(1))))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.userName").value("bank002"))
+                .andExpect(jsonPath("$.data.userName").value("bank002@163.com"))
                 .andExpect(jsonPath("$.data.role").value("BANK"));
 
+        mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "userName": "bank002@163.com",
+                                  "password": "secret"
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.role").value("BANK"));
+
+        byte[] imageBytes = new byte[]{(byte) 0x89, 0x50, 0x4e, 0x47};
         MockMultipartFile image = new MockMultipartFile(
                 "file",
                 "orange.png",
                 "image/png",
-                new byte[]{(byte) 0x89, 0x50, 0x4e, 0x47}
+                imageBytes
         );
-        mockMvc.perform(multipart("/api/files/images")
+        String uploadBody = mockMvc.perform(multipart("/api/files/images")
                         .file(image)
                         .with(role("FARMER")))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.originalName").value("orange.png"))
                 .andExpect(jsonPath("$.data.contentType").value("image/png"))
-                .andExpect(jsonPath("$.data.url").value(org.hamcrest.Matchers.startsWith("/files/")));
+                .andExpect(jsonPath("$.data.url").value(org.hamcrest.Matchers.startsWith("/files/")))
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
 
-        mockMvc.perform(delete("/api/users/bank002").with(role("BANK")))
+        String uploadedUrl = objectMapper.readTree(uploadBody).path("data").path("url").asText();
+        mockMvc.perform(get(uploadedUrl))
+                .andExpect(status().isOk())
+                .andExpect(content().bytes(imageBytes));
+
+        mockMvc.perform(delete("/api/users/bank002@163.com").with(role("BANK")))
+                .andExpect(status().isOk());
+        mockMvc.perform(delete("/api/users/buyer002").with(role("BUYER")))
                 .andExpect(status().isOk());
     }
 
@@ -382,7 +455,26 @@ class AgriLinkBackApplicationTests {
                                 """))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.userName").value("farmer001"))
-                .andExpect(jsonPath("$.data.password").value("new-secret"));
+                .andExpect(jsonPath("$.data.password").value(org.hamcrest.Matchers.startsWith("$2")));
+
+        mockMvc.perform(put("/api/users/farmer001")
+                        .with(role("FARMER"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "userName": "farmer001",
+                                  "password": "must-not-overwrite",
+                                  "nickName": "Farmer One",
+                                  "phone": "13800000001",
+                                  "identityNum": "430000199001010001",
+                                  "address": "Jishou",
+                                  "role": "BANK",
+                                  "realName": "Zhang San"
+                                }
+                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.password").value(org.hamcrest.Matchers.startsWith("$2")))
+                .andExpect(jsonPath("$.data.role").value("FARMER"));
 
         mockMvc.perform(get("/api/finance/banks/matches?amount=30000"))
                 .andExpect(status().isUnauthorized());
@@ -504,7 +596,7 @@ class AgriLinkBackApplicationTests {
         int purchaseId = objectMapper.readTree(purchaseResponse).path("data").path("purchaseId").asInt();
 
         mockMvc.perform(patch("/api/trade/orders/{orderId}/status", orderId)
-                        .with(role("BUYER"))
+                        .with(role("FARMER"))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
@@ -732,13 +824,13 @@ class AgriLinkBackApplicationTests {
                 .getContentAsString();
         int questionId = objectMapper.readTree(questionResponse).path("data").path("id").asInt();
 
+        // 兼容仅提交 answer、省略 status 的调用（默认 status=1）
         mockMvc.perform(patch("/api/consultation/questions/{id}/answer", questionId)
                         .with(role("EXPERT"))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
-                                  "answer": "Improve watering and nutrition.",
-                                  "status": 1
+                                  "answer": "Improve watering and nutrition."
                                 }
                                 """))
                 .andExpect(status().isOk())
@@ -821,16 +913,23 @@ class AgriLinkBackApplicationTests {
                 "/api/addresses/{id}",
                 "/api/addresses/owners/{ownName}",
                 "/api/admin/finance/applications",
+                "/api/admin/finance/applications/export",
                 "/api/admin/knowledge",
                 "/api/admin/knowledge/{knowledgeId}",
                 "/api/admin/knowledge/{knowledgeId}/status",
                 "/api/admin/overview",
                 "/api/admin/trade/orders",
+                "/api/admin/trade/orders/export",
                 "/api/admin/trade/orders/{orderId}/status",
                 "/api/admin/trade/purchases",
+                "/api/admin/trade/purchases/export",
                 "/api/admin/trade/purchases/{purchaseId}/status",
                 "/api/admin/users",
+                "/api/admin/users/export",
+                "/api/admin/users/{userName}",
+                "/api/admin/users/{userName}/enabled",
                 "/api/admin/users/{userName}/role",
+                "/api/auth/email-code",
                 "/api/auth/login",
                 "/api/auth/register",
                 "/api/consultation/questions",
@@ -857,6 +956,10 @@ class AgriLinkBackApplicationTests {
                 "/api/knowledge/{knowledgeId}",
                 "/api/knowledge/{knowledgeId}/discusses",
                 "/api/knowledge/{knowledgeId}/discusses/{discussId}",
+                "/api/notifications",
+                "/api/notifications/read-all",
+                "/api/notifications/unread-count",
+                "/api/notifications/{id}/read",
                 "/api/system/health",
                 "/api/system/roles",
                 "/api/trade/orders",

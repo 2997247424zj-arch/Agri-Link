@@ -15,6 +15,7 @@ public record User(
         Integer integral,
         Integer credit,
         String avatar,
-        String realName
+        String realName,
+        Boolean enabled
 ) {
 }

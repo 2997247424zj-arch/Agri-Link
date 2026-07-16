@@ -8,6 +8,7 @@ import com.example.agrilinkback.module.user.entity.User;
 import com.example.agrilinkback.module.user.mapper.UserMapper;
 import java.time.LocalDateTime;
 import java.util.List;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
 /**
@@ -17,6 +18,8 @@ import org.springframework.stereotype.Service;
  */
 @Service
 public class UserService {
+
+    private static final BCryptPasswordEncoder BCRYPT = new BCryptPasswordEncoder();
 
     private final UserMapper userMapper;
 
@@ -50,18 +53,19 @@ public class UserService {
         User existing = getUser(userName);
         User user = new User(
                 userName,
-                request.password(),
+                existing.password(),
                 request.nickName(),
                 request.phone(),
                 request.identityNum(),
                 request.address(),
-                requireBusinessRole(request.role()).code(),
+                existing.role(),
                 existing.createTime(),
                 LocalDateTime.now(),
                 existing.integral(),
                 existing.credit(),
                 request.avatar(),
-                request.realName()
+                request.realName(),
+                existing.enabled()
         );
         userMapper.update(user);
         return getUser(userName);
@@ -74,14 +78,14 @@ public class UserService {
 
     public User updatePassword(String userName, PasswordRequest request) {
         getUser(userName);
-        userMapper.updatePassword(userName, request.password());
+        userMapper.updatePassword(userName, BCRYPT.encode(request.password()));
         return getUser(userName);
     }
 
     private User toUser(UserRequest request, LocalDateTime now, Integer integral, Integer credit) {
         return new User(
                 request.userName(),
-                request.password(),
+                BCRYPT.encode(request.password()),
                 request.nickName(),
                 request.phone(),
                 request.identityNum(),
@@ -92,7 +96,8 @@ public class UserService {
                 integral,
                 credit,
                 request.avatar(),
-                request.realName()
+                request.realName(),
+                true
         );
     }
 

@@ -65,7 +65,7 @@ CREATE TABLE `tb_bank`  (
   `bank_phone` varchar(255) CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci NOT NULL,
   `money` decimal(65, 2) NOT NULL,
   `rate` decimal(65, 2) NOT NULL,
-  `repayment` int NOT NULL,
+  `repayment` varchar(64) CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci NOT NULL,
   PRIMARY KEY (`bank_id`) USING BTREE
 ) ENGINE = InnoDB AUTO_INCREMENT = 19003 CHARACTER SET = utf8mb3 COLLATE = utf8mb3_general_ci ROW_FORMAT = COMPACT;
 
@@ -104,9 +104,9 @@ CREATE TABLE `tb_bank_user`  (
 -- ----------------------------
 -- Records of tb_bank_user
 -- ----------------------------
-INSERT INTO `tb_bank_user` VALUES ('buser01', 1001, '$2a$10$AC1gCsk1V5Ov7n.zvkxxvuMM4f3BnWmJqr4jNNYtVAm8j4nBdxIUq', '王家明', '13236963696', 'user', '2022-04-02 16:19:10', '2022-04-02 16:19:13');
-INSERT INTO `tb_bank_user` VALUES ('buser02', 1006, '$2a$10$AC1gCsk1V5Ov7n.zvkxxvuMM4f3BnWmJqr4jNNYtVAm8j4nBdxIUq', '刘璐', '13236963696', 'user', '2022-04-02 16:19:10', '2022-04-02 16:19:13');
-INSERT INTO `tb_bank_user` VALUES ('buser03', 1001, '$2a$10$AC1gCsk1V5Ov7n.zvkxxvuMM4f3BnWmJqr4jNNYtVAm8j4nBdxIUq', '李涵', '13236963696', 'user', '2022-04-02 16:19:10', '2022-04-02 16:19:13');
+INSERT INTO `tb_bank_user` VALUES ('buser01', 1001, '$2a$10$AC1gCsk1V5Ov7n.zvkxxvuMM4f3BnWmJqr4jNNYtVAm8j4nBdxIUq', '王家明', '13236963696', 'BANK', '2022-04-02 16:19:10', '2022-04-02 16:19:13');
+INSERT INTO `tb_bank_user` VALUES ('buser02', 1006, '$2a$10$AC1gCsk1V5Ov7n.zvkxxvuMM4f3BnWmJqr4jNNYtVAm8j4nBdxIUq', '刘璐', '13236963696', 'BANK', '2022-04-02 16:19:10', '2022-04-02 16:19:13');
+INSERT INTO `tb_bank_user` VALUES ('buser03', 1001, '$2a$10$AC1gCsk1V5Ov7n.zvkxxvuMM4f3BnWmJqr4jNNYtVAm8j4nBdxIUq', '李涵', '13236963696', 'BANK', '2022-04-02 16:19:10', '2022-04-02 16:19:13');
 INSERT INTO `tb_bank_user` VALUES ('dev_bank', 19001, '$2a$10$BnbMjtNYz3Ny2fb2DSzcY.G.FUF6fjBVt8/0VwUT54Vw07JqBrrxC', 'Lin Manager', '13800009004', 'BANK', '2026-07-08 11:34:29', '2026-07-08 11:34:29');
 
 -- ----------------------------
@@ -180,7 +180,7 @@ CREATE TABLE `tb_finance`  (
   `remark` varchar(255) CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci NULL DEFAULT NULL,
   `money` decimal(65, 2) NOT NULL,
   `rate` decimal(65, 2) NOT NULL,
-  `repayment` int NOT NULL,
+  `repayment` varchar(64) CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci NOT NULL,
   `create_time` datetime NOT NULL,
   `update_time` datetime NOT NULL,
   `combination_name1` varchar(64) CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci NULL DEFAULT NULL,
@@ -220,8 +220,8 @@ CREATE TABLE `tb_financing_intention`  (
   `amount` int NOT NULL,
   `application` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
   `item` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
-  `repayment_period` int NOT NULL,
-  `area` int NOT NULL,
+  `repayment_period` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
+  `area` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
   `phone` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
   `create_time` datetime NOT NULL,
   `update_time` datetime NOT NULL,
@@ -505,7 +505,7 @@ CREATE TABLE `tb_user`  (
   `phone` varchar(255) CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci NULL DEFAULT NULL,
   `identity_num` varchar(255) CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci NULL DEFAULT NULL,
   `address` varchar(255) CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci NULL DEFAULT NULL COMMENT '地址',
-  `role` varchar(255) CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci NOT NULL DEFAULT 'user' COMMENT 'user普通用户，expert专家，admin管理员',
+  `role` varchar(255) CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci NOT NULL DEFAULT 'FARMER' COMMENT 'FARMER农户，BUYER买家，EXPERT专家，BANK银行，SYSTEM_ADMIN管理员',
   `create_time` datetime NOT NULL,
   `update_time` datetime NOT NULL,
   `integral` int NULL DEFAULT 500 COMMENT '积分500',
@@ -518,32 +518,32 @@ CREATE TABLE `tb_user`  (
 -- ----------------------------
 -- Records of tb_user
 -- ----------------------------
-INSERT INTO `tb_user` VALUES ('admin', '$2a$10$AC1gCsk1V5Ov7n.zvkxxvuMM4f3BnWmJqr4jNNYtVAm8j4nBdxIUq', '管理员', '17894286579', '370343199612012718', '山东省青岛市', 'admin', '2021-09-01 09:00:51', '2022-09-01 16:35:24', 0, 0, '2ae82e5cf7ca47c9ab516d37dccab5dd.jpg', '');
+INSERT INTO `tb_user` VALUES ('admin', '$2a$10$AC1gCsk1V5Ov7n.zvkxxvuMM4f3BnWmJqr4jNNYtVAm8j4nBdxIUq', '管理员', '17894286579', '370343199612012718', '山东省青岛市', 'SYSTEM_ADMIN', '2021-09-01 09:00:51', '2022-09-01 16:35:24', 0, 0, '2ae82e5cf7ca47c9ab516d37dccab5dd.jpg', '');
 INSERT INTO `tb_user` VALUES ('demo', '111111', 'demo', '1107197845', NULL, '东莞', 'FARMER', '2026-07-08 20:15:11', '2026-07-08 20:15:11', 500, 5, NULL, '老六');
-INSERT INTO `tb_user` VALUES ('dev_admin', '$2a$10$BnbMjtNYz3Ny2fb2DSzcY.G.FUF6fjBVt8/0VwUT54Vw07JqBrrxC', 'Dev Admin', '13800009000', '430000199001019000', 'Jishou Admin Office', 'SYSTEM_ADMIN', '2026-07-08 11:34:29', '2026-07-08 11:34:29', 1000, 5, 'dev-admin.png', 'Dev Admin');
-INSERT INTO `tb_user` VALUES ('dev_bank', '$2a$10$BnbMjtNYz3Ny2fb2DSzcY.G.FUF6fjBVt8/0VwUT54Vw07JqBrrxC', 'Dev Bank', '13800009004', '430000199001019004', 'Xiangxi Rural Commercial Bank', 'BANK', '2026-07-08 11:34:29', '2026-07-08 11:34:29', 900, 5, 'dev-bank.png', 'Lin Manager');
-INSERT INTO `tb_user` VALUES ('dev_buyer', '$2a$10$BnbMjtNYz3Ny2fb2DSzcY.G.FUF6fjBVt8/0VwUT54Vw07JqBrrxC', 'Dev Buyer', '13800009002', '430000199001019002', 'Changsha Purchase Center', 'BUYER', '2026-07-08 11:34:29', '2026-07-08 11:34:29', 720, 4, 'dev-buyer.png', 'Chen Buyer');
-INSERT INTO `tb_user` VALUES ('dev_expert', '$2a$10$BnbMjtNYz3Ny2fb2DSzcY.G.FUF6fjBVt8/0VwUT54Vw07JqBrrxC', 'Dev Expert', '13800009003', '430000199001019003', 'Hunan Agricultural University', 'EXPERT', '2026-07-08 11:34:29', '2026-07-08 11:34:29', 980, 5, 'dev-expert.png', 'Zhou Expert');
-INSERT INTO `tb_user` VALUES ('dev_farmer', '$2a$10$BnbMjtNYz3Ny2fb2DSzcY.G.FUF6fjBVt8/0VwUT54Vw07JqBrrxC', 'Dev Farmer', '13800009001', '430000199001019001', 'Shibadong Kiwi Base, Huayuan', 'FARMER', '2026-07-08 11:34:29', '2026-07-08 11:34:29', 860, 5, 'dev-farmer.png', 'Shi Xiaoman');
-INSERT INTO `tb_user` VALUES ('fengj', '$2a$10$AC1gCsk1V5Ov7n.zvkxxvuMM4f3BnWmJqr4jNNYtVAm8j4nBdxIUq', '冯洁', '15623652222', '370343199612012718', '山东省威海市', 'expert', '2021-08-30 09:20:24', '2022-08-23 15:23:34', 0, 0, 'fb7eb52c76c747999e553fca1ee6dc9f.png', '冯洁');
-INSERT INTO `tb_user` VALUES ('gaoge', '$2a$10$AC1gCsk1V5Ov7n.zvkxxvuMM4f3BnWmJqr4jNNYtVAm8j4nBdxIUq', '高歌', '18766661439', '370343199612016352', '山东省临沂市', 'expert', '2021-08-27 16:05:20', '2022-09-01 11:21:11', 0, 0, 'expert04.png', '高歌');
-INSERT INTO `tb_user` VALUES ('lijj', '$2a$10$AC1gCsk1V5Ov7n.zvkxxvuMM4f3BnWmJqr4jNNYtVAm8j4nBdxIUq', '佳俊', '15623652222', '370343199612012718', '山东省威海市', 'expert', '2021-08-30 09:20:24', '2022-08-23 15:23:34', 0, 0, 'expert02.png', '李佳俊');
-INSERT INTO `tb_user` VALUES ('lisi', '$2a$10$AC1gCsk1V5Ov7n.zvkxxvuMM4f3BnWmJqr4jNNYtVAm8j4nBdxIUq', '思思', '15623652365', '371323199601062719', '山东省临沂市', 'user', '2022-08-19 16:39:11', '2022-09-01 17:20:04', 0, 0, 'expert07.png', '李思');
-INSERT INTO `tb_user` VALUES ('liux', '$2a$10$AC1gCsk1V5Ov7n.zvkxxvuMM4f3BnWmJqr4jNNYtVAm8j4nBdxIUq', '刘旭', '15623652222', '370343199612012718', '山东省威海市', 'expert', '2021-08-30 09:20:24', '2022-08-23 15:23:34', 0, 0, 'expert01.png', '刘旭');
-INSERT INTO `tb_user` VALUES ('liyy', '$2a$10$AC1gCsk1V5Ov7n.zvkxxvuMM4f3BnWmJqr4jNNYtVAm8j4nBdxIUq', '依依', '15623652222', '370343199612012718', '山东省威海市', 'expert', '2021-08-30 09:20:24', '2022-08-23 15:23:34', 0, 0, '9908de80aae54f8590b301ee9517beac.png', '李依依');
-INSERT INTO `tb_user` VALUES ('lzh', '$2a$10$AC1gCsk1V5Ov7n.zvkxxvuMM4f3BnWmJqr4jNNYtVAm8j4nBdxIUq', '小李', '15621367568', '373312199801032719', '山东省威海市', 'user', '2022-07-22 11:05:54', '2022-09-07 16:45:53', 0, 0, 'ac10c6dc98d14afda5f09ba81f286197.jpg', '李增虎');
-INSERT INTO `tb_user` VALUES ('tyy', '$2a$10$AC1gCsk1V5Ov7n.zvkxxvuMM4f3BnWmJqr4jNNYtVAm8j4nBdxIUq', '公举', '15236983695', '370343199613652415', '山东省青岛市', 'user', '2021-08-30 09:59:50', '2022-08-10 15:44:36', 0, 0, '39557b8fb7a54f81833c8d4a7309b05c.jpg', '唐艳艳');
-INSERT INTO `tb_user` VALUES ('wangya', '$2a$10$nLKfTbJqrA5IoRdY.PsZBOACe2s4H3k2NPKLy5LdWL0wKWno0.oDG', '王娅', '13792449255', '370213198911120506', '山东省青岛市', 'user', '2022-09-08 10:14:22', '2022-09-08 10:19:34', 0, 0, '39557b8fb7a54f81833c8d4a7309b05c.jpg', '王娅');
-INSERT INTO `tb_user` VALUES ('wuhan', '$2a$10$AC1gCsk1V5Ov7n.zvkxxvuMM4f3BnWmJqr4jNNYtVAm8j4nBdxIUq', '吴晗', '15623652222', '370343199612012718', '山东省威海市', 'expert', '2021-08-30 09:20:24', '2022-08-23 15:23:34', 0, 0, 'expert08.png', '吴晗');
-INSERT INTO `tb_user` VALUES ('wyn', '$2a$10$AC1gCsk1V5Ov7n.zvkxxvuMM4f3BnWmJqr4jNNYtVAm8j4nBdxIUq', '玉娜', '18711236658', '370123200008123456', '山东省威海市', 'expert', '2021-08-27 16:05:20', '2022-09-01 11:21:11', 0, 0, 'expert11.png', '王玉娜');
-INSERT INTO `tb_user` VALUES ('wyn2', '$2a$10$AC1gCsk1V5Ov7n.zvkxxvuMM4f3BnWmJqr4jNNYtVAm8j4nBdxIUq', '艳安', '15623652222', '370343199612012718', '山东省威海市', 'expert', '2021-08-30 09:20:24', '2022-08-23 15:23:34', 0, 0, 'expert10.png', '王艳安');
-INSERT INTO `tb_user` VALUES ('wyn3', '$2a$10$AC1gCsk1V5Ov7n.zvkxxvuMM4f3BnWmJqr4jNNYtVAm8j4nBdxIUq', '丫丫', '15630429628', '324624861233056852', '山东省青岛市', 'user', '2022-04-11 11:36:03', '2022-08-18 15:04:18', 0, 0, 'bd12eba3a9a24d89845ebbdb7fbff448.jpg', '王亚楠');
-INSERT INTO `tb_user` VALUES ('zhangsan', '$2a$10$AC1gCsk1V5Ov7n.zvkxxvuMM4f3BnWmJqr4jNNYtVAm8j4nBdxIUq', '三三', '13792499274', '370343199609176060', '山东省青岛市', 'user', '2022-08-19 16:37:10', '2022-08-19 16:37:10', 0, 0, 'bd12eba3a9a24d89845ebbdb7fbff448.jpg', '张三');
-INSERT INTO `tb_user` VALUES ('zhangxu', '$2a$10$AC1gCsk1V5Ov7n.zvkxxvuMM4f3BnWmJqr4jNNYtVAm8j4nBdxIUq', '张旭', '13456567878', '370123200001012233', '山东省青岛市', 'expert', '2021-08-31 10:13:42', '2022-08-10 15:43:58', 0, 0, 'expert10.png', '张旭');
-INSERT INTO `tb_user` VALUES ('zhangxukun', '$2a$10$AC1gCsk1V5Ov7n.zvkxxvuMM4f3BnWmJqr4jNNYtVAm8j4nBdxIUq', 'kelven', '13544545454', '370123200008083422', '山东省临沂市', 'user', '2021-08-27 16:05:25', '2022-08-23 15:19:28', 0, 0, '2ae82e5cf7ca47c9ab516d37dccab5dd.jpg', '张旭坤');
-INSERT INTO `tb_user` VALUES ('zhaoqm', '$2a$10$AC1gCsk1V5Ov7n.zvkxxvuMM4f3BnWmJqr4jNNYtVAm8j4nBdxIUq', '清明', '15623652222', '370343199612012718', '山东省威海市', 'expert', '2021-08-30 09:20:24', '2022-08-23 15:23:34', 0, 0, 'expert01.png', '赵清明');
-INSERT INTO `tb_user` VALUES ('zhengxin', '$2a$10$AC1gCsk1V5Ov7n.zvkxxvuMM4f3BnWmJqr4jNNYtVAm8j4nBdxIUq', '鑫鑫', '15623652222', '370343199612012718', '山东省威海市', 'expert', '2021-08-30 09:20:24', '2022-08-23 15:23:34', 0, 0, 'expert09.png', '郑鑫');
-INSERT INTO `tb_user` VALUES ('zwr', '$2a$10$AC1gCsk1V5Ov7n.zvkxxvuMM4f3BnWmJqr4jNNYtVAm8j4nBdxIUq', '张文瑞', '15623652222', '111111111111111111', '山东省威海市', 'user', '2021-08-30 09:20:24', '2022-08-23 15:23:34', 0, 0, 'bd12eba3a9a24d89845ebbdb7fbff449.jpg', '张文瑞');
+INSERT INTO `tb_user` VALUES ('dev_admin', '$2a$10$BnbMjtNYz3Ny2fb2DSzcY.G.FUF6fjBVt8/0VwUT54Vw07JqBrrxC', 'Dev Admin', '13800009000', '430000199001019000', 'Jishou Admin Office', 'SYSTEM_ADMIN', '2026-07-08 11:34:29', '2026-07-08 11:34:29', 1000, 5, 'avatar.png', 'Dev Admin');
+INSERT INTO `tb_user` VALUES ('dev_bank', '$2a$10$BnbMjtNYz3Ny2fb2DSzcY.G.FUF6fjBVt8/0VwUT54Vw07JqBrrxC', 'Dev Bank', '13800009004', '430000199001019004', 'Xiangxi Rural Commercial Bank', 'BANK', '2026-07-08 11:34:29', '2026-07-08 11:34:29', 900, 5, 'avatar.png', 'Lin Manager');
+INSERT INTO `tb_user` VALUES ('dev_buyer', '$2a$10$BnbMjtNYz3Ny2fb2DSzcY.G.FUF6fjBVt8/0VwUT54Vw07JqBrrxC', 'Dev Buyer', '13800009002', '430000199001019002', 'Changsha Purchase Center', 'BUYER', '2026-07-08 11:34:29', '2026-07-08 11:34:29', 720, 4, '2ae82e5cf7ca47c9ab516d37dccab5dd.jpg', 'Chen Buyer');
+INSERT INTO `tb_user` VALUES ('dev_expert', '$2a$10$BnbMjtNYz3Ny2fb2DSzcY.G.FUF6fjBVt8/0VwUT54Vw07JqBrrxC', 'Dev Expert', '13800009003', '430000199001019003', 'Hunan Agricultural University', 'EXPERT', '2026-07-08 11:34:29', '2026-07-08 11:34:29', 980, 5, 'expert01.png', 'Zhou Expert');
+INSERT INTO `tb_user` VALUES ('dev_farmer', '$2a$10$BnbMjtNYz3Ny2fb2DSzcY.G.FUF6fjBVt8/0VwUT54Vw07JqBrrxC', 'Dev Farmer', '13800009001', '430000199001019001', 'Shibadong Kiwi Base, Huayuan', 'FARMER', '2026-07-08 11:34:29', '2026-07-08 11:34:29', 860, 5, '0a2b73b5f1624530a5cbd25fd404a9ac.jpg', 'Shi Xiaoman');
+INSERT INTO `tb_user` VALUES ('fengj', '$2a$10$AC1gCsk1V5Ov7n.zvkxxvuMM4f3BnWmJqr4jNNYtVAm8j4nBdxIUq', '冯洁', '15623652222', '370343199612012718', '山东省威海市', 'EXPERT', '2021-08-30 09:20:24', '2022-08-23 15:23:34', 0, 0, 'fb7eb52c76c747999e553fca1ee6dc9f.png', '冯洁');
+INSERT INTO `tb_user` VALUES ('gaoge', '$2a$10$AC1gCsk1V5Ov7n.zvkxxvuMM4f3BnWmJqr4jNNYtVAm8j4nBdxIUq', '高歌', '18766661439', '370343199612016352', '山东省临沂市', 'EXPERT', '2021-08-27 16:05:20', '2022-09-01 11:21:11', 0, 0, 'expert04.png', '高歌');
+INSERT INTO `tb_user` VALUES ('lijj', '$2a$10$AC1gCsk1V5Ov7n.zvkxxvuMM4f3BnWmJqr4jNNYtVAm8j4nBdxIUq', '佳俊', '15623652222', '370343199612012718', '山东省威海市', 'EXPERT', '2021-08-30 09:20:24', '2022-08-23 15:23:34', 0, 0, 'expert02.png', '李佳俊');
+INSERT INTO `tb_user` VALUES ('lisi', '$2a$10$AC1gCsk1V5Ov7n.zvkxxvuMM4f3BnWmJqr4jNNYtVAm8j4nBdxIUq', '思思', '15623652365', '371323199601062719', '山东省临沂市', 'FARMER', '2022-08-19 16:39:11', '2022-09-01 17:20:04', 0, 0, 'expert07.png', '李思');
+INSERT INTO `tb_user` VALUES ('liux', '$2a$10$AC1gCsk1V5Ov7n.zvkxxvuMM4f3BnWmJqr4jNNYtVAm8j4nBdxIUq', '刘旭', '15623652222', '370343199612012718', '山东省威海市', 'EXPERT', '2021-08-30 09:20:24', '2022-08-23 15:23:34', 0, 0, 'expert01.png', '刘旭');
+INSERT INTO `tb_user` VALUES ('liyy', '$2a$10$AC1gCsk1V5Ov7n.zvkxxvuMM4f3BnWmJqr4jNNYtVAm8j4nBdxIUq', '依依', '15623652222', '370343199612012718', '山东省威海市', 'EXPERT', '2021-08-30 09:20:24', '2022-08-23 15:23:34', 0, 0, '9908de80aae54f8590b301ee9517beac.png', '李依依');
+INSERT INTO `tb_user` VALUES ('lzh', '$2a$10$AC1gCsk1V5Ov7n.zvkxxvuMM4f3BnWmJqr4jNNYtVAm8j4nBdxIUq', '小李', '15621367568', '373312199801032719', '山东省威海市', 'FARMER', '2022-07-22 11:05:54', '2022-09-07 16:45:53', 0, 0, 'ac10c6dc98d14afda5f09ba81f286197.jpg', '李增虎');
+INSERT INTO `tb_user` VALUES ('tyy', '$2a$10$AC1gCsk1V5Ov7n.zvkxxvuMM4f3BnWmJqr4jNNYtVAm8j4nBdxIUq', '公举', '15236983695', '370343199613652415', '山东省青岛市', 'FARMER', '2021-08-30 09:59:50', '2022-08-10 15:44:36', 0, 0, '39557b8fb7a54f81833c8d4a7309b05c.jpg', '唐艳艳');
+INSERT INTO `tb_user` VALUES ('wangya', '$2a$10$nLKfTbJqrA5IoRdY.PsZBOACe2s4H3k2NPKLy5LdWL0wKWno0.oDG', '王娅', '13792449255', '370213198911120506', '山东省青岛市', 'FARMER', '2022-09-08 10:14:22', '2022-09-08 10:19:34', 0, 0, '39557b8fb7a54f81833c8d4a7309b05c.jpg', '王娅');
+INSERT INTO `tb_user` VALUES ('wuhan', '$2a$10$AC1gCsk1V5Ov7n.zvkxxvuMM4f3BnWmJqr4jNNYtVAm8j4nBdxIUq', '吴晗', '15623652222', '370343199612012718', '山东省威海市', 'EXPERT', '2021-08-30 09:20:24', '2022-08-23 15:23:34', 0, 0, 'expert08.png', '吴晗');
+INSERT INTO `tb_user` VALUES ('wyn', '$2a$10$AC1gCsk1V5Ov7n.zvkxxvuMM4f3BnWmJqr4jNNYtVAm8j4nBdxIUq', '玉娜', '18711236658', '370123200008123456', '山东省威海市', 'EXPERT', '2021-08-27 16:05:20', '2022-09-01 11:21:11', 0, 0, 'expert11.png', '王玉娜');
+INSERT INTO `tb_user` VALUES ('wyn2', '$2a$10$AC1gCsk1V5Ov7n.zvkxxvuMM4f3BnWmJqr4jNNYtVAm8j4nBdxIUq', '艳安', '15623652222', '370343199612012718', '山东省威海市', 'EXPERT', '2021-08-30 09:20:24', '2022-08-23 15:23:34', 0, 0, 'expert10.png', '王艳安');
+INSERT INTO `tb_user` VALUES ('wyn3', '$2a$10$AC1gCsk1V5Ov7n.zvkxxvuMM4f3BnWmJqr4jNNYtVAm8j4nBdxIUq', '丫丫', '15630429628', '324624861233056852', '山东省青岛市', 'FARMER', '2022-04-11 11:36:03', '2022-08-18 15:04:18', 0, 0, 'bd12eba3a9a24d89845ebbdb7fbff448.jpg', '王亚楠');
+INSERT INTO `tb_user` VALUES ('zhangsan', '$2a$10$AC1gCsk1V5Ov7n.zvkxxvuMM4f3BnWmJqr4jNNYtVAm8j4nBdxIUq', '三三', '13792499274', '370343199609176060', '山东省青岛市', 'FARMER', '2022-08-19 16:37:10', '2022-08-19 16:37:10', 0, 0, 'bd12eba3a9a24d89845ebbdb7fbff448.jpg', '张三');
+INSERT INTO `tb_user` VALUES ('zhangxu', '$2a$10$AC1gCsk1V5Ov7n.zvkxxvuMM4f3BnWmJqr4jNNYtVAm8j4nBdxIUq', '张旭', '13456567878', '370123200001012233', '山东省青岛市', 'EXPERT', '2021-08-31 10:13:42', '2022-08-10 15:43:58', 0, 0, 'expert10.png', '张旭');
+INSERT INTO `tb_user` VALUES ('zhangxukun', '$2a$10$AC1gCsk1V5Ov7n.zvkxxvuMM4f3BnWmJqr4jNNYtVAm8j4nBdxIUq', 'kelven', '13544545454', '370123200008083422', '山东省临沂市', 'FARMER', '2021-08-27 16:05:25', '2022-08-23 15:19:28', 0, 0, '2ae82e5cf7ca47c9ab516d37dccab5dd.jpg', '张旭坤');
+INSERT INTO `tb_user` VALUES ('zhaoqm', '$2a$10$AC1gCsk1V5Ov7n.zvkxxvuMM4f3BnWmJqr4jNNYtVAm8j4nBdxIUq', '清明', '15623652222', '370343199612012718', '山东省威海市', 'EXPERT', '2021-08-30 09:20:24', '2022-08-23 15:23:34', 0, 0, 'expert01.png', '赵清明');
+INSERT INTO `tb_user` VALUES ('zhengxin', '$2a$10$AC1gCsk1V5Ov7n.zvkxxvuMM4f3BnWmJqr4jNNYtVAm8j4nBdxIUq', '鑫鑫', '15623652222', '370343199612012718', '山东省威海市', 'EXPERT', '2021-08-30 09:20:24', '2022-08-23 15:23:34', 0, 0, 'expert09.png', '郑鑫');
+INSERT INTO `tb_user` VALUES ('zwr', '$2a$10$AC1gCsk1V5Ov7n.zvkxxvuMM4f3BnWmJqr4jNNYtVAm8j4nBdxIUq', '张文瑞', '15623652222', '111111111111111111', '山东省威海市', 'FARMER', '2021-08-30 09:20:24', '2022-08-23 15:23:34', 0, 0, 'bd12eba3a9a24d89845ebbdb7fbff449.jpg', '张文瑞');
 
 -- ----------------------------
 -- Function structure for sfn_GetSimilar_Rate
@@ -588,5 +588,105 @@ RETURN sum/l2;
 END
 ;;
 delimiter ;
+
+-- ----------------------------
+-- Extended Chinese demo accounts and linked business records
+-- Password for every dev_* account: Test@123456
+-- ----------------------------
+UPDATE tb_user SET nick_name = '演示管理员', address = '吉首市平台运营中心', real_name = '张管理员' WHERE user_name = 'dev_admin';
+UPDATE tb_user SET nick_name = '十八洞农户', address = '花垣县十八洞猕猴桃基地', real_name = '石小满' WHERE user_name = 'dev_farmer';
+UPDATE tb_user SET nick_name = '社区团购买家', address = '长沙市雨花区采购中心', real_name = '陈采薇' WHERE user_name = 'dev_buyer';
+UPDATE tb_user SET nick_name = '果树专家', address = '湖南农业大学园艺学院', real_name = '周明' WHERE user_name = 'dev_expert';
+UPDATE tb_user SET nick_name = '农商行客户经理', address = '湘西农村商业银行', real_name = '林经理' WHERE user_name = 'dev_bank';
+UPDATE tb_expert SET real_name = '周明', profession = '猕猴桃病虫害防治与土壤改良', position = '高级农艺师', belong = '湖南农业大学园艺学院' WHERE user_name = 'dev_expert';
+UPDATE tb_bank SET bank_name = '湘西农商行春耕信用贷', introduce = '用于种子、化肥、灌溉、冷链和订单周转，材料精简，可按经营流水授信。', repayment = '按季付息' WHERE bank_id = 19001;
+UPDATE tb_bank SET bank_name = '吉首普惠订单周转贷', introduce = '面向绿色农产品采购订单提供短期流动资金支持。', repayment = '到期还本' WHERE bank_id = 19002;
+UPDATE tb_bank_user SET real_name = '林经理' WHERE user_name = 'dev_bank';
+UPDATE tb_order SET title = '湘西鲜草莓 3kg', content = '当天采摘并完成分级，适合社区团购和商超试销。', type = '水果', address = '湘西州花垣县', spec = '3kg/箱', unit = '箱' WHERE order_id = 19001;
+UPDATE tb_order SET title = '高山生态大米 50kg', content = '梯田稻谷低温烘干，适合食堂和商超批量采购。', type = '粮油', address = '湘西州龙山县', spec = '50kg/袋', unit = '斤' WHERE order_id = 19002;
+UPDATE tb_order SET title = '柑橘分选包装服务', content = '提供柑橘分级、套袋和装箱服务，适合采收高峰期。', type = '农业服务', address = '湘西州泸溪县', spec = '按斤计价', unit = '斤' WHERE order_id = 19003;
+UPDATE tb_order SET title = '新鲜农家鸡蛋 30枚', content = '按重量筛选褐壳和白壳鸡蛋，适合社区团购。', type = '禽蛋', address = '湘西州吉首市', spec = '30枚/箱', unit = '箱' WHERE order_id = 19004;
+
+INSERT INTO tb_user (
+  user_name, password, nick_name, phone, identity_num, address, role,
+  create_time, update_time, integral, credit, avatar, real_name
+) VALUES
+('dev_farmer2', '$2a$10$BnbMjtNYz3Ny2fb2DSzcY.G.FUF6fjBVt8/0VwUT54Vw07JqBrrxC', '浦市果园农户', '13800009005', '430000199001019005', '泸溪县浦市柑橘合作社', 'FARMER', NOW(), NOW(), 790, 4, 'bd12eba3a9a24d89845ebbdb7fbff448.jpg', '吴果香'),
+('dev_buyer2', '$2a$10$BnbMjtNYz3Ny2fb2DSzcY.G.FUF6fjBVt8/0VwUT54Vw07JqBrrxC', '商超采购经理', '13800009006', '430000199001019006', '吉首市生鲜商超配送中心', 'BUYER', NOW(), NOW(), 810, 5, 'a6f5dff3a39541009fedc8621485898c.png', '刘采购'),
+('dev_expert2', '$2a$10$BnbMjtNYz3Ny2fb2DSzcY.G.FUF6fjBVt8/0VwUT54Vw07JqBrrxC', '植保专家', '13800009007', '430000199001019007', '湘西州农业技术推广站', 'EXPERT', NOW(), NOW(), 960, 5, 'expert06.png', '彭晓禾'),
+('dev_bank2', '$2a$10$BnbMjtNYz3Ny2fb2DSzcY.G.FUF6fjBVt8/0VwUT54Vw07JqBrrxC', '普惠金融经理', '13800009008', '430000199001019008', '吉首普惠金融服务中心', 'BANK', NOW(), NOW(), 920, 5, '9908de80aae54f8590b301ee9517beac.png', '向经理');
+
+INSERT INTO tb_expert (user_name, real_name, phone, profession, position, belong) VALUES
+('dev_expert2', '彭晓禾', '13800009007', '水稻植保、病虫害识别与绿色防控', '农业技术推广研究员', '湘西州农业技术推广站');
+
+INSERT INTO tb_bank (bank_id, bank_name, introduce, bank_phone, money, rate, repayment) VALUES
+(19003, '柑橘产业升级贷', '支持果园水肥一体化、分选设备和冷库改造。', '0743-1900390', 260000.00, 3.95, '等额本息'),
+(19004, '农产品仓储设备贷', '支持仓储、包装、冷链运输等生产经营设备采购。', '0743-1900490', 500000.00, 4.35, '按月付息');
+
+INSERT INTO tb_bank_user (user_name, bank_id, password, real_name, phone, role, create_time, update_time) VALUES
+('dev_bank2', 19003, '$2a$10$BnbMjtNYz3Ny2fb2DSzcY.G.FUF6fjBVt8/0VwUT54Vw07JqBrrxC', '向经理', '13800009008', 'BANK', NOW(), NOW());
+
+INSERT INTO tb_address (id, own_name, consignee, phone, address_detail, is_default) VALUES
+(19004, 'dev_buyer2', '刘采购', '13800009006', '吉首市生鲜商超中央仓 C1', 1),
+(19005, 'dev_farmer2', '吴果香', '13800009005', '泸溪县浦市柑橘合作社', 1);
+
+INSERT INTO tb_order (
+  order_id, title, price, content, order_status, type, picture,
+  own_name, cooperation_name, create_time, update_time, address,
+  stock, spec, unit, min_purchase
+) VALUES
+(19005, '浦市冰糖橙 10kg', 42.00, '果径分级、甜度检测后装箱，可提供商超条码标签。', 1, '水果', '5722cfcd93c84a9083720d2cb072c5a0.jpg', 'dev_farmer2', 'dev_buyer2', NOW(), NOW(), '湘西州泸溪县', 560, '10kg/箱', '箱', 5),
+(19006, '保靖黄金茶 500g', 88.00, '明前春茶，支持礼盒和散装两种包装。', 0, '茶叶', 'tea.png', 'dev_farmer2', NULL, NOW(), NOW(), '湘西州保靖县', 180, '500g/盒', '盒', 2),
+(19007, '高山红薯 25kg', 3.60, '沙壤土种植，完成泥土初筛，适合食堂和加工采购。', 1, '薯类', 'a7a1262dc3994331937e53d5258b57cb.webp', 'dev_farmer2', 'dev_buyer2', NOW(), NOW(), '湘西州永顺县', 1200, '25kg/袋', '斤', 50),
+(19008, '时令鲜蔬组合 10kg', 6.50, '包含辣椒、茄子、豆角等当季蔬菜，按采购日组合发货。', 0, '蔬菜', '新鲜蔬菜.png', 'dev_farmer2', NULL, NOW(), NOW(), '湘西州吉首市', 360, '10kg/筐', '斤', 20);
+
+INSERT INTO tb_shoppingcart (shopping_id, order_id, count, own_name, create_time, update_time) VALUES
+(19004, 19005, 4, 'dev_buyer2', NOW(), NOW()),
+(19005, 19007, 2, 'dev_buyer2', NOW(), NOW());
+
+INSERT INTO tb_purchase (purchase_id, own_name, purchase_type, total_price, address, purchase_status, create_time, update_time, cancel_reason, delivery_no) VALUES
+(19003, 'dev_buyer2', 1, 840.00, '吉首市生鲜商超中央仓 C1', 2, NOW(), NOW(), NULL, 'DEV-WL-19003'),
+(19004, 'dev_buyer2', 1, 360.00, '吉首市生鲜商超中央仓 C1', 0, NOW(), NOW(), NULL, NULL);
+
+INSERT INTO tb_purchase_detail (detail_id, purchase_id, order_id, unin_price, sum_price, count) VALUES
+(19003, 19003, 19005, 42.00, 840.00, 20),
+(19004, 19004, 19007, 3.60, 360.00, 100);
+
+INSERT INTO tb_sell_purchase (sell_purchase_id, purchase_id, own_name, purchase_type, unin_pricee, sum_price, address, purchase_status, create_time, update_time, order_id) VALUES
+(19003, 19003, 'dev_farmer2', 1, 42.00, 840.00, '吉首市生鲜商超中央仓 C1', 2, NOW(), NOW(), 19005),
+(19004, 19004, 'dev_farmer2', 1, 3.60, 360.00, '吉首市生鲜商超中央仓 C1', 0, NOW(), NOW(), 19007);
+
+INSERT INTO tb_finance (
+  finance_id, bank_id, own_name, real_name, phone, id_num, status, remark,
+  money, rate, repayment, create_time, update_time,
+  combination_name1, combination_phone1, combination_idnum1,
+  combination_name2, combination_phone2, combination_idnum2, file_info, materials
+) VALUES
+(19003, 19003, 'dev_farmer2', '吴果香', '13800009005', '430000199001019005', 0, '等待补充果园设备报价单', 120000.00, 3.95, '等额本息', NOW(), NOW(), '刘采购', '13800009006', '430000199001019006', NULL, NULL, NULL, '/files/dev-orange-equipment.pdf', '身份证明; 果园承包证明; 商超采购意向书'),
+(19004, 19004, 'dev_farmer2', '吴果香', '13800009005', '430000199001019005', 2, '仓储建设周期暂不符合当前产品要求', 200000.00, 4.35, '按月付息', NOW(), NOW(), NULL, NULL, NULL, NULL, NULL, NULL, '/files/dev-warehouse-plan.pdf', '仓储改造方案; 设备清单; 近半年销售流水');
+
+INSERT INTO tb_financing_intention (id, user_name, real_name, address, amount, application, item, repayment_period, area, phone, create_time, update_time) VALUES
+(19003, 'dev_farmer2', '吴果香', '泸溪县浦市镇', 120000, '分选机和水肥一体化设备采购', '柑橘果园升级', '18个月', '60亩', '13800009005', NOW(), NOW()),
+(19004, 'dev_buyer2', '刘采购', '吉首市乾州街道', 180000, '商超生鲜采购周转', '湘西特色农产品专柜', '9个月', '8亩', '13800009006', NOW(), NOW());
+
+INSERT INTO tb_question (id, expert_name, questioner, phone, plant_name, title, question, answer, status, attachments) VALUES
+(19003, 'dev_expert', 'dev_farmer2', '13800009005', '柑橘', '幼果期出现黑点', '冰糖橙幼果表面出现黑点，近期雨水较多，是否需要调整用药？', '先确认是否为黑点病，清理枯枝并选择雨停后的保护性药剂，注意安全间隔期。', 1, '5722cfcd93c84a9083720d2cb072c5a0.jpg'),
+(19004, 'dev_expert2', 'dev_farmer2', '13800009005', '红薯', '叶片卷曲且长势不齐', '部分地块红薯叶片卷曲，是否与蓟马或缺素有关？', NULL, 0, NULL);
+
+INSERT INTO tb_reserve (
+  id, expert_name, questioner, area, address, plant_name,
+  soil_condition, plant_condition, plant_detail, phone, message, answer,
+  status, appointment_time, service_mode
+) VALUES
+(19003, 'dev_expert', 'dev_farmer2', '60亩', '泸溪县浦市柑橘园', '柑橘', '红壤，坡地排水较快', '幼果黑点较多', '东侧果园密度偏大，雨后发病明显', '13800009005', '希望安排一次现场巡园', '可安排周日下午，请准备近期施药和施肥记录。', 1, '2026-07-20 14:00', '现场指导'),
+(19004, 'dev_expert2', 'dev_farmer2', '25亩', '永顺县高山红薯基地', '红薯', '沙壤土，局部偏旱', '叶片卷曲', '新叶卷曲并伴有少量虫口', '13800009005', '先做视频诊断再决定是否到场', NULL, 0, '2026-07-21 10:00', '视频指导');
+
+INSERT INTO tb_knowledge (knowledge_id, title, content, pic_path, own_name, create_time, update_time, status) VALUES
+(19003, '水稻纹枯病绿色防控清单', '控制田间湿度和种植密度，结合病株识别、科学施药与安全间隔期管理。', 'W020230811400645740814_ORIGIN.jpg', 'dev_expert2', CURRENT_TIME, NOW(), 1),
+(19004, '湘西柑橘进入商超采购专区', '泸溪柑橘合作社新增分级包装货源，支持商超采购、冷链配送和订单融资。', '5722cfcd93c84a9083720d2cb072c5a0.jpg', '平台资讯', CURRENT_TIME, NOW(), 1);
+
+INSERT INTO tb_discuss (discuss_id, knowledge_id, own_name, content, create_time) VALUES
+(19003, 19003, 'dev_farmer2', '已收藏，准备按清单检查红薯和水稻地块的病虫害。', NOW()),
+(19004, 19004, 'dev_buyer2', '商超采购需要稳定规格，后续希望增加每周可供货量。', NOW());
 
 SET FOREIGN_KEY_CHECKS = 1;

@@ -38,6 +38,20 @@ public class DatabaseSchemaCompatibilityInitializer implements ApplicationRunner
         addColumnIfMissing("tb_reserve", "appointment_time", "varchar(64) default null");
         addColumnIfMissing("tb_reserve", "service_mode", "varchar(64) default null");
         addColumnIfMissing("tb_knowledge", "status", "int default 1");
+        addColumnIfMissing("tb_user", "enabled", "tinyint(1) default 1");
+        createTableIfMissing("tb_notification",
+                """
+                create table tb_notification (
+                    notification_id int auto_increment primary key,
+                    target_user varchar(128) default null comment '目标用户（null 表示全局广播）',
+                    title varchar(255) not null,
+                    content text,
+                    type varchar(64) default '系统通知',
+                    is_read tinyint(1) default 0,
+                    creator varchar(128) default null,
+                    create_time datetime default current_timestamp
+                ) engine=InnoDB default charset=utf8mb4
+                """);
     }
 
     private void addColumnIfMissing(String tableName, String columnName, String columnDefinition) throws SQLException {
@@ -46,6 +60,14 @@ public class DatabaseSchemaCompatibilityInitializer implements ApplicationRunner
         }
         jdbcTemplate.execute("alter table " + tableName + " add column " + columnName + " " + columnDefinition);
         log.info("Added missing database column {}.{}", tableName, columnName);
+    }
+
+    private void createTableIfMissing(String tableName, String ddl) throws SQLException {
+        if (tableExists(tableName)) {
+            return;
+        }
+        jdbcTemplate.execute(ddl);
+        log.info("Created missing table {}", tableName);
     }
 
     private boolean tableExists(String tableName) throws SQLException {

@@ -54,7 +54,9 @@ public class ReserveService {
 
     public Reserve answerReserve(Integer id, AnswerRequest request) {
         getReserve(id);
-        reserveMapper.updateAnswer(id, request.answer(), request.status());
+        // 未传 status 时默认“已处理”，与问答答复接口保持一致。
+        int status = request.status() == null ? 1 : request.status();
+        reserveMapper.updateAnswer(id, request.answer(), status);
         return getReserve(id);
     }
 

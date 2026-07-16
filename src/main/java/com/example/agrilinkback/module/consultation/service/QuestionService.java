@@ -49,7 +49,9 @@ public class QuestionService {
 
     public Question answerQuestion(Integer id, AnswerRequest request) {
         getQuestion(id);
-        questionMapper.updateAnswer(id, request.answer(), request.status());
+        // 未传 status 时默认“已处理”，兼容只提交答复正文的调用方。
+        int status = request.status() == null ? 1 : request.status();
+        questionMapper.updateAnswer(id, request.answer(), status);
         return getQuestion(id);
     }
 

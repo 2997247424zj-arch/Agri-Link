@@ -12,6 +12,20 @@ spring:
     url: jdbc:mysql://${AGRILINK_DB_HOST:localhost}:${AGRILINK_DB_PORT:3306}/${AGRILINK_DB_NAME:rongxiaotong}?serverTimezone=Asia/Shanghai&useUnicode=true&characterEncoding=UTF-8&useSSL=false&allowPublicKeyRetrieval=true
     username: ${AGRILINK_DB_USERNAME:root}
     password: ${AGRILINK_DB_PASSWORD:}
+  mail:
+    host: smtp.163.com
+    port: 465
+    username: ${AGRILINK_MAIL_USERNAME:}
+    password: ${AGRILINK_MAIL_AUTH_CODE:}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          ssl:
+            enable: true
+          connectiontimeout: 5000
+          timeout: 5000
+          writetimeout: 5000
   servlet:
     multipart:
       max-file-size: 20MB
@@ -23,7 +37,7 @@ spring:
     static-path-pattern: /files/**
 
 application:
-  upload-path: ${AGRILINK_UPLOAD_PATH:d:/wangyanan/file/info}
+  upload-path: ${AGRILINK_UPLOAD_PATH:./uploads}
 
 mybatis:
   mapper-locations: classpath*:mapper/**/*.xml

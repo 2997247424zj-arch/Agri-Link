@@ -14,7 +14,7 @@ public interface UserMapper {
 
     @Select("""
             select user_name, password, nick_name, phone, identity_num, address, role,
-                   create_time, update_time, integral, credit, avatar, real_name
+                   create_time, update_time, integral, credit, avatar, real_name, enabled
             from tb_user
             order by create_time desc
             """)
@@ -22,7 +22,7 @@ public interface UserMapper {
 
     @Select("""
             select user_name, password, nick_name, phone, identity_num, address, role,
-                   create_time, update_time, integral, credit, avatar, real_name
+                   create_time, update_time, integral, credit, avatar, real_name, enabled
             from tb_user
             where user_name = #{userName}
             """)
@@ -31,11 +31,12 @@ public interface UserMapper {
     @Insert("""
             insert into tb_user (
                 user_name, password, nick_name, phone, identity_num, address, role,
-                create_time, update_time, integral, credit, avatar, real_name
+                create_time, update_time, integral, credit, avatar, real_name, enabled
             ) values (
                 #{user.userName}, #{user.password}, #{user.nickName}, #{user.phone},
                 #{user.identityNum}, #{user.address}, #{user.role}, #{user.createTime},
-                #{user.updateTime}, #{user.integral}, #{user.credit}, #{user.avatar}, #{user.realName}
+                #{user.updateTime}, #{user.integral}, #{user.credit}, #{user.avatar}, #{user.realName},
+                #{user.enabled}
             )
             """)
     int insert(@Param("user") User user);
@@ -73,4 +74,12 @@ public interface UserMapper {
             where user_name = #{userName}
             """)
     int updateRole(@Param("userName") String userName, @Param("role") String role);
+
+    @Update("""
+            update tb_user
+            set enabled = #{enabled},
+                update_time = current_timestamp
+            where user_name = #{userName}
+            """)
+    int updateEnabled(@Param("userName") String userName, @Param("enabled") boolean enabled);
 }

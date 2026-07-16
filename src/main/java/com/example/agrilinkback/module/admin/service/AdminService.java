@@ -6,10 +6,12 @@ import com.example.agrilinkback.module.admin.dto.AdminKnowledgeItem;
 import com.example.agrilinkback.module.admin.dto.AdminKnowledgeRequest;
 import com.example.agrilinkback.module.admin.dto.AdminKnowledgeStatusRequest;
 import com.example.agrilinkback.module.admin.dto.AdminOverview;
+import com.example.agrilinkback.module.admin.dto.AdminUserUpdateRequest;
 import com.example.agrilinkback.module.finance.entity.Finance;
 import com.example.agrilinkback.module.finance.service.FinanceService;
 import com.example.agrilinkback.module.knowledge.dto.KnowledgeRequest;
 import com.example.agrilinkback.module.knowledge.service.KnowledgeService;
+import com.example.agrilinkback.module.notification.service.NotificationService;
 import com.example.agrilinkback.module.trade.dto.PurchaseStatusRequest;
 import com.example.agrilinkback.module.trade.dto.TradeOrderStatusRequest;
 import com.example.agrilinkback.module.trade.entity.Purchase;
@@ -19,6 +21,7 @@ import com.example.agrilinkback.module.trade.service.TradeOrderService;
 import com.example.agrilinkback.module.user.entity.User;
 import com.example.agrilinkback.module.user.mapper.UserMapper;
 import com.example.agrilinkback.module.user.service.UserService;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -38,6 +41,7 @@ public class AdminService {
     private final PurchaseService purchaseService;
     private final FinanceService financeService;
     private final KnowledgeService knowledgeService;
+    private final NotificationService notificationService;
 
     public AdminService(
             UserService userService,
@@ -45,7 +49,8 @@ public class AdminService {
             TradeOrderService tradeOrderService,
             PurchaseService purchaseService,
             FinanceService financeService,
-            KnowledgeService knowledgeService
+            KnowledgeService knowledgeService,
+            NotificationService notificationService
     ) {
         this.userService = userService;
         this.userMapper = userMapper;
@@ -53,11 +58,11 @@ public class AdminService {
         this.purchaseService = purchaseService;
         this.financeService = financeService;
         this.knowledgeService = knowledgeService;
+        this.notificationService = notificationService;
     }
 
     public AdminOverview getOverview() {
         List<User> users = userService.listUsers();
-        // 概览页需要按角色统计用户分布，用于后台首页数据看板。
         Map<String, Long> usersByRole = users.stream()
                 .collect(Collectors.groupingBy(User::role, Collectors.counting()));
 
@@ -80,11 +85,42 @@ public class AdminService {
         User existing = userService.getUser(userName);
         UserRole nextRole = requireBusinessRole(role);
         if (UserRole.SYSTEM_ADMIN.code().equals(existing.role())) {
-            // 系统管理员账号不参与业务角色切换，避免误降权导致后台无法管理。
             throw new BusinessException("System admin role cannot be managed as a business role");
         }
         userMapper.updateRole(userName, nextRole.code());
         return userService.getUser(userName);
+    }
+
+    public User toggleUserEnabled(String userName, boolean enabled) {
+        User existing = userService.getUser(userName);
+        if (UserRole.SYSTEM_ADMIN.code().equals(existing.role())) {
+            throw new BusinessException("Cannot disable system admin account");
+        }
+        userMapper.updateEnabled(userName, enabled);
+        notificationService.notifyUser(userName, "账号状态变更",
+                "您的账号已被管理员" + (enabled ? "启用" : "禁用") + "。", "SYSTEM_ADMIN");
+        return userService.getUser(userName);
+    }
+
+    public User updateUserProfile(String userName, AdminUserUpdateRequest request) {
+        User existing = userService.getUser(userName);
+        User updated = new User(
+                userName, existing.password(),
+                request.nickName(), request.phone(), request.identityNum(), request.address(),
+                existing.role(), existing.createTime(), LocalDateTime.now(),
+                existing.integral(), existing.credit(), existing.avatar(),
+                request.realName(), existing.enabled()
+        );
+        userMapper.update(updated);
+        return userService.getUser(userName);
+    }
+
+    public void deleteUser(String userName) {
+        User existing = userService.getUser(userName);
+        if (UserRole.SYSTEM_ADMIN.code().equals(existing.role())) {
+            throw new BusinessException("Cannot delete system admin account");
+        }
+        userMapper.deleteByUserName(userName);
     }
 
     public List<TradeOrder> listOrders() {
@@ -107,9 +143,6 @@ public class AdminService {
         return financeService.listFinances();
     }
 
-    /**
-     * ???????????????????????????????????
-     */
     public List<AdminKnowledgeItem> listKnowledge() {
         return knowledgeService.listKnowledge().stream()
                 .map(AdminKnowledgeItem::fromKnowledge)
@@ -117,7 +150,13 @@ public class AdminService {
     }
 
     public AdminKnowledgeItem createKnowledge(AdminKnowledgeRequest request) {
-        return AdminKnowledgeItem.fromKnowledge(knowledgeService.createKnowledge(toKnowledgeRequest(request)));
+        AdminKnowledgeItem item = AdminKnowledgeItem.fromKnowledge(
+                knowledgeService.createKnowledge(toKnowledgeRequest(request)));
+        notificationService.broadcast(
+                "新内容发布：" + request.title(),
+                "平台发布了新的知识内容「" + request.title() + "」，请前往知识库查看。",
+                "SYSTEM_ADMIN");
+        return item;
     }
 
     public AdminKnowledgeItem updateKnowledge(Integer knowledgeId, AdminKnowledgeRequest request) {
@@ -128,18 +167,21 @@ public class AdminService {
             Integer knowledgeId,
             AdminKnowledgeStatusRequest request
     ) {
-        return AdminKnowledgeItem.fromKnowledge(
-                knowledgeService.updateKnowledgeStatus(knowledgeId, request.status())
-        );
+        AdminKnowledgeItem item = AdminKnowledgeItem.fromKnowledge(
+                knowledgeService.updateKnowledgeStatus(knowledgeId, request.status()));
+        if (request.status() != null && request.status() == 1) {
+            notificationService.broadcast(
+                    "内容已发布：" + item.title(),
+                    "平台发布了知识内容「" + item.title() + "」，请前往知识库查看。",
+                    "SYSTEM_ADMIN");
+        }
+        return item;
     }
 
     public void deleteKnowledge(Integer knowledgeId) {
         knowledgeService.deleteKnowledge(knowledgeId);
     }
 
-    /**
-     * ????????????????????????????????
-     */
     private UserRole requireBusinessRole(String role) {
         UserRole userRole = UserRole.fromCode(role)
                 .orElseThrow(() -> new BusinessException("Role must be BUYER, FARMER, EXPERT or BANK"));
@@ -149,9 +191,6 @@ public class AdminService {
         return userRole;
     }
 
-    /**
-     * ??????????????category ??? Knowledge.ownName?summary ??????
-     */
     private KnowledgeRequest toKnowledgeRequest(AdminKnowledgeRequest request) {
         String category = request.category() == null || request.category().isBlank()
                 ? "平台资讯"
