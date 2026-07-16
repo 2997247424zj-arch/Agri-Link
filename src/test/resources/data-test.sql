@@ -1,19 +1,46 @@
 insert into tb_user (
   user_name, password, nick_name, phone, identity_num, address, role,
-  create_time, update_time, integral, credit, avatar, real_name
+  create_time, update_time, integral, credit, avatar, real_name, enabled
 ) values (
   'farmer001', 'secret', 'Farmer One', '13800000001', '430000199001010001',
   'Jishou', 'FARMER', '2026-01-01 08:00:00', '2026-01-02 08:00:00',
-  500, 5, '/files/avatar.png', 'Zhang San'
+  500, 5, '/files/avatar.png', 'Zhang San', true
 );
 
 insert into tb_user (
   user_name, password, nick_name, phone, identity_num, address, role,
-  create_time, update_time, integral, credit, avatar, real_name
+  create_time, update_time, integral, credit, avatar, real_name, enabled
 ) values (
   'admin001', 'secret', 'System Admin', '13800000000', '430000198001010001',
   'Jishou', 'SYSTEM_ADMIN', '2026-01-01 07:00:00', '2026-01-02 07:00:00',
-  0, 0, '/files/avatar.png', 'Admin User'
+  0, 0, '/files/avatar.png', 'Admin User', true
+);
+
+insert into tb_user (
+  user_name, password, nick_name, phone, identity_num, address, role,
+  create_time, update_time, integral, credit, avatar, real_name, enabled
+) values (
+  'buyer001', 'secret', 'Buyer One', '13800000011', '430000199201010001',
+  'Jishou', 'BUYER', '2026-01-01 08:10:00', '2026-01-02 08:10:00',
+  100, 5, '/files/avatar.png', 'Buyer User', true
+);
+
+insert into tb_user (
+  user_name, password, nick_name, phone, identity_num, address, role,
+  create_time, update_time, integral, credit, avatar, real_name, enabled
+) values (
+  'bank001', 'secret', 'Bank One', '13800000021', '430000199301010001',
+  'Jishou', 'BANK', '2026-01-01 08:20:00', '2026-01-02 08:20:00',
+  0, 5, '/files/avatar.png', 'Bank User', true
+);
+
+insert into tb_user (
+  user_name, password, nick_name, phone, identity_num, address, role,
+  create_time, update_time, integral, credit, avatar, real_name, enabled
+) values (
+  'expert001', 'secret', 'Expert One', '13800000002', '430000199401010001',
+  'Jishou', 'EXPERT', '2026-01-01 08:30:00', '2026-01-02 08:30:00',
+  0, 5, '/files/avatar.png', 'Li Expert', true
 );
 
 insert into tb_address (

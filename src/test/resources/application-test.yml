@@ -13,3 +13,7 @@ spring:
       data-locations: classpath:data-test.sql
 application:
   upload-path: ${java.io.tmpdir}/agrilink-test-uploads
+  security:
+    jwt:
+      secret: AgriLink-Test-Jwt-Secret-Key-32Bytes!!
+      expire-hours: 2

@@ -1,7 +1,7 @@
 package com.example.agrilinkback.config;
 
 import com.example.agrilinkback.common.api.ApiResponse;
-import com.example.agrilinkback.common.security.HeaderRoleAuthenticationFilter;
+import com.example.agrilinkback.common.security.JwtAuthenticationFilter;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.context.annotation.Bean;
@@ -23,8 +23,8 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
  * <p>本平台采用前后端分离架构，后端仅提供 RESTful API，不维护传统 Servlet 会话。
  * 因此安全配置围绕以下原则展开：</p>
  * <ul>
- *   <li><strong>无状态认证</strong> —— 关闭 CSRF、禁用 Session，认证信息通过请求头（Header）
- *       由 {@link HeaderRoleAuthenticationFilter} 提取并注入安全上下文。</li>
+ *   <li><strong>无状态认证</strong> —— 关闭 CSRF、禁用 Session，认证信息通过
+ *       {@code Authorization: Bearer <JWT>} 由 {@link JwtAuthenticationFilter} 校验并注入安全上下文。</li>
  *   <li><strong>角色驱动授权</strong> —— 基于五种业务角色（BUYER、FARMER、EXPERT、BANK、
  *       SYSTEM_ADMIN）对写操作与敏感资源进行精细控制。</li>
  *   <li><strong>查询友好开放</strong> —— 面向游客的展示型 GET 接口（农产品、知识库、
@@ -56,19 +56,19 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
  *
  * @author seeking
  * @since 1.0
- * @see HeaderRoleAuthenticationFilter
+ * @see JwtAuthenticationFilter
  * @see ApiResponse
  */
 @Configuration
 public class SecurityConfig {
 
     /**
-     * 自定义请求头角色认证过滤器。
-     * <p>在每次请求到达 Spring Security 主链前，解析请求头中的角色令牌，
+     * JWT 认证过滤器。
+     * <p>在每次请求到达 Spring Security 主链前，校验 Bearer JWT，
      * 构造 {@link org.springframework.security.core.Authentication} 对象
      * 并设置到 {@link org.springframework.security.core.context.SecurityContextHolder}。</p>
      */
-    private final HeaderRoleAuthenticationFilter headerRoleAuthenticationFilter;
+    private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
     /**
      * Jackson 序列化工具，用于在 Security 异常处理中写出 JSON 格式的统一响应体。
@@ -78,11 +78,11 @@ public class SecurityConfig {
     /**
      * 构造 Security 配置实例，注入认证过滤器与 JSON 序列化器。
      *
-     * @param headerRoleAuthenticationFilter 自定义 Header 角色认证过滤器（必须非 null）
-     * @param objectMapper                   Spring 容器内管理的 Jackson {@link ObjectMapper} Bean
+     * @param jwtAuthenticationFilter JWT 认证过滤器（必须非 null）
+     * @param objectMapper            Spring 容器内管理的 Jackson {@link ObjectMapper} Bean
      */
-    public SecurityConfig(HeaderRoleAuthenticationFilter headerRoleAuthenticationFilter, ObjectMapper objectMapper) {
-        this.headerRoleAuthenticationFilter = headerRoleAuthenticationFilter;
+    public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter, ObjectMapper objectMapper) {
+        this.jwtAuthenticationFilter = jwtAuthenticationFilter;
         this.objectMapper = objectMapper;
     }
 
@@ -106,7 +106,7 @@ public class SecurityConfig {
      *   <li><strong>规则顺序</strong> —— 先声明公共资源与公开 GET 查询，
      *       再逐层收紧写操作与角色限定路径，最后兜底 {@code anyRequest().authenticated()}。</li>
      *   <li><strong>过滤器插入</strong> —— 在 {@link UsernamePasswordAuthenticationFilter}
-     *       之前插入自定义 {@link HeaderRoleAuthenticationFilter}，确保角色信息
+     *       之前插入 {@link JwtAuthenticationFilter}，确保 JWT 身份
      *       在正式授权判断前已就绪。</li>
      * </ol>
      *
@@ -199,9 +199,9 @@ public class SecurityConfig {
                         .requestMatchers("/api/finance/intentions/**").hasAnyRole("FARMER", "BANK")
                         // 兜底规则：未明确匹配的路径必须经过认证。
                         .anyRequest().authenticated())
-                // 将自定义 Header 角色认证过滤器插入 UsernamePasswordAuthenticationFilter 之前，
-                // 确保请求到达授权判断时 SecurityContextHolder 中已有角色信息。
-                .addFilterBefore(headerRoleAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+                // 将 JWT 认证过滤器插入 UsernamePasswordAuthenticationFilter 之前，
+                // 确保请求到达授权判断时 SecurityContextHolder 中已有身份信息。
+                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }

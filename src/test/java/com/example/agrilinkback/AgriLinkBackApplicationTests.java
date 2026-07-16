@@ -1,11 +1,14 @@
 package com.example.agrilinkback;
 
+import com.example.agrilinkback.common.security.JwtService;
+import com.example.agrilinkback.common.security.UserRole;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.mail.SimpleMailMessage;
@@ -21,6 +24,9 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.not;
 import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -42,6 +48,9 @@ class AgriLinkBackApplicationTests {
 
     @Autowired
     private ObjectMapper objectMapper;
+
+    @Autowired
+    private JwtService jwtService;
 
     @MockitoBean
     private JavaMailSender mailSender;
@@ -92,6 +101,12 @@ class AgriLinkBackApplicationTests {
         mockMvc.perform(get("/api/admin/overview").with(role("SYSTEM_ADMIN")))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true));
+
+        // 伪造 X-User-Role 不再授予权限
+        mockMvc.perform(get("/api/admin/overview")
+                        .header("X-User-Role", "SYSTEM_ADMIN")
+                        .header("X-User-Name", "admin001"))
+                .andExpect(status().isUnauthorized());
     }
 
     @Test
@@ -108,8 +123,9 @@ class AgriLinkBackApplicationTests {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.userName").value("farmer001"))
                 .andExpect(jsonPath("$.data.role").value("FARMER"))
-                .andExpect(jsonPath("$.data.token").value("FARMER"))
-                .andExpect(jsonPath("$.data.headerName").value("X-User-Role"));
+                .andExpect(jsonPath("$.data.token").value(not("FARMER")))
+                .andExpect(jsonPath("$.data.token").value(containsString(".")))
+                .andExpect(jsonPath("$.data.headerName").value(HttpHeaders.AUTHORIZATION));
 
         mockMvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -237,14 +253,14 @@ class AgriLinkBackApplicationTests {
     void systemAdminInterfacesWorkWithoutBusinessRoleConflict() throws Exception {
         mockMvc.perform(get("/api/admin/overview").with(role("SYSTEM_ADMIN")))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.userCount").value(2))
+                .andExpect(jsonPath("$.data.userCount").value(5))
                 .andExpect(jsonPath("$.data.orderCount").value(1))
                 .andExpect(jsonPath("$.data.usersByRole.FARMER").value(1))
                 .andExpect(jsonPath("$.data.usersByRole.SYSTEM_ADMIN").value(1));
 
         mockMvc.perform(get("/api/admin/users").with(role("SYSTEM_ADMIN")))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data[0].userName").value("farmer001"));
+                .andExpect(jsonPath("$.data[*].userName", hasItem("farmer001")));
 
         mockMvc.perform(post("/api/users")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -986,14 +1002,14 @@ class AgriLinkBackApplicationTests {
         mockMvc.perform(get("/api/users").with(role("FARMER")))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.data[0].userName").value("farmer001"))
-                .andExpect(jsonPath("$.data[0].nickName").value("Farmer One"))
-                .andExpect(jsonPath("$.data[0].identityNum").value("430000199001010001"));
+                .andExpect(jsonPath("$.data[*].userName", hasItem("farmer001")));
 
         mockMvc.perform(get("/api/users/farmer001").with(role("FARMER")))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.userName").value("farmer001"))
                 .andExpect(jsonPath("$.data.role").value("FARMER"))
+                .andExpect(jsonPath("$.data.nickName").value("Farmer One"))
+                .andExpect(jsonPath("$.data.identityNum").value("430000199001010001"))
                 .andExpect(jsonPath("$.data.realName").value("Zhang San"));
 
         mockMvc.perform(get("/api/users/admin001").with(role("SYSTEM_ADMIN")))
@@ -1169,8 +1185,18 @@ class AgriLinkBackApplicationTests {
     }
 
     private RequestPostProcessor role(String role) {
+        UserRole userRole = UserRole.fromCode(role)
+                .orElseThrow(() -> new IllegalArgumentException("Unknown role: " + role));
+        String userName = switch (userRole) {
+            case SYSTEM_ADMIN -> "admin001";
+            case FARMER -> "farmer001";
+            case BUYER -> "buyer001";
+            case BANK -> "bank001";
+            case EXPERT -> "expert001";
+        };
+        String token = jwtService.generateToken(userName, userRole);
         return request -> {
-            request.addHeader("X-User-Role", role);
+            request.addHeader(HttpHeaders.AUTHORIZATION, "Bearer " + token);
             return request;
         };
     }

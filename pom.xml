@@ -69,6 +69,25 @@
             <version>5.2.5</version>
         </dependency>
 
+        <!-- JJWT: 签发/校验无状态 JWT，替代可伪造的 X-User-Role 头。 -->
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-api</artifactId>
+            <version>0.12.6</version>
+        </dependency>
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-impl</artifactId>
+            <version>0.12.6</version>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-jackson</artifactId>
+            <version>0.12.6</version>
+            <scope>runtime</scope>
+        </dependency>
+
         <!-- DevTools: 开发期热重启工具，运行时可选，不参与生产打包。 -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

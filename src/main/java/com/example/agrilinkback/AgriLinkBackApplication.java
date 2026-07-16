@@ -1,8 +1,10 @@
 package com.example.agrilinkback;
 
+import com.example.agrilinkback.common.security.JwtProperties;
 import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 
 /**
  * AgriLink平台后端Spring Boot应用程序的主入口类。
@@ -35,6 +37,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
  * @see MapperScan
  */
 @MapperScan("com.example.agrilinkback.module")
+@EnableConfigurationProperties(JwtProperties.class)
 @SpringBootApplication
 public class AgriLinkBackApplication {
 

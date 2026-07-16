@@ -1,7 +1,8 @@
 package com.example.agrilinkback.module.auth.service;
 
 import com.example.agrilinkback.common.exception.BusinessException;
-import com.example.agrilinkback.common.security.HeaderRoleAuthenticationFilter;
+import com.example.agrilinkback.common.security.JwtAuthenticationFilter;
+import com.example.agrilinkback.common.security.JwtService;
 import com.example.agrilinkback.common.security.UserRole;
 import com.example.agrilinkback.module.auth.dto.AuthResponse;
 import com.example.agrilinkback.module.auth.dto.LoginRequest;
@@ -17,7 +18,7 @@ import org.springframework.stereotype.Service;
 /**
  * 登录和注册服务。
  *
- * <p>返回的 token 当前使用角色码承载，配合 HeaderRoleAuthenticationFilter 完成实训阶段鉴权。
+ * <p>登录/注册成功后签发 JWT，前端以 {@code Authorization: Bearer <token>} 携带。
  */
 @Service
 public class AuthService {
@@ -29,18 +30,24 @@ public class AuthService {
     private final UserMapper userMapper;
     private final UserService userService;
     private final EmailVerificationService emailVerificationService;
+    private final JwtService jwtService;
 
     public AuthService(UserMapper userMapper, UserService userService,
-                       EmailVerificationService emailVerificationService) {
+                       EmailVerificationService emailVerificationService,
+                       JwtService jwtService) {
         this.userMapper = userMapper;
         this.userService = userService;
         this.emailVerificationService = emailVerificationService;
+        this.jwtService = jwtService;
     }
 
     public AuthResponse login(LoginRequest request) {
         User user = userMapper.findByUserName(request.userName());
         if (user == null || !passwordMatches(request.password(), user.password())) {
             throw new BusinessException(401, "Invalid username or password");
+        }
+        if (Boolean.FALSE.equals(user.enabled())) {
+            throw new BusinessException(403, "Account has been disabled");
         }
 
         UserRole role = resolveRole(user.role());
@@ -92,14 +99,15 @@ public class AuthService {
     }
 
     private AuthResponse toResponse(User user, UserRole role) {
+        String token = jwtService.generateToken(user.userName(), role);
         return new AuthResponse(
                 user.userName(),
                 user.nickName(),
                 user.realName(),
                 role.code(),
                 role.label(),
-                role.code(),
-                HeaderRoleAuthenticationFilter.ROLE_HEADER
+                token,
+                JwtAuthenticationFilter.TOKEN_HEADER
         );
     }
 }

@@ -26,7 +26,8 @@ create table tb_user (
   integral int default 500,
   credit int default 5,
   avatar varchar(255),
-  real_name varchar(255)
+  real_name varchar(255),
+  enabled boolean default true
 );
 
 create table tb_address (
